@@ -1,0 +1,48 @@
+version: "1.0.9-SNAPSHOT"
+
+server:
+  port: "8281"
+  read_timeout: "120s"
+  write_timeout: "120s"
+  idle_timeout: "180s"
+
+services:
+  auth:
+    base_url: "http://localhost:8081"
+    timeout: "30s"
+    retries: 3
+  communication:
+    base_url: "http://localhost:8082"
+    timeout: "30s"
+    retries: 3
+  company:
+    base_url: "http://localhost:8083"
+    timeout: "30s"
+    retries: 3
+  terms:
+    base_url: "http://localhost:8084"
+    timeout: "30s"
+    retries: 3
+  user:
+    base_url: "http://localhost:8085"
+    timeout: "30s"
+    retries: 3
+
+
+jwt:
+  issuer: "keepguard"
+  audience: "keepguard-api"
+  jwks_url: ""
+  signing_key: ""
+
+metrics:
+  enabled: true
+  scrape_path: "/metrics"
+  port: "9092"
+
+log:
+  level: "info"
+  format: "json"
+
+
+env: "dev"

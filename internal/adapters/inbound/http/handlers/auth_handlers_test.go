@@ -1,0 +1,354 @@
+package http
+
+import (
+	"bytes"
+	"encoding/json"
+	"net/http"
+	"net/http/httptest"
+	"testing"
+
+	"github.com/keepguard/bff-auth/internal/adapters/inbound/http/dto"
+	appdto "github.com/keepguard/bff-auth/internal/application/dto"
+	"github.com/keepguard/bff-auth/internal/pkg"
+	"github.com/labstack/echo/v4"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+	"go.uber.org/zap"
+)
+
+// MockUseCases são mocks para os casos de uso
+type MockLoginUseCase struct {
+	mock.Mock
+}
+
+func (m *MockLoginUseCase) Execute(command appdto.LoginCommand) (dto.AuthResponseDTO, error) {
+	args := m.Called(command)
+	return args.Get(0).(dto.AuthResponseDTO), args.Error(1)
+}
+
+type MockRefreshUseCase struct {
+	mock.Mock
+}
+
+func (m *MockRefreshUseCase) Execute(command appdto.RefreshTokenCommand) (dto.RefreshTokenResponseDTO, error) {
+	args := m.Called(command)
+	return args.Get(0).(dto.RefreshTokenResponseDTO), args.Error(1)
+}
+
+type MockLogoutUseCase struct {
+	mock.Mock
+}
+
+func (m *MockLogoutUseCase) Execute(command appdto.LogoutCommand) error {
+	args := m.Called(command)
+	return args.Error(0)
+}
+
+type MockValidateTokenUseCase struct {
+	mock.Mock
+}
+
+func (m *MockValidateTokenUseCase) Execute(command appdto.ValidateTokenCommand) error {
+	args := m.Called(command)
+	return args.Error(0)
+}
+
+type MockChangePasswordUseCase struct {
+	mock.Mock
+}
+
+func (m *MockChangePasswordUseCase) Execute(command appdto.ChangePasswordCommand) error {
+	args := m.Called(command)
+	return args.Error(0)
+}
+
+type MockResetPasswordUseCase struct {
+	mock.Mock
+}
+
+func (m *MockResetPasswordUseCase) Execute(command appdto.ResetPasswordCommand) error {
+	args := m.Called(command)
+	return args.Error(0)
+}
+
+func setupTestHandlers() (*AuthHandlers, *MockLoginUseCase, *MockRefreshUseCase, *MockLogoutUseCase) {
+	mockLoginUseCase := new(MockLoginUseCase)
+	mockRefreshUseCase := new(MockRefreshUseCase)
+	mockLogoutUseCase := new(MockLogoutUseCase)
+	mockValidateTokenUseCase := new(MockValidateTokenUseCase)
+	mockChangePasswordUseCase := new(MockChangePasswordUseCase)
+	mockResetPasswordUseCase := new(MockResetPasswordUseCase)
+	logger, _ := zap.NewDevelopment()
+
+	handlers := NewAuthHandlers(
+		mockLoginUseCase,
+		mockRefreshUseCase,
+		mockLogoutUseCase,
+		mockValidateTokenUseCase,
+		mockChangePasswordUseCase,
+		mockResetPasswordUseCase,
+		logger,
+	)
+
+	return handlers, mockLoginUseCase, mockRefreshUseCase, mockLogoutUseCase
+}
+
+func TestAuthHandlers_LoginHandler_Success(t *testing.T) {
+	// Arrange
+	handlers, mockLoginUseCase, _, _ := setupTestHandlers()
+
+	e := echo.New()
+	reqBody := dto.AuthRequestDTO{
+		Username: "testuser",
+		Password: "testpass",
+	}
+	reqBodyBytes, _ := json.Marshal(reqBody)
+	req := httptest.NewRequest(http.MethodPost, "/auth/login", bytes.NewReader(reqBodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Correlation-ID", "test-correlation-id")
+	req.Header.Set("X-Application", "550e8400-e29b-41d4-a716-446655440000")
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	expectedResponse := dto.AuthResponseDTO{
+		Token:     "access_token",
+		ExpiresIn: 3600,
+	}
+
+	// O teste precisa ser ajustado para usar o novo command
+	// Por enquanto, vamos usar mock.Anything para o comando
+	mockLoginUseCase.On("Execute", mock.Anything).Return(expectedResponse, nil)
+
+	// Act
+	err := handlers.LoginHandler(c)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var response dto.AuthResponseDTO
+	err = json.Unmarshal(rec.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedResponse, response)
+
+	mockLoginUseCase.AssertExpectations(t)
+}
+
+func TestAuthHandlers_LoginHandler_InvalidJSON(t *testing.T) {
+	// Arrange
+	handlers, _, _, _ := setupTestHandlers()
+
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodPost, "/auth/login", bytes.NewReader([]byte("invalid json")))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Correlation-ID", "test-correlation-id")
+	req.Header.Set("X-Application", "550e8400-e29b-41d4-a716-446655440000")
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	// Act
+	err := handlers.LoginHandler(c)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+
+	var response pkg.ErrorResponse
+	err = json.Unmarshal(rec.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "INVALID_REQUEST", response.Error)
+	assert.Equal(t, "Requisição inválida", response.Message)
+
+}
+
+func TestAuthHandlers_LoginHandler_UseCaseError(t *testing.T) {
+	// Arrange
+	handlers, mockLoginUseCase, _, _ := setupTestHandlers()
+
+	e := echo.New()
+	reqBody := dto.AuthRequestDTO{
+		Username: "testuser",
+		Password: "testpass",
+	}
+	reqBodyBytes, _ := json.Marshal(reqBody)
+	req := httptest.NewRequest(http.MethodPost, "/auth/login", bytes.NewReader(reqBodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Correlation-ID", "test-correlation-id")
+	req.Header.Set("X-Application", "550e8400-e29b-41d4-a716-446655440000")
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	authError := &appdto.HTTPError{
+		StatusCode: 401,
+		Message:    "Credenciais inválidas",
+		ErrorCode:  "INVALID_CREDENTIALS",
+	}
+
+	mockLoginUseCase.On("Execute", mock.Anything).Return(dto.AuthResponseDTO{}, authError)
+
+	// Act
+	err := handlers.LoginHandler(c)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
+
+	var response pkg.ErrorResponse
+	err = json.Unmarshal(rec.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "INVALID_CREDENTIALS", response.Error)
+	assert.Equal(t, "Credenciais inválidas", response.Message)
+
+	mockLoginUseCase.AssertExpectations(t)
+}
+
+func TestAuthHandlers_RefreshHandler_Success(t *testing.T) {
+	// Arrange
+	handlers, _, mockRefreshUseCase, _ := setupTestHandlers()
+
+	e := echo.New()
+	reqBody := dto.RefreshTokenRequestDTO{
+		Token: "valid_refresh_token",
+	}
+	reqBodyBytes, _ := json.Marshal(reqBody)
+	req := httptest.NewRequest(http.MethodPost, "/auth/refresh", bytes.NewReader(reqBodyBytes))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Correlation-ID", "test-correlation-id")
+	req.Header.Set("X-Application", "550e8400-e29b-41d4-a716-446655440000")
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	expectedResponse := dto.RefreshTokenResponseDTO{
+		Token:     "new_access_token",
+		ExpiresIn: 3600,
+	}
+
+	mockRefreshUseCase.On("Execute", mock.Anything).Return(expectedResponse, nil)
+
+	// Act
+	err := handlers.RefreshHandler(c)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var response dto.RefreshTokenResponseDTO
+	err = json.Unmarshal(rec.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedResponse, response)
+
+	mockRefreshUseCase.AssertExpectations(t)
+}
+
+func TestAuthHandlers_LogoutHandler_Success(t *testing.T) {
+	// Arrange
+	handlers, _, _, mockLogoutUseCase := setupTestHandlers()
+
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodPost, "/auth/logout", nil)
+	req.Header.Set("Authorization", "Bearer valid_token")
+	req.Header.Set("X-Correlation-ID", "test-correlation-id")
+	req.Header.Set("X-Application", "550e8400-e29b-41d4-a716-446655440000")
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	mockLogoutUseCase.On("Execute", mock.Anything).Return(nil)
+
+	// Act
+	err := handlers.LogoutHandler(c)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var response map[string]string
+	err = json.Unmarshal(rec.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "Logout realizado com sucesso", response["message"])
+
+	mockLogoutUseCase.AssertExpectations(t)
+}
+
+func TestAuthHandlers_LogoutHandler_NoAuthorizationHeader(t *testing.T) {
+	// Arrange
+	handlers, _, _, _ := setupTestHandlers()
+
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodPost, "/auth/logout", nil)
+	req.Header.Set("X-Correlation-ID", "test-correlation-id")
+	req.Header.Set("X-Application", "550e8400-e29b-41d4-a716-446655440000")
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	// Act
+	err := handlers.LogoutHandler(c)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
+
+	var response pkg.ErrorResponse
+	err = json.Unmarshal(rec.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "UNAUTHORIZED", response.Error)
+	assert.Equal(t, "Token de autorização não fornecido", response.Message)
+}
+
+func TestAuthHandlers_LogoutHandler_InvalidToken(t *testing.T) {
+	// Arrange
+	handlers, _, _, _ := setupTestHandlers()
+
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodPost, "/auth/logout", nil)
+	req.Header.Set("Authorization", "Bearer ")
+	req.Header.Set("X-Correlation-ID", "test-correlation-id")
+	req.Header.Set("X-Application", "550e8400-e29b-41d4-a716-446655440000")
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	// Act
+	err := handlers.LogoutHandler(c)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
+
+	var response pkg.ErrorResponse
+	err = json.Unmarshal(rec.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, "UNAUTHORIZED", response.Error)
+	assert.Equal(t, "Token inválido", response.Message)
+}
+
+func TestGetOrCreateCorrelationID_WithExistingID(t *testing.T) {
+	// Arrange
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	req.Header.Set("X-Correlation-ID", "existing-correlation-id")
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	// Act
+	correlationID, err := GetCorrelationID(c)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Equal(t, "existing-correlation-id", correlationID)
+	assert.Equal(t, "existing-correlation-id", c.Response().Header().Get("X-Correlation-ID"))
+}
+
+func TestGetCorrelationID_WithoutExistingID(t *testing.T) {
+	// Arrange
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/test", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	// Act
+	correlationID, err := GetCorrelationID(c)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Empty(t, correlationID)
+	assert.Equal(t, "Header X-Correlation-ID é obrigatório", err.Error())
+}

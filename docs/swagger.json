@@ -1,0 +1,689 @@
+{
+    "swagger": "2.0",
+    "info": {
+        "description": "Backend for Frontend responsável pela autenticação e autorização do sistema KeepGuard",
+        "title": "BFF-AUTH API",
+        "contact": {},
+        "version": "1.0.0"
+    },
+    "host": "localhost:8381",
+    "basePath": "/",
+    "paths": {
+        "/auth/change-password": {
+            "post": {
+                "description": "Altera a senha do usuário autenticado. Requer headers obrigatórios X-Correlation-ID, X-Application e Authorization.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Change password",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID de correlação para rastreamento da requisição",
+                        "name": "X-Correlation-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID da aplicação cliente (UUID)",
+                        "name": "X-Application",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token Bearer para autenticação",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Dados para alteração de senha",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.ChangePasswordRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Senha alterada com sucesso",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Erro de validação (headers ausentes, dados inválidos ou senha atual incorreta)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Token de autorização inválido ou ausente",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/login": {
+            "post": {
+                "description": "Realiza login do usuário usando credenciais de username e password. Requer headers obrigatórios X-Correlation-ID e X-Application.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Login",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID de correlação para rastreamento da requisição",
+                        "name": "X-Correlation-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID da aplicação cliente (UUID)",
+                        "name": "X-Application",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Credenciais de login",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.AuthRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Login realizado com sucesso",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.AuthResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Erro de validação (headers ausentes ou dados inválidos)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Credenciais inválidas",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/logout": {
+            "post": {
+                "description": "Realiza logout do usuário invalidando o token de acesso. Requer headers obrigatórios X-Correlation-ID e X-Application, e token no header Authorization.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Logout",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID de correlação para rastreamento da requisição",
+                        "name": "X-Correlation-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID da aplicação cliente (UUID)",
+                        "name": "X-Application",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Token Bearer para autenticação",
+                        "name": "Authorization",
+                        "in": "header",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Logout realizado com sucesso",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Erro de validação (headers ausentes)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Token de autorização inválido ou ausente",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/refresh": {
+            "post": {
+                "description": "Renova o token de acesso usando o refresh token. Requer headers obrigatórios X-Correlation-ID e X-Application.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Refresh token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID de correlação para rastreamento da requisição",
+                        "name": "X-Correlation-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID da aplicação cliente (UUID)",
+                        "name": "X-Application",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Token de refresh para renovação",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.RefreshTokenRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Token renovado com sucesso",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.RefreshTokenResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Erro de validação (headers ausentes ou dados inválidos)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Refresh token inválido ou expirado",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/reset-password": {
+            "post": {
+                "description": "Reseta a senha do usuário usando um token de reset válido. Requer headers obrigatórios X-Correlation-ID e X-Application.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Reset password",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID de correlação para rastreamento da requisição",
+                        "name": "X-Correlation-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID da aplicação cliente (UUID)",
+                        "name": "X-Application",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Dados para reset de senha",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.ResetPasswordRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Senha resetada com sucesso",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Erro de validação (headers ausentes, dados inválidos, token inválido ou usuário não ativo)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Usuário não encontrado",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/validate": {
+            "post": {
+                "description": "Valida se um token JWT é válido e não expirou. Requer headers obrigatórios X-Correlation-ID e X-Application.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Validate token",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID de correlação para rastreamento da requisição",
+                        "name": "X-Correlation-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID da aplicação cliente (UUID)",
+                        "name": "X-Application",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Token para validação",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.ValidateTokenRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Token válido",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    },
+                    "400": {
+                        "description": "Erro de validação (headers ausentes ou dados inválidos)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Token inválido ou expirado",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/health": {
+            "get": {
+                "description": "Verifica se o serviço está funcionando corretamente",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "health"
+                ],
+                "summary": "Health check",
+                "responses": {
+                    "200": {
+                        "description": "Serviço funcionando",
+                        "schema": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "string"
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        "/message/reset-password/send": {
+            "post": {
+                "description": "Envia uma mensagem de reset de senha para o email do usuário. Não requer autenticação. Requer headers obrigatórios X-Correlation-ID e X-Application.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "messages"
+                ],
+                "summary": "Send reset password message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID de correlação para rastreamento da requisição",
+                        "name": "X-Correlation-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID da aplicação cliente (UUID)",
+                        "name": "X-Application",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Email do usuário",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.SendResetPasswordMessageRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Mensagem enviada com sucesso",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.SendResetPasswordMessageResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Erro de validação (headers ausentes, email inválido ou usuário não ativo)",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Usuário não encontrado",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        }
+    },
+    "definitions": {
+        "github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.AuthRequestDTO": {
+            "type": "object",
+            "required": [
+                "password",
+                "username"
+            ],
+            "properties": {
+                "password": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.AuthResponseDTO": {
+            "type": "object",
+            "properties": {
+                "expiresIn": {
+                    "type": "integer"
+                },
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.ChangePasswordRequestDTO": {
+            "type": "object",
+            "required": [
+                "confirmNewPassword",
+                "currentPassword",
+                "newPassword"
+            ],
+            "properties": {
+                "confirmNewPassword": {
+                    "type": "string",
+                    "minLength": 6
+                },
+                "currentPassword": {
+                    "type": "string",
+                    "minLength": 6
+                },
+                "newPassword": {
+                    "type": "string",
+                    "minLength": 6
+                }
+            }
+        },
+        "github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.RefreshTokenRequestDTO": {
+            "type": "object",
+            "required": [
+                "token"
+            ],
+            "properties": {
+                "token": {
+                    "type": "string",
+                    "minLength": 1
+                }
+            }
+        },
+        "github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.RefreshTokenResponseDTO": {
+            "type": "object",
+            "properties": {
+                "expiresIn": {
+                    "type": "integer"
+                },
+                "token": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.ResetPasswordRequestDTO": {
+            "type": "object",
+            "required": [
+                "confirmNewPassword",
+                "email",
+                "newPassword",
+                "resetToken"
+            ],
+            "properties": {
+                "confirmNewPassword": {
+                    "type": "string",
+                    "minLength": 6
+                },
+                "email": {
+                    "type": "string"
+                },
+                "newPassword": {
+                    "type": "string",
+                    "minLength": 6
+                },
+                "resetToken": {
+                    "type": "string",
+                    "minLength": 1
+                }
+            }
+        },
+        "github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.SendResetPasswordMessageRequestDTO": {
+            "type": "object",
+            "required": [
+                "email"
+            ],
+            "properties": {
+                "email": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.SendResetPasswordMessageResponseDTO": {
+            "type": "object",
+            "properties": {
+                "message": {
+                    "type": "string"
+                },
+                "success": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.ValidateTokenRequestDTO": {
+            "type": "object",
+            "required": [
+                "token"
+            ],
+            "properties": {
+                "token": {
+                    "type": "string",
+                    "minLength": 1
+                }
+            }
+        },
+        "github_com_keepguard_bff-auth_internal_pkg.ErrorDetail": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "string"
+                },
+                "field": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "github_com_keepguard_bff-auth_internal_pkg.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "details": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorDetail"
+                    }
+                },
+                "error": {
+                    "type": "string"
+                },
+                "message": {
+                    "type": "string"
+                },
+                "traceId": {
+                    "type": "string"
+                }
+            }
+        }
+    },
+    "securityDefinitions": {
+        "Bearer": {
+            "type": "apiKey",
+            "name": "Authorization",
+            "in": "header"
+        }
+    }
+}

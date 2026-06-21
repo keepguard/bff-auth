@@ -1,0 +1,254 @@
+package auth
+
+import (
+	"context"
+	"errors"
+	"testing"
+
+	inboundDto "github.com/keepguard/bff-auth/internal/adapters/inbound/http/dto"
+	outboundDto "github.com/keepguard/bff-auth/internal/adapters/outbound/http/dto"
+	"github.com/keepguard/bff-auth/internal/infrastructure/resilience"
+	"github.com/stretchr/testify/assert"
+	"github.com/stretchr/testify/mock"
+)
+
+// MockAuthClient é um mock para AuthClient
+type MockAuthClient struct {
+	mock.Mock
+}
+
+func (m *MockAuthClient) Login(ctx context.Context, req inboundDto.AuthRequestDTO, xApplication, correlationID string) (inboundDto.AuthResponseDTO, error) {
+	args := m.Called(ctx, req, xApplication, correlationID)
+	return args.Get(0).(inboundDto.AuthResponseDTO), args.Error(1)
+}
+
+func (m *MockAuthClient) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, xApplication, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
+	args := m.Called(ctx, req, xApplication, correlationID)
+	return args.Get(0).(inboundDto.RefreshTokenResponseDTO), args.Error(1)
+}
+
+func (m *MockAuthClient) Logout(ctx context.Context, token, xApplication, correlationID string) error {
+	args := m.Called(ctx, token, xApplication, correlationID)
+	return args.Error(0)
+}
+
+func (m *MockAuthClient) ValidateToken(ctx context.Context, token, xApplication, correlationID string) error {
+	args := m.Called(ctx, token, xApplication, correlationID)
+	return args.Error(0)
+}
+
+func (m *MockAuthClient) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, xApplication, correlationID string) error {
+	args := m.Called(ctx, req, xApplication, correlationID)
+	return args.Error(0)
+}
+
+func (m *MockAuthClient) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, xApplication, correlationID string) error {
+	args := m.Called(ctx, req, xApplication, correlationID)
+	return args.Error(0)
+}
+
+func (m *MockAuthClient) GenerateResetToken(ctx context.Context, req map[string]interface{}, xApplication, correlationID string) (outboundDto.GenerateResetTokenMSResponseDTO, error) {
+	args := m.Called(ctx, req, xApplication, correlationID)
+	return args.Get(0).(outboundDto.GenerateResetTokenMSResponseDTO), args.Error(1)
+}
+
+// MockMetricsRecorder é um mock para MetricsRecorder
+type MockMetricsRecorder struct {
+	mock.Mock
+}
+
+func (m *MockMetricsRecorder) SetCircuitBreakerState(service string, state int) {
+	m.Called(service, state)
+}
+
+func TestNewCircuitBreakerDecorator(t *testing.T) {
+	// Arrange
+	mockInner := new(MockAuthClient)
+	mockMetrics := new(MockMetricsRecorder)
+	cbManager := resilience.NewCircuitBreakerManager(mockMetrics)
+	serviceName := "test-service"
+
+	// Act
+	decorator := NewCircuitBreakerDecorator(mockInner, cbManager, serviceName)
+
+	// Assert
+	assert.NotNil(t, decorator)
+	assert.IsType(t, &circuitBreakerDecorator{}, decorator)
+}
+
+func TestCircuitBreakerDecorator_Login_Success(t *testing.T) {
+	// Arrange
+	mockInner := new(MockAuthClient)
+	mockMetrics := new(MockMetricsRecorder)
+	cbManager := resilience.NewCircuitBreakerManager(mockMetrics)
+	serviceName := "test-service"
+
+	decorator := NewCircuitBreakerDecorator(mockInner, cbManager, serviceName)
+
+	ctx := context.Background()
+	req := inboundDto.AuthRequestDTO{
+		Username: "testuser",
+		Password: "testpass",
+	}
+	xApplication := "test-app-id"
+	correlationID := "test-correlation-id"
+
+	expectedResponse := inboundDto.AuthResponseDTO{
+		Token:     "access_token",
+		ExpiresIn: 3600,
+	}
+
+	mockInner.On("Login", ctx, req, xApplication, correlationID).Return(expectedResponse, nil)
+
+	// Act
+	result, err := decorator.Login(ctx, req, xApplication, correlationID)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Equal(t, expectedResponse, result)
+	mockInner.AssertExpectations(t)
+}
+
+func TestCircuitBreakerDecorator_Login_Error(t *testing.T) {
+	// Arrange
+	mockInner := new(MockAuthClient)
+	mockMetrics := new(MockMetricsRecorder)
+	cbManager := resilience.NewCircuitBreakerManager(mockMetrics)
+	serviceName := "test-service"
+
+	decorator := NewCircuitBreakerDecorator(mockInner, cbManager, serviceName)
+
+	ctx := context.Background()
+	req := inboundDto.AuthRequestDTO{
+		Username: "testuser",
+		Password: "testpass",
+	}
+	xApplication := "test-app-id"
+	correlationID := "test-correlation-id"
+
+	expectedError := errors.New("auth service error")
+
+	mockInner.On("Login", ctx, req, xApplication, correlationID).Return(inboundDto.AuthResponseDTO{}, expectedError)
+
+	// Act
+	result, err := decorator.Login(ctx, req, xApplication, correlationID)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Equal(t, expectedError, err)
+	assert.Equal(t, inboundDto.AuthResponseDTO{}, result)
+	mockInner.AssertExpectations(t)
+}
+
+func TestCircuitBreakerDecorator_RefreshToken_Success(t *testing.T) {
+	// Arrange
+	mockInner := new(MockAuthClient)
+	mockMetrics := new(MockMetricsRecorder)
+	cbManager := resilience.NewCircuitBreakerManager(mockMetrics)
+	serviceName := "test-service"
+
+	decorator := NewCircuitBreakerDecorator(mockInner, cbManager, serviceName)
+
+	ctx := context.Background()
+	req := inboundDto.RefreshTokenRequestDTO{
+		Token: "valid_refresh_token",
+	}
+	xApplication := "test-app-id"
+	correlationID := "test-correlation-id"
+
+	expectedResponse := inboundDto.RefreshTokenResponseDTO{
+		Token:     "new_access_token",
+		ExpiresIn: 3600,
+	}
+
+	mockInner.On("RefreshToken", ctx, req, xApplication, correlationID).Return(expectedResponse, nil)
+
+	// Act
+	result, err := decorator.RefreshToken(ctx, req, xApplication, correlationID)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Equal(t, expectedResponse, result)
+	mockInner.AssertExpectations(t)
+}
+
+func TestCircuitBreakerDecorator_RefreshToken_Error(t *testing.T) {
+	// Arrange
+	mockInner := new(MockAuthClient)
+	mockMetrics := new(MockMetricsRecorder)
+	cbManager := resilience.NewCircuitBreakerManager(mockMetrics)
+	serviceName := "test-service"
+
+	decorator := NewCircuitBreakerDecorator(mockInner, cbManager, serviceName)
+
+	ctx := context.Background()
+	req := inboundDto.RefreshTokenRequestDTO{
+		Token: "invalid_refresh_token",
+	}
+	xApplication := "test-app-id"
+	correlationID := "test-correlation-id"
+
+	expectedError := errors.New("refresh token error")
+
+	mockInner.On("RefreshToken", ctx, req, xApplication, correlationID).Return(inboundDto.RefreshTokenResponseDTO{}, expectedError)
+
+	// Act
+	result, err := decorator.RefreshToken(ctx, req, xApplication, correlationID)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Equal(t, expectedError, err)
+	assert.Equal(t, inboundDto.RefreshTokenResponseDTO{}, result)
+	mockInner.AssertExpectations(t)
+}
+
+func TestCircuitBreakerDecorator_Logout_Success(t *testing.T) {
+	// Arrange
+	mockInner := new(MockAuthClient)
+	mockMetrics := new(MockMetricsRecorder)
+	cbManager := resilience.NewCircuitBreakerManager(mockMetrics)
+	serviceName := "test-service"
+
+	decorator := NewCircuitBreakerDecorator(mockInner, cbManager, serviceName)
+
+	ctx := context.Background()
+	token := "valid_token"
+	xApplication := "test-app-id"
+	correlationID := "test-correlation-id"
+
+	mockInner.On("Logout", ctx, token, xApplication, correlationID).Return(nil)
+
+	// Act
+	err := decorator.Logout(ctx, token, xApplication, correlationID)
+
+	// Assert
+	assert.NoError(t, err)
+	mockInner.AssertExpectations(t)
+}
+
+func TestCircuitBreakerDecorator_Logout_Error(t *testing.T) {
+	// Arrange
+	mockInner := new(MockAuthClient)
+	mockMetrics := new(MockMetricsRecorder)
+	cbManager := resilience.NewCircuitBreakerManager(mockMetrics)
+	serviceName := "test-service"
+
+	decorator := NewCircuitBreakerDecorator(mockInner, cbManager, serviceName)
+
+	ctx := context.Background()
+	token := "invalid_token"
+	xApplication := "test-app-id"
+	correlationID := "test-correlation-id"
+
+	expectedError := errors.New("logout error")
+
+	mockInner.On("Logout", ctx, token, xApplication, correlationID).Return(expectedError)
+
+	// Act
+	err := decorator.Logout(ctx, token, xApplication, correlationID)
+
+	// Assert
+	assert.Error(t, err)
+	assert.Equal(t, expectedError, err)
+	mockInner.AssertExpectations(t)
+}

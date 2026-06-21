@@ -1,0 +1,231 @@
+package auth
+
+import (
+	"context"
+	"crypto/sha256"
+	"encoding/hex"
+	"encoding/json"
+	"sync"
+	"time"
+
+	inboundDto "github.com/keepguard/bff-auth/internal/adapters/inbound/http/dto"
+	outboundDto "github.com/keepguard/bff-auth/internal/adapters/outbound/http/dto"
+	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	"github.com/keepguard/bff-auth/internal/infrastructure/metrics"
+)
+
+// CacheConfig configuração para cache
+type CacheConfig struct {
+	TTL             time.Duration // Tempo de vida do cache
+	MaxSize         int           // Número máximo de entradas
+	CleanupInterval time.Duration // Intervalo de limpeza de entradas expiradas
+}
+
+// DefaultCacheConfig retorna uma configuração padrão de cache
+func DefaultCacheConfig() CacheConfig {
+	return CacheConfig{
+		TTL:             5 * time.Minute,
+		MaxSize:         1000,
+		CleanupInterval: 1 * time.Minute,
+	}
+}
+
+// cacheEntry representa uma entrada no cache
+type cacheEntry struct {
+	value     interface{}
+	expiresAt time.Time
+}
+
+// isExpired verifica se a entrada está expirada
+func (e *cacheEntry) isExpired() bool {
+	return time.Now().After(e.expiresAt)
+}
+
+// cache implementa um cache thread-safe em memória
+type cache struct {
+	entries map[string]*cacheEntry
+	mu      sync.RWMutex
+	config  CacheConfig
+	metrics *metrics.Metrics
+}
+
+// newCache cria um novo cache
+func newCache(config CacheConfig, metrics *metrics.Metrics) *cache {
+	c := &cache{
+		entries: make(map[string]*cacheEntry),
+		config:  config,
+		metrics: metrics,
+	}
+
+	// Inicia goroutine de limpeza
+	if config.CleanupInterval > 0 {
+		go c.cleanup()
+	}
+
+	return c
+}
+
+// cleanup remove entradas expiradas periodicamente
+func (c *cache) cleanup() {
+	ticker := time.NewTicker(c.config.CleanupInterval)
+	defer ticker.Stop()
+
+	for range ticker.C {
+		c.mu.Lock()
+		for key, entry := range c.entries {
+			if entry.isExpired() {
+				delete(c.entries, key)
+			}
+		}
+		c.mu.Unlock()
+	}
+}
+
+// get obtém um valor do cache
+func (c *cache) get(key string) (interface{}, bool) {
+	c.mu.RLock()
+	defer c.mu.RUnlock()
+
+	entry, exists := c.entries[key]
+	if !exists {
+		if c.metrics != nil {
+			c.metrics.RecordCacheMiss("auth-client", "auth")
+		}
+		return nil, false
+	}
+
+	if entry.isExpired() {
+		if c.metrics != nil {
+			c.metrics.RecordCacheMiss("auth-client", "auth")
+		}
+		return nil, false
+	}
+
+	if c.metrics != nil {
+		c.metrics.RecordCacheHit("auth-client", "auth")
+	}
+	return entry.value, true
+}
+
+// set armazena um valor no cache
+func (c *cache) set(key string, value interface{}) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	// Se atingiu o tamanho máximo, remove entrada mais antiga
+	if len(c.entries) >= c.config.MaxSize {
+		// Remove primeira entrada (simples, mas não LRU)
+		for k := range c.entries {
+			delete(c.entries, k)
+			break
+		}
+	}
+
+	c.entries[key] = &cacheEntry{
+		value:     value,
+		expiresAt: time.Now().Add(c.config.TTL),
+	}
+}
+
+// invalidate remove uma chave específica do cache
+func (c *cache) invalidate(key string) {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	delete(c.entries, key)
+}
+
+// clear limpa todo o cache
+func (c *cache) clear() {
+	c.mu.Lock()
+	defer c.mu.Unlock()
+
+	c.entries = make(map[string]*cacheEntry)
+}
+
+// cacheDecorator implementa o padrão decorator para cache
+type cacheDecorator struct {
+	inner  authclient.AuthClient
+	cache  *cache
+	config CacheConfig
+}
+
+// NewCacheDecorator cria um decorator de cache para AuthClient
+func NewCacheDecorator(
+	inner authclient.AuthClient,
+	config CacheConfig,
+	metrics *metrics.Metrics,
+) authclient.AuthClient {
+	return &cacheDecorator{
+		inner:  inner,
+		cache:  newCache(config, metrics),
+		config: config,
+	}
+}
+
+// generateCacheKey gera uma chave de cache baseada nos parâmetros
+func (d *cacheDecorator) generateCacheKey(operation string, params ...interface{}) string {
+	data, _ := json.Marshal(map[string]interface{}{
+		"operation": operation,
+		"params":    params,
+	})
+	hash := sha256.Sum256(data)
+	return hex.EncodeToString(hash[:])
+}
+
+// Login - NÃO CACHEIA (autenticação sempre deve ser validada)
+func (d *cacheDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, xApplication, correlationID string) (inboundDto.AuthResponseDTO, error) {
+	return d.inner.Login(ctx, req, xApplication, correlationID)
+}
+
+// RefreshToken - NÃO CACHEIA (tokens sempre devem ser validados)
+func (d *cacheDecorator) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, xApplication, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
+	return d.inner.RefreshToken(ctx, req, xApplication, correlationID)
+}
+
+// Logout - NÃO CACHEIA e INVALIDA cache relacionado
+func (d *cacheDecorator) Logout(ctx context.Context, token, xApplication, correlationID string) error {
+	err := d.inner.Logout(ctx, token, xApplication, correlationID)
+
+	// Invalida cache de validação de token
+	cacheKey := d.generateCacheKey("ValidateToken", token, xApplication)
+	d.cache.invalidate(cacheKey)
+
+	return err
+}
+
+// ValidateToken - CACHEIA (validação de token pode ser cacheada por curto período)
+func (d *cacheDecorator) ValidateToken(ctx context.Context, token, xApplication, correlationID string) error {
+	cacheKey := d.generateCacheKey("ValidateToken", token, xApplication)
+
+	// Tenta obter do cache
+	if cached, found := d.cache.get(cacheKey); found {
+		if err, ok := cached.(error); ok {
+			return err
+		}
+		return nil
+	}
+
+	// Se não encontrou no cache, executa a operação
+	err := d.inner.ValidateToken(ctx, token, xApplication, correlationID)
+
+	// Armazena no cache (mesmo erros, para evitar validações repetidas)
+	d.cache.set(cacheKey, err)
+
+	return err
+}
+
+// ChangePassword - NÃO CACHEIA (operação de escrita)
+func (d *cacheDecorator) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, xApplication, correlationID string) error {
+	return d.inner.ChangePassword(ctx, req, xApplication, correlationID)
+}
+
+// ResetPassword - NÃO CACHEIA (operação de escrita)
+func (d *cacheDecorator) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, xApplication, correlationID string) error {
+	return d.inner.ResetPassword(ctx, req, xApplication, correlationID)
+}
+
+// GenerateResetToken implementa o método GenerateResetToken (sem cache)
+func (d *cacheDecorator) GenerateResetToken(ctx context.Context, req map[string]interface{}, xApplication, correlationID string) (outboundDto.GenerateResetTokenMSResponseDTO, error) {
+	return d.inner.GenerateResetToken(ctx, req, xApplication, correlationID)
+}
