@@ -7,17 +7,17 @@ import "context"
 type LoginCommand struct {
 	Username      string
 	Password      string
-	XApplication  string
+	TenantId  string
 	CorrelationID string
 	Context       context.Context
 }
 
 // NewLoginCommand cria uma nova instância do LoginCommand
-func NewLoginCommand(username, password, xApplication, correlationID string, ctx context.Context) LoginCommand {
+func NewLoginCommand(username, password, tenantId, correlationID string, ctx context.Context) LoginCommand {
 	return LoginCommand{
 		Username:      username,
 		Password:      password,
-		XApplication:  xApplication,
+		TenantId:  tenantId,
 		CorrelationID: correlationID,
 		Context:       ctx,
 	}
@@ -31,8 +31,8 @@ func (c *LoginCommand) Validate() error {
 	if c.Password == "" {
 		return &ValidationError{Field: "password", Message: "password é obrigatório"}
 	}
-	if c.XApplication == "" {
-		return &ValidationError{Field: "xApplication", Message: "xApplication é obrigatório"}
+	if c.TenantId == "" {
+		return &ValidationError{Field: "tenantId", Message: "tenantId é obrigatório"}
 	}
 	if c.CorrelationID == "" {
 		return &ValidationError{Field: "correlationID", Message: "correlationID é obrigatório"}

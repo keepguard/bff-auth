@@ -43,7 +43,7 @@ func TestRetryDecorator_SendMessage_SuccessFirstAttempt(t *testing.T) {
 		Recipient:    "user@example.com",
 		TemplateType: "RECUPERACAO_SENHA",
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedResponse := outboundDto.SendMessageResponseDTO{
@@ -51,10 +51,10 @@ func TestRetryDecorator_SendMessage_SuccessFirstAttempt(t *testing.T) {
 		Message: "Message sent",
 	}
 
-	mockInner.On("SendMessage", ctx, req, xApplication, correlationID).Return(expectedResponse, nil).Once()
+	mockInner.On("SendMessage", ctx, req, tenantId, correlationID).Return(expectedResponse, nil).Once()
 
 	// Act
-	result, err := decorator.SendMessage(ctx, req, xApplication, correlationID)
+	result, err := decorator.SendMessage(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -82,7 +82,7 @@ func TestRetryDecorator_SendMessage_SuccessAfterRetry(t *testing.T) {
 		Recipient:    "user@example.com",
 		TemplateType: "RECUPERACAO_SENHA",
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedResponse := outboundDto.SendMessageResponseDTO{
@@ -96,13 +96,13 @@ func TestRetryDecorator_SendMessage_SuccessAfterRetry(t *testing.T) {
 		Message:    "Service temporarily unavailable",
 		ErrorCode:  "SERVICE_UNAVAILABLE",
 	}
-	mockInner.On("SendMessage", ctx, req, xApplication, correlationID).Return(outboundDto.SendMessageResponseDTO{}, retryableError).Once()
+	mockInner.On("SendMessage", ctx, req, tenantId, correlationID).Return(outboundDto.SendMessageResponseDTO{}, retryableError).Once()
 
 	// Segunda tentativa: sucesso
-	mockInner.On("SendMessage", ctx, req, xApplication, correlationID).Return(expectedResponse, nil).Once()
+	mockInner.On("SendMessage", ctx, req, tenantId, correlationID).Return(expectedResponse, nil).Once()
 
 	// Act
-	result, err := decorator.SendMessage(ctx, req, xApplication, correlationID)
+	result, err := decorator.SendMessage(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -130,7 +130,7 @@ func TestRetryDecorator_SendMessage_MaxAttemptsReached(t *testing.T) {
 		Recipient:    "user@example.com",
 		TemplateType: "RECUPERACAO_SENHA",
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	// Sempre retorna 503
@@ -140,10 +140,10 @@ func TestRetryDecorator_SendMessage_MaxAttemptsReached(t *testing.T) {
 		ErrorCode:  "SERVICE_UNAVAILABLE",
 	}
 
-	mockInner.On("SendMessage", ctx, req, xApplication, correlationID).Return(outboundDto.SendMessageResponseDTO{}, retryableError).Times(4)
+	mockInner.On("SendMessage", ctx, req, tenantId, correlationID).Return(outboundDto.SendMessageResponseDTO{}, retryableError).Times(4)
 
 	// Act
-	_, err := decorator.SendMessage(ctx, req, xApplication, correlationID)
+	_, err := decorator.SendMessage(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.Error(t, err)

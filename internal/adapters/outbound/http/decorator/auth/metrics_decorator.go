@@ -48,10 +48,10 @@ func (d *metricsDecorator) getStatusCodeFromError(err error) int {
 }
 
 // Login implementa o método Login com coleta de métricas
-func (d *metricsDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, xApplication, correlationID string) (inboundDto.AuthResponseDTO, error) {
+func (d *metricsDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
 	start := time.Now()
 
-	response, err := d.inner.Login(ctx, req, xApplication, correlationID)
+	response, err := d.inner.Login(ctx, req, tenantId, correlationID)
 
 	duration := time.Since(start)
 	statusCode := d.getStatusCodeFromError(err)
@@ -71,10 +71,10 @@ func (d *metricsDecorator) Login(ctx context.Context, req inboundDto.AuthRequest
 }
 
 // RefreshToken implementa o método RefreshToken com coleta de métricas
-func (d *metricsDecorator) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, xApplication, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
+func (d *metricsDecorator) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
 	start := time.Now()
 
-	response, err := d.inner.RefreshToken(ctx, req, xApplication, correlationID)
+	response, err := d.inner.RefreshToken(ctx, req, tenantId, correlationID)
 
 	duration := time.Since(start)
 	statusCode := d.getStatusCodeFromError(err)
@@ -94,10 +94,10 @@ func (d *metricsDecorator) RefreshToken(ctx context.Context, req inboundDto.Refr
 }
 
 // Logout implementa o método Logout com coleta de métricas
-func (d *metricsDecorator) Logout(ctx context.Context, token, xApplication, correlationID string) error {
+func (d *metricsDecorator) Logout(ctx context.Context, token, tenantId, correlationID string) error {
 	start := time.Now()
 
-	err := d.inner.Logout(ctx, token, xApplication, correlationID)
+	err := d.inner.Logout(ctx, token, tenantId, correlationID)
 
 	duration := time.Since(start)
 	statusCode := d.getStatusCodeFromError(err)
@@ -117,10 +117,10 @@ func (d *metricsDecorator) Logout(ctx context.Context, token, xApplication, corr
 }
 
 // ValidateToken implementa o método ValidateToken com coleta de métricas
-func (d *metricsDecorator) ValidateToken(ctx context.Context, token, xApplication, correlationID string) error {
+func (d *metricsDecorator) ValidateToken(ctx context.Context, token, tenantId, correlationID string) error {
 	start := time.Now()
 
-	err := d.inner.ValidateToken(ctx, token, xApplication, correlationID)
+	err := d.inner.ValidateToken(ctx, token, tenantId, correlationID)
 
 	duration := time.Since(start)
 	statusCode := d.getStatusCodeFromError(err)
@@ -140,10 +140,10 @@ func (d *metricsDecorator) ValidateToken(ctx context.Context, token, xApplicatio
 }
 
 // ChangePassword implementa o método ChangePassword com coleta de métricas
-func (d *metricsDecorator) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, xApplication, correlationID string) error {
+func (d *metricsDecorator) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, tenantId, correlationID string) error {
 	start := time.Now()
 
-	err := d.inner.ChangePassword(ctx, req, xApplication, correlationID)
+	err := d.inner.ChangePassword(ctx, req, tenantId, correlationID)
 
 	duration := time.Since(start)
 	statusCode := d.getStatusCodeFromError(err)
@@ -163,10 +163,10 @@ func (d *metricsDecorator) ChangePassword(ctx context.Context, req outboundDto.C
 }
 
 // ResetPassword implementa o método ResetPassword com coleta de métricas
-func (d *metricsDecorator) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, xApplication, correlationID string) error {
+func (d *metricsDecorator) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, tenantId, correlationID string) error {
 	start := time.Now()
 
-	err := d.inner.ResetPassword(ctx, req, xApplication, correlationID)
+	err := d.inner.ResetPassword(ctx, req, tenantId, correlationID)
 
 	duration := time.Since(start)
 	statusCode := d.getStatusCodeFromError(err)
@@ -186,10 +186,10 @@ func (d *metricsDecorator) ResetPassword(ctx context.Context, req outboundDto.Re
 }
 
 // GenerateResetToken implementa o método GenerateResetToken com coleta de métricas
-func (d *metricsDecorator) GenerateResetToken(ctx context.Context, req map[string]interface{}, xApplication, correlationID string) (outboundDto.GenerateResetTokenMSResponseDTO, error) {
+func (d *metricsDecorator) GenerateResetToken(ctx context.Context, req map[string]interface{}, tenantId, correlationID string) (outboundDto.GenerateResetTokenMSResponseDTO, error) {
 	start := time.Now()
 
-	response, err := d.inner.GenerateResetToken(ctx, req, xApplication, correlationID)
+	response, err := d.inner.GenerateResetToken(ctx, req, tenantId, correlationID)
 
 	duration := time.Since(start)
 	statusCode := d.getStatusCodeFromError(err)

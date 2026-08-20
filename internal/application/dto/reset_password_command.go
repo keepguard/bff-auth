@@ -9,19 +9,19 @@ type ResetPasswordCommand struct {
 	ResetToken         string
 	NewPassword        string
 	ConfirmNewPassword string
-	XApplication       string
+	TenantId       string
 	CorrelationID      string
 	Context            context.Context
 }
 
 // NewResetPasswordCommand cria uma nova instância do ResetPasswordCommand
-func NewResetPasswordCommand(email, resetToken, newPassword, confirmNewPassword, xApplication, correlationID string, ctx context.Context) ResetPasswordCommand {
+func NewResetPasswordCommand(email, resetToken, newPassword, confirmNewPassword, tenantId, correlationID string, ctx context.Context) ResetPasswordCommand {
 	return ResetPasswordCommand{
 		Email:              email,
 		ResetToken:         resetToken,
 		NewPassword:        newPassword,
 		ConfirmNewPassword: confirmNewPassword,
-		XApplication:       xApplication,
+		TenantId:       tenantId,
 		CorrelationID:      correlationID,
 		Context:            ctx,
 	}
@@ -44,8 +44,8 @@ func (c *ResetPasswordCommand) Validate() error {
 	if c.NewPassword != c.ConfirmNewPassword {
 		return &ValidationError{Field: "confirmNewPassword", Message: "newPassword e confirmNewPassword devem ser iguais"}
 	}
-	if c.XApplication == "" {
-		return &ValidationError{Field: "xApplication", Message: "xApplication é obrigatório"}
+	if c.TenantId == "" {
+		return &ValidationError{Field: "tenantId", Message: "tenantId é obrigatório"}
 	}
 	if c.CorrelationID == "" {
 		return &ValidationError{Field: "correlationID", Message: "correlationID é obrigatório"}

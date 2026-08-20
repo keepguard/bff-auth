@@ -124,7 +124,7 @@ paths:
       consumes:
       - application/json
       description: Altera a senha do usuário autenticado. Requer headers obrigatórios
-        X-Correlation-ID, X-Application e Authorization.
+        X-Correlation-ID, X-Tenant-Id e Authorization.
       parameters:
       - description: ID de correlação para rastreamento da requisição
         in: header
@@ -133,7 +133,7 @@ paths:
         type: string
       - description: ID da aplicação cliente (UUID)
         in: header
-        name: X-Application
+        name: X-Tenant-Id
         required: true
         type: string
       - description: Token Bearer para autenticação
@@ -177,7 +177,7 @@ paths:
       consumes:
       - application/json
       description: Realiza login do usuário usando credenciais de username e password.
-        Requer headers obrigatórios X-Correlation-ID e X-Application.
+        Requer headers obrigatórios X-Correlation-ID e X-Tenant-Id.
       parameters:
       - description: ID de correlação para rastreamento da requisição
         in: header
@@ -186,7 +186,7 @@ paths:
         type: string
       - description: ID da aplicação cliente (UUID)
         in: header
-        name: X-Application
+        name: X-Tenant-Id
         required: true
         type: string
       - description: Credenciais de login
@@ -222,7 +222,7 @@ paths:
       consumes:
       - application/json
       description: Realiza logout do usuário invalidando o token de acesso. Requer
-        headers obrigatórios X-Correlation-ID e X-Application, e token no header Authorization.
+        headers obrigatórios X-Correlation-ID e X-Tenant-Id, e token no header Authorization.
       parameters:
       - description: ID de correlação para rastreamento da requisição
         in: header
@@ -231,7 +231,7 @@ paths:
         type: string
       - description: ID da aplicação cliente (UUID)
         in: header
-        name: X-Application
+        name: X-Tenant-Id
         required: true
         type: string
       - description: Token Bearer para autenticação
@@ -268,7 +268,7 @@ paths:
       consumes:
       - application/json
       description: Renova o token de acesso usando o refresh token. Requer headers
-        obrigatórios X-Correlation-ID e X-Application.
+        obrigatórios X-Correlation-ID e X-Tenant-Id.
       parameters:
       - description: ID de correlação para rastreamento da requisição
         in: header
@@ -277,7 +277,7 @@ paths:
         type: string
       - description: ID da aplicação cliente (UUID)
         in: header
-        name: X-Application
+        name: X-Tenant-Id
         required: true
         type: string
       - description: Token de refresh para renovação
@@ -313,7 +313,7 @@ paths:
       consumes:
       - application/json
       description: Reseta a senha do usuário usando um token de reset válido. Requer
-        headers obrigatórios X-Correlation-ID e X-Application.
+        headers obrigatórios X-Correlation-ID e X-Tenant-Id.
       parameters:
       - description: ID de correlação para rastreamento da requisição
         in: header
@@ -322,7 +322,7 @@ paths:
         type: string
       - description: ID da aplicação cliente (UUID)
         in: header
-        name: X-Application
+        name: X-Tenant-Id
         required: true
         type: string
       - description: Dados para reset de senha
@@ -361,7 +361,7 @@ paths:
       consumes:
       - application/json
       description: Valida se um token JWT é válido e não expirou. Requer headers obrigatórios
-        X-Correlation-ID e X-Application.
+        X-Correlation-ID e X-Tenant-Id.
       parameters:
       - description: ID de correlação para rastreamento da requisição
         in: header
@@ -370,7 +370,7 @@ paths:
         type: string
       - description: ID da aplicação cliente (UUID)
         in: header
-        name: X-Application
+        name: X-Tenant-Id
         required: true
         type: string
       - description: Token para validação
@@ -423,7 +423,7 @@ paths:
       consumes:
       - application/json
       description: Envia uma mensagem de reset de senha para o email do usuário. Não
-        requer autenticação. Requer headers obrigatórios X-Correlation-ID e X-Application.
+        requer autenticação. Requer headers obrigatórios X-Correlation-ID e X-Tenant-Id.
       parameters:
       - description: ID de correlação para rastreamento da requisição
         in: header
@@ -432,7 +432,7 @@ paths:
         type: string
       - description: ID da aplicação cliente (UUID)
         in: header
-        name: X-Application
+        name: X-Tenant-Id
         required: true
         type: string
       - description: Email do usuário

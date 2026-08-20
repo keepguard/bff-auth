@@ -37,7 +37,7 @@ func TestUserMetricsDecorator_GetByEmail_Success(t *testing.T) {
 
 	ctx := context.Background()
 	email := "user@example.com"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedResponse := outboundDto.UserByEmailResponseDTO{
@@ -47,10 +47,10 @@ func TestUserMetricsDecorator_GetByEmail_Success(t *testing.T) {
 		Status:   "ACTIVE",
 	}
 
-	mockInner.On("GetByEmail", ctx, email, xApplication, correlationID).Return(expectedResponse, nil)
+	mockInner.On("GetByEmail", ctx, email, tenantId, correlationID).Return(expectedResponse, nil)
 
 	// Act
-	result, err := decorator.GetByEmail(ctx, email, xApplication, correlationID)
+	result, err := decorator.GetByEmail(ctx, email, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -67,15 +67,15 @@ func TestUserMetricsDecorator_GetByEmail_Error(t *testing.T) {
 
 	ctx := context.Background()
 	email := "notfound@example.com"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedError := errors.New("user not found")
 
-	mockInner.On("GetByEmail", ctx, email, xApplication, correlationID).Return(outboundDto.UserByEmailResponseDTO{}, expectedError)
+	mockInner.On("GetByEmail", ctx, email, tenantId, correlationID).Return(outboundDto.UserByEmailResponseDTO{}, expectedError)
 
 	// Act
-	_, err := decorator.GetByEmail(ctx, email, xApplication, correlationID)
+	_, err := decorator.GetByEmail(ctx, email, tenantId, correlationID)
 
 	// Assert
 	assert.Error(t, err)

@@ -6,16 +6,16 @@ import "context"
 // Encapsula todos os parâmetros necessários para executar o caso de uso de logout
 type LogoutCommand struct {
 	Token         string
-	XApplication  string
+	TenantId  string
 	CorrelationID string
 	Context       context.Context
 }
 
 // NewLogoutCommand cria uma nova instância do LogoutCommand
-func NewLogoutCommand(token, xApplication, correlationID string, ctx context.Context) LogoutCommand {
+func NewLogoutCommand(token, tenantId, correlationID string, ctx context.Context) LogoutCommand {
 	return LogoutCommand{
 		Token:         token,
-		XApplication:  xApplication,
+		TenantId:  tenantId,
 		CorrelationID: correlationID,
 		Context:       ctx,
 	}
@@ -26,8 +26,8 @@ func (c *LogoutCommand) Validate() error {
 	if c.Token == "" {
 		return &ValidationError{Field: "token", Message: "token é obrigatório"}
 	}
-	if c.XApplication == "" {
-		return &ValidationError{Field: "xApplication", Message: "xApplication é obrigatório"}
+	if c.TenantId == "" {
+		return &ValidationError{Field: "tenantId", Message: "tenantId é obrigatório"}
 	}
 	if c.CorrelationID == "" {
 		return &ValidationError{Field: "correlationID", Message: "correlationID é obrigatório"}

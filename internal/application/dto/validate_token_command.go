@@ -6,16 +6,16 @@ import "context"
 // Encapsula todos os parâmetros necessários para executar o caso de uso de validação de token
 type ValidateTokenCommand struct {
 	Token         string
-	XApplication  string
+	TenantId  string
 	CorrelationID string
 	Context       context.Context
 }
 
 // NewValidateTokenCommand cria uma nova instância do ValidateTokenCommand
-func NewValidateTokenCommand(token, xApplication, correlationID string, ctx context.Context) ValidateTokenCommand {
+func NewValidateTokenCommand(token, tenantId, correlationID string, ctx context.Context) ValidateTokenCommand {
 	return ValidateTokenCommand{
 		Token:         token,
-		XApplication:  xApplication,
+		TenantId:  tenantId,
 		CorrelationID: correlationID,
 		Context:       ctx,
 	}
@@ -26,8 +26,8 @@ func (c *ValidateTokenCommand) Validate() error {
 	if c.Token == "" {
 		return &ValidationError{Field: "token", Message: "token é obrigatório"}
 	}
-	if c.XApplication == "" {
-		return &ValidationError{Field: "xApplication", Message: "xApplication é obrigatório"}
+	if c.TenantId == "" {
+		return &ValidationError{Field: "tenantId", Message: "tenantId é obrigatório"}
 	}
 	if c.CorrelationID == "" {
 		return &ValidationError{Field: "correlationID", Message: "correlationID é obrigatório"}

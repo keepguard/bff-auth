@@ -24,7 +24,7 @@ func TestNewRetryDecorator(t *testing.T) {
 	assert.IsType(t, &retryDecorator{}, decorator)
 }
 
-func TestRetryDecorator_GetByXApplication_SuccessFirstAttempt(t *testing.T) {
+func TestRetryDecorator_GetByTenantId_SuccessFirstAttempt(t *testing.T) {
 	// Arrange
 	mockInner := new(MockCompanyClient)
 	config := RetryConfig{
@@ -38,7 +38,7 @@ func TestRetryDecorator_GetByXApplication_SuccessFirstAttempt(t *testing.T) {
 	decorator := NewRetryDecorator(mockInner, config)
 
 	ctx := context.Background()
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedResponse := portsclient.CompanySimpleResponseDTO{
@@ -46,19 +46,19 @@ func TestRetryDecorator_GetByXApplication_SuccessFirstAttempt(t *testing.T) {
 		Name: "Test Company",
 	}
 
-	mockInner.On("GetByXApplication", ctx, xApplication, correlationID).Return(expectedResponse, nil).Once()
+	mockInner.On("GetByTenantId", ctx, tenantId, correlationID).Return(expectedResponse, nil).Once()
 
 	// Act
-	result, err := decorator.GetByXApplication(ctx, xApplication, correlationID)
+	result, err := decorator.GetByTenantId(ctx, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)
 	assert.Equal(t, expectedResponse, result)
 	mockInner.AssertExpectations(t)
-	mockInner.AssertNumberOfCalls(t, "GetByXApplication", 1)
+	mockInner.AssertNumberOfCalls(t, "GetByTenantId", 1)
 }
 
-func TestRetryDecorator_GetByXApplication_SuccessAfterRetry(t *testing.T) {
+func TestRetryDecorator_GetByTenantId_SuccessAfterRetry(t *testing.T) {
 	// Arrange
 	mockInner := new(MockCompanyClient)
 	config := RetryConfig{
@@ -72,7 +72,7 @@ func TestRetryDecorator_GetByXApplication_SuccessAfterRetry(t *testing.T) {
 	decorator := NewRetryDecorator(mockInner, config)
 
 	ctx := context.Background()
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedResponse := portsclient.CompanySimpleResponseDTO{
@@ -86,22 +86,22 @@ func TestRetryDecorator_GetByXApplication_SuccessAfterRetry(t *testing.T) {
 		Message:    "Service temporarily unavailable",
 		ErrorCode:  "SERVICE_UNAVAILABLE",
 	}
-	mockInner.On("GetByXApplication", ctx, xApplication, correlationID).Return(portsclient.CompanySimpleResponseDTO{}, retryableError).Once()
+	mockInner.On("GetByTenantId", ctx, tenantId, correlationID).Return(portsclient.CompanySimpleResponseDTO{}, retryableError).Once()
 
 	// Segunda tentativa: sucesso
-	mockInner.On("GetByXApplication", ctx, xApplication, correlationID).Return(expectedResponse, nil).Once()
+	mockInner.On("GetByTenantId", ctx, tenantId, correlationID).Return(expectedResponse, nil).Once()
 
 	// Act
-	result, err := decorator.GetByXApplication(ctx, xApplication, correlationID)
+	result, err := decorator.GetByTenantId(ctx, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)
 	assert.Equal(t, expectedResponse, result)
 	mockInner.AssertExpectations(t)
-	mockInner.AssertNumberOfCalls(t, "GetByXApplication", 2) // 2 chamadas (retry)
+	mockInner.AssertNumberOfCalls(t, "GetByTenantId", 2) // 2 chamadas (retry)
 }
 
-func TestRetryDecorator_GetByXApplication_NonRetryableError(t *testing.T) {
+func TestRetryDecorator_GetByTenantId_NonRetryableError(t *testing.T) {
 	// Arrange
 	mockInner := new(MockCompanyClient)
 	config := DefaultRetryConfig()
@@ -109,7 +109,7 @@ func TestRetryDecorator_GetByXApplication_NonRetryableError(t *testing.T) {
 	decorator := NewRetryDecorator(mockInner, config)
 
 	ctx := context.Background()
-	xApplication := "invalid-app-id"
+	tenantId := "invalid-app-id"
 	correlationID := "test-correlation-id"
 
 	// 404 não é retryable
@@ -119,14 +119,14 @@ func TestRetryDecorator_GetByXApplication_NonRetryableError(t *testing.T) {
 		ErrorCode:  "COMPANY_NOT_FOUND",
 	}
 
-	mockInner.On("GetByXApplication", ctx, xApplication, correlationID).Return(portsclient.CompanySimpleResponseDTO{}, nonRetryableError).Once()
+	mockInner.On("GetByTenantId", ctx, tenantId, correlationID).Return(portsclient.CompanySimpleResponseDTO{}, nonRetryableError).Once()
 
 	// Act
-	_, err := decorator.GetByXApplication(ctx, xApplication, correlationID)
+	_, err := decorator.GetByTenantId(ctx, tenantId, correlationID)
 
 	// Assert
 	assert.Error(t, err)
 	assert.Equal(t, nonRetryableError, err)
 	mockInner.AssertExpectations(t)
-	mockInner.AssertNumberOfCalls(t, "GetByXApplication", 1) // Apenas 1 tentativa (não retenta)
+	mockInner.AssertNumberOfCalls(t, "GetByTenantId", 1) // Apenas 1 tentativa (não retenta)
 }

@@ -141,12 +141,12 @@ func (d *retryDecorator) retry(ctx context.Context, operation func() error) erro
 }
 
 // Login implementa o método Login com retry
-func (d *retryDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, xApplication, correlationID string) (inboundDto.AuthResponseDTO, error) {
+func (d *retryDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
 	var result inboundDto.AuthResponseDTO
 	var err error
 
 	retryErr := d.retry(ctx, func() error {
-		result, err = d.inner.Login(ctx, req, xApplication, correlationID)
+		result, err = d.inner.Login(ctx, req, tenantId, correlationID)
 		return err
 	})
 
@@ -154,12 +154,12 @@ func (d *retryDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDT
 }
 
 // RefreshToken implementa o método RefreshToken com retry
-func (d *retryDecorator) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, xApplication, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
+func (d *retryDecorator) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
 	var result inboundDto.RefreshTokenResponseDTO
 	var err error
 
 	retryErr := d.retry(ctx, func() error {
-		result, err = d.inner.RefreshToken(ctx, req, xApplication, correlationID)
+		result, err = d.inner.RefreshToken(ctx, req, tenantId, correlationID)
 		return err
 	})
 
@@ -167,39 +167,39 @@ func (d *retryDecorator) RefreshToken(ctx context.Context, req inboundDto.Refres
 }
 
 // Logout implementa o método Logout com retry
-func (d *retryDecorator) Logout(ctx context.Context, token, xApplication, correlationID string) error {
+func (d *retryDecorator) Logout(ctx context.Context, token, tenantId, correlationID string) error {
 	return d.retry(ctx, func() error {
-		return d.inner.Logout(ctx, token, xApplication, correlationID)
+		return d.inner.Logout(ctx, token, tenantId, correlationID)
 	})
 }
 
 // ValidateToken implementa o método ValidateToken com retry
-func (d *retryDecorator) ValidateToken(ctx context.Context, token, xApplication, correlationID string) error {
+func (d *retryDecorator) ValidateToken(ctx context.Context, token, tenantId, correlationID string) error {
 	return d.retry(ctx, func() error {
-		return d.inner.ValidateToken(ctx, token, xApplication, correlationID)
+		return d.inner.ValidateToken(ctx, token, tenantId, correlationID)
 	})
 }
 
 // ChangePassword implementa o método ChangePassword com retry
-func (d *retryDecorator) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, xApplication, correlationID string) error {
+func (d *retryDecorator) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, tenantId, correlationID string) error {
 	return d.retry(ctx, func() error {
-		return d.inner.ChangePassword(ctx, req, xApplication, correlationID)
+		return d.inner.ChangePassword(ctx, req, tenantId, correlationID)
 	})
 }
 
 // ResetPassword implementa o método ResetPassword com retry
-func (d *retryDecorator) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, xApplication, correlationID string) error {
+func (d *retryDecorator) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, tenantId, correlationID string) error {
 	return d.retry(ctx, func() error {
-		return d.inner.ResetPassword(ctx, req, xApplication, correlationID)
+		return d.inner.ResetPassword(ctx, req, tenantId, correlationID)
 	})
 }
 
 // GenerateResetToken implementa o método GenerateResetToken com retry
-func (d *retryDecorator) GenerateResetToken(ctx context.Context, req map[string]interface{}, xApplication, correlationID string) (outboundDto.GenerateResetTokenMSResponseDTO, error) {
+func (d *retryDecorator) GenerateResetToken(ctx context.Context, req map[string]interface{}, tenantId, correlationID string) (outboundDto.GenerateResetTokenMSResponseDTO, error) {
 	var response outboundDto.GenerateResetTokenMSResponseDTO
 	err := d.retry(ctx, func() error {
 		var innerErr error
-		response, innerErr = d.inner.GenerateResetToken(ctx, req, xApplication, correlationID)
+		response, innerErr = d.inner.GenerateResetToken(ctx, req, tenantId, correlationID)
 		return innerErr
 	})
 	return response, err

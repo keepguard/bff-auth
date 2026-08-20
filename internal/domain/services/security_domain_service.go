@@ -177,7 +177,7 @@ func (s *securityDomainServiceImpl) GenerateSecureRandomString(length int) strin
 // ValidateSecurityHeaders valida headers de segurança
 func (s *securityDomainServiceImpl) ValidateSecurityHeaders(headers map[string]string) error {
 	requiredHeaders := []string{
-		"X-Application",
+		"X-Tenant-Id",
 		"X-Correlation-ID",
 	}
 	
@@ -187,8 +187,8 @@ func (s *securityDomainServiceImpl) ValidateSecurityHeaders(headers map[string]s
 		}
 	}
 	
-	// Validar X-Application
-	if err := s.validateXApplicationHeader(headers["X-Application"]); err != nil {
+	// Validar X-Tenant-Id
+	if err := s.validateTenantIdHeader(headers["X-Tenant-Id"]); err != nil {
 		return err
 	}
 	
@@ -310,15 +310,15 @@ func (s *securityDomainServiceImpl) containsPersonalInfo(password string) bool {
 	return false
 }
 
-// validateXApplicationHeader valida o header X-Application
-func (s *securityDomainServiceImpl) validateXApplicationHeader(xApplication string) error {
-	if len(xApplication) < 3 || len(xApplication) > 50 {
-		return errors.New("invalid X-Application header length")
+// validateTenantIdHeader valida o header X-Tenant-Id
+func (s *securityDomainServiceImpl) validateTenantIdHeader(tenantId string) error {
+	if len(tenantId) < 3 || len(tenantId) > 50 {
+		return errors.New("invalid X-Tenant-Id header length")
 	}
 	
 	validChars := regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
-	if !validChars.MatchString(xApplication) {
-		return errors.New("invalid X-Application header format")
+	if !validChars.MatchString(tenantId) {
+		return errors.New("invalid X-Tenant-Id header format")
 	}
 	
 	return nil

@@ -12,7 +12,7 @@ func TestNewCompany(t *testing.T) {
 		name         string
 		id           valueobjects.CompanyID
 		companyName  valueobjects.CompanyName
-		xApplication valueobjects.XApplication
+		tenantId valueobjects.TenantId
 		wantErr      bool
 		errMsg       string
 	}{
@@ -20,14 +20,14 @@ func TestNewCompany(t *testing.T) {
 			name:         "valid company",
 			id:           func() valueobjects.CompanyID { id, _ := valueobjects.NewCompanyID("company-123"); return id }(),
 			companyName:  func() valueobjects.CompanyName { name, _ := valueobjects.NewCompanyName("Test Company"); return name }(),
-			xApplication: func() valueobjects.XApplication { app, _ := valueobjects.NewXApplication("test-app"); return app }(),
+			tenantId: func() valueobjects.TenantId { app, _ := valueobjects.NewTenantId("test-app"); return app }(),
 			wantErr:      false,
 		},
 		{
 			name:         "empty company ID",
 			id:           func() valueobjects.CompanyID { id, _ := valueobjects.NewCompanyID(""); return id }(),
 			companyName:  func() valueobjects.CompanyName { name, _ := valueobjects.NewCompanyName("Test Company"); return name }(),
-			xApplication: func() valueobjects.XApplication { app, _ := valueobjects.NewXApplication("test-app"); return app }(),
+			tenantId: func() valueobjects.TenantId { app, _ := valueobjects.NewTenantId("test-app"); return app }(),
 			wantErr:      true,
 			errMsg:       "company ID cannot be empty",
 		},
@@ -35,23 +35,23 @@ func TestNewCompany(t *testing.T) {
 			name:         "empty company name",
 			id:           func() valueobjects.CompanyID { id, _ := valueobjects.NewCompanyID("company-123"); return id }(),
 			companyName:  func() valueobjects.CompanyName { name, _ := valueobjects.NewCompanyName(""); return name }(),
-			xApplication: func() valueobjects.XApplication { app, _ := valueobjects.NewXApplication("test-app"); return app }(),
+			tenantId: func() valueobjects.TenantId { app, _ := valueobjects.NewTenantId("test-app"); return app }(),
 			wantErr:      true,
 			errMsg:       "company name cannot be empty",
 		},
 		{
-			name:         "empty x-application",
+			name:         "empty x-tenant-id",
 			id:           func() valueobjects.CompanyID { id, _ := valueobjects.NewCompanyID("company-123"); return id }(),
 			companyName:  func() valueobjects.CompanyName { name, _ := valueobjects.NewCompanyName("Test Company"); return name }(),
-			xApplication: func() valueobjects.XApplication { app, _ := valueobjects.NewXApplication(""); return app }(),
+			tenantId: func() valueobjects.TenantId { app, _ := valueobjects.NewTenantId(""); return app }(),
 			wantErr:      true,
-			errMsg:       "x-application cannot be empty",
+			errMsg:       "x-tenant-id cannot be empty",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			company, err := NewCompany(tt.id, tt.companyName, tt.xApplication)
+			company, err := NewCompany(tt.id, tt.companyName, tt.tenantId)
 			if tt.wantErr {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errMsg)
@@ -61,7 +61,7 @@ func TestNewCompany(t *testing.T) {
 				assert.NotNil(t, company)
 				assert.Equal(t, tt.id, company.ID())
 				assert.Equal(t, tt.companyName, company.Name())
-				assert.Equal(t, tt.xApplication, company.XApplication())
+				assert.Equal(t, tt.tenantId, company.TenantId())
 				assert.Equal(t, CompanyStatusActive, company.Status())
 				assert.True(t, company.IsActive())
 			}
@@ -72,7 +72,7 @@ func TestNewCompany(t *testing.T) {
 func TestCompany_Activate(t *testing.T) {
 	id, _ := valueobjects.NewCompanyID("company-123")
 	name, _ := valueobjects.NewCompanyName("Test Company")
-	app, _ := valueobjects.NewXApplication("test-app")
+	app, _ := valueobjects.NewTenantId("test-app")
 	
 	company, _ := NewCompany(id, name, app)
 	company.Deactivate() // Garante que está inativo
@@ -86,7 +86,7 @@ func TestCompany_Activate(t *testing.T) {
 func TestCompany_Deactivate(t *testing.T) {
 	id, _ := valueobjects.NewCompanyID("company-123")
 	name, _ := valueobjects.NewCompanyName("Test Company")
-	app, _ := valueobjects.NewXApplication("test-app")
+	app, _ := valueobjects.NewTenantId("test-app")
 	
 	company, _ := NewCompany(id, name, app)
 	
@@ -99,7 +99,7 @@ func TestCompany_Deactivate(t *testing.T) {
 func TestCompany_Block(t *testing.T) {
 	id, _ := valueobjects.NewCompanyID("company-123")
 	name, _ := valueobjects.NewCompanyName("Test Company")
-	app, _ := valueobjects.NewXApplication("test-app")
+	app, _ := valueobjects.NewTenantId("test-app")
 	
 	company, _ := NewCompany(id, name, app)
 	
@@ -112,7 +112,7 @@ func TestCompany_Block(t *testing.T) {
 func TestCompany_SetPending(t *testing.T) {
 	id, _ := valueobjects.NewCompanyID("company-123")
 	name, _ := valueobjects.NewCompanyName("Test Company")
-	app, _ := valueobjects.NewXApplication("test-app")
+	app, _ := valueobjects.NewTenantId("test-app")
 	
 	company, _ := NewCompany(id, name, app)
 	
@@ -125,7 +125,7 @@ func TestCompany_SetPending(t *testing.T) {
 func TestCompany_UpdateName(t *testing.T) {
 	id, _ := valueobjects.NewCompanyID("company-123")
 	name, _ := valueobjects.NewCompanyName("Test Company")
-	app, _ := valueobjects.NewXApplication("test-app")
+	app, _ := valueobjects.NewTenantId("test-app")
 	
 	company, _ := NewCompany(id, name, app)
 	
@@ -139,7 +139,7 @@ func TestCompany_UpdateName(t *testing.T) {
 func TestCompany_UpdateName_Empty(t *testing.T) {
 	id, _ := valueobjects.NewCompanyID("company-123")
 	name, _ := valueobjects.NewCompanyName("Test Company")
-	app, _ := valueobjects.NewXApplication("test-app")
+	app, _ := valueobjects.NewTenantId("test-app")
 	
 	company, _ := NewCompany(id, name, app)
 	
@@ -150,38 +150,38 @@ func TestCompany_UpdateName_Empty(t *testing.T) {
 	assert.Contains(t, err.Error(), "company name cannot be empty")
 }
 
-func TestCompany_UpdateXApplication(t *testing.T) {
+func TestCompany_UpdateTenantId(t *testing.T) {
 	id, _ := valueobjects.NewCompanyID("company-123")
 	name, _ := valueobjects.NewCompanyName("Test Company")
-	app, _ := valueobjects.NewXApplication("test-app")
+	app, _ := valueobjects.NewTenantId("test-app")
 	
 	company, _ := NewCompany(id, name, app)
 	
-	newApp, _ := valueobjects.NewXApplication("new-app")
-	err := company.UpdateXApplication(newApp)
+	newApp, _ := valueobjects.NewTenantId("new-app")
+	err := company.UpdateTenantId(newApp)
 	
 	assert.NoError(t, err)
-	assert.Equal(t, newApp, company.XApplication())
+	assert.Equal(t, newApp, company.TenantId())
 }
 
-func TestCompany_UpdateXApplication_Empty(t *testing.T) {
+func TestCompany_UpdateTenantId_Empty(t *testing.T) {
 	id, _ := valueobjects.NewCompanyID("company-123")
 	name, _ := valueobjects.NewCompanyName("Test Company")
-	app, _ := valueobjects.NewXApplication("test-app")
+	app, _ := valueobjects.NewTenantId("test-app")
 	
 	company, _ := NewCompany(id, name, app)
 	
-	emptyApp, _ := valueobjects.NewXApplication("")
-	err := company.UpdateXApplication(emptyApp)
+	emptyApp, _ := valueobjects.NewTenantId("")
+	err := company.UpdateTenantId(emptyApp)
 	
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "x-application cannot be empty")
+	assert.Contains(t, err.Error(), "x-tenant-id cannot be empty")
 }
 
 func TestCompany_CanBeActivated(t *testing.T) {
 	id, _ := valueobjects.NewCompanyID("company-123")
 	name, _ := valueobjects.NewCompanyName("Test Company")
-	app, _ := valueobjects.NewXApplication("test-app")
+	app, _ := valueobjects.NewTenantId("test-app")
 	
 	company, _ := NewCompany(id, name, app)
 	
@@ -200,7 +200,7 @@ func TestCompany_CanBeActivated(t *testing.T) {
 func TestCompany_CanBeBlocked(t *testing.T) {
 	id, _ := valueobjects.NewCompanyID("company-123")
 	name, _ := valueobjects.NewCompanyName("Test Company")
-	app, _ := valueobjects.NewXApplication("test-app")
+	app, _ := valueobjects.NewTenantId("test-app")
 	
 	company, _ := NewCompany(id, name, app)
 	
@@ -215,7 +215,7 @@ func TestCompany_CanBeBlocked(t *testing.T) {
 func TestCompany_CanAuthenticateUsers(t *testing.T) {
 	id, _ := valueobjects.NewCompanyID("company-123")
 	name, _ := valueobjects.NewCompanyName("Test Company")
-	app, _ := valueobjects.NewXApplication("test-app")
+	app, _ := valueobjects.NewTenantId("test-app")
 	
 	company, _ := NewCompany(id, name, app)
 	
@@ -230,7 +230,7 @@ func TestCompany_CanAuthenticateUsers(t *testing.T) {
 func TestCompany_CanCreateUsers(t *testing.T) {
 	id, _ := valueobjects.NewCompanyID("company-123")
 	name, _ := valueobjects.NewCompanyName("Test Company")
-	app, _ := valueobjects.NewXApplication("test-app")
+	app, _ := valueobjects.NewTenantId("test-app")
 	
 	company, _ := NewCompany(id, name, app)
 	

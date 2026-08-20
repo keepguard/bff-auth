@@ -7,7 +7,7 @@ import (
 // CompanySimpleResponseDTO representa a resposta simples da empresa
 type CompanySimpleResponseDTO struct {
 	ID           string `json:"id"`
-	XApplication string `json:"xApplication"`
+	TenantId string `json:"tenantId"`
 	Name         string `json:"name"`
 	LegalName    string `json:"legalName"`
 	CNPJ         string `json:"cnpj"`
@@ -16,6 +16,6 @@ type CompanySimpleResponseDTO struct {
 
 // CompanyClient interface para comunicação com o serviço de empresas
 type CompanyClient interface {
-	// GetByXApplication busca uma empresa pelo X-Application
-	GetByXApplication(ctx context.Context, xApplication, correlationID string) (CompanySimpleResponseDTO, error)
+	// GetByTenantId busca uma empresa pelo X-Tenant-Id
+	GetByTenantId(ctx context.Context, tenantId, correlationID string) (CompanySimpleResponseDTO, error)
 }

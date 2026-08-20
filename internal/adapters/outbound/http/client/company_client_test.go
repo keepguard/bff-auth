@@ -13,11 +13,11 @@ import (
 	"go.uber.org/zap"
 )
 
-func TestCompanyClient_GetByXApplication_Success(t *testing.T) {
+func TestCompanyClient_GetByTenantId_Success(t *testing.T) {
 	// Arrange
 	expectedResponse := client.CompanySimpleResponseDTO{
 		ID:           "550e8400-e29b-41d4-a716-446655440000",
-		XApplication: "550e8400-e29b-41d4-a716-446655440000",
+		TenantId: "550e8400-e29b-41d4-a716-446655440000",
 		Name:         "Empresa Teste",
 		LegalName:    "Empresa Teste LTDA",
 		CNPJ:         "12345678000199",
@@ -26,7 +26,7 @@ func TestCompanyClient_GetByXApplication_Success(t *testing.T) {
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		assert.Equal(t, "GET", r.Method)
-		assert.Equal(t, "/api/v1/companies/x-application/550e8400-e29b-41d4-a716-446655440000", r.URL.Path)
+		assert.Equal(t, "/api/v1/companies/x-tenant-id/550e8400-e29b-41d4-a716-446655440000", r.URL.Path)
 		assert.Equal(t, "test-correlation-id", r.Header.Get("X-Correlation-ID"))
 		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
 
@@ -48,7 +48,7 @@ func TestCompanyClient_GetByXApplication_Success(t *testing.T) {
 	companyClient := NewCompanyClient(cfg, logger)
 
 	// Act
-	result, err := companyClient.GetByXApplication(
+	result, err := companyClient.GetByTenantId(
 		context.Background(),
 		"550e8400-e29b-41d4-a716-446655440000",
 		"test-correlation-id",
@@ -59,7 +59,7 @@ func TestCompanyClient_GetByXApplication_Success(t *testing.T) {
 	assert.Equal(t, expectedResponse, result)
 }
 
-func TestCompanyClient_GetByXApplication_NotFound(t *testing.T) {
+func TestCompanyClient_GetByTenantId_NotFound(t *testing.T) {
 	// Arrange
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusNotFound)
@@ -79,7 +79,7 @@ func TestCompanyClient_GetByXApplication_NotFound(t *testing.T) {
 	companyClient := NewCompanyClient(cfg, logger)
 
 	// Act
-	result, err := companyClient.GetByXApplication(
+	result, err := companyClient.GetByTenantId(
 		context.Background(),
 		"550e8400-e29b-41d4-a716-446655440000",
 		"test-correlation-id",
@@ -91,7 +91,7 @@ func TestCompanyClient_GetByXApplication_NotFound(t *testing.T) {
 	assert.Equal(t, client.CompanySimpleResponseDTO{}, result)
 }
 
-func TestCompanyClient_GetByXApplication_ServerError(t *testing.T) {
+func TestCompanyClient_GetByTenantId_ServerError(t *testing.T) {
 	// Arrange
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.WriteHeader(http.StatusInternalServerError)
@@ -111,7 +111,7 @@ func TestCompanyClient_GetByXApplication_ServerError(t *testing.T) {
 	companyClient := NewCompanyClient(cfg, logger)
 
 	// Act
-	result, err := companyClient.GetByXApplication(
+	result, err := companyClient.GetByTenantId(
 		context.Background(),
 		"550e8400-e29b-41d4-a716-446655440000",
 		"test-correlation-id",
@@ -123,7 +123,7 @@ func TestCompanyClient_GetByXApplication_ServerError(t *testing.T) {
 	assert.Equal(t, client.CompanySimpleResponseDTO{}, result)
 }
 
-func TestCompanyClient_GetByXApplication_InvalidJSON(t *testing.T) {
+func TestCompanyClient_GetByTenantId_InvalidJSON(t *testing.T) {
 	// Arrange
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "application/json")
@@ -144,7 +144,7 @@ func TestCompanyClient_GetByXApplication_InvalidJSON(t *testing.T) {
 	companyClient := NewCompanyClient(cfg, logger)
 
 	// Act
-	result, err := companyClient.GetByXApplication(
+	result, err := companyClient.GetByTenantId(
 		context.Background(),
 		"550e8400-e29b-41d4-a716-446655440000",
 		"test-correlation-id",

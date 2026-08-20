@@ -106,7 +106,7 @@ func TestAuthHandlers_LoginHandler_Success(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/auth/login", bytes.NewReader(reqBodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Correlation-ID", "test-correlation-id")
-	req.Header.Set("X-Application", "550e8400-e29b-41d4-a716-446655440000")
+	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
@@ -142,7 +142,7 @@ func TestAuthHandlers_LoginHandler_InvalidJSON(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/auth/login", bytes.NewReader([]byte("invalid json")))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Correlation-ID", "test-correlation-id")
-	req.Header.Set("X-Application", "550e8400-e29b-41d4-a716-446655440000")
+	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
@@ -174,7 +174,7 @@ func TestAuthHandlers_LoginHandler_UseCaseError(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/auth/login", bytes.NewReader(reqBodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Correlation-ID", "test-correlation-id")
-	req.Header.Set("X-Application", "550e8400-e29b-41d4-a716-446655440000")
+	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
@@ -214,7 +214,7 @@ func TestAuthHandlers_RefreshHandler_Success(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/auth/refresh", bytes.NewReader(reqBodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Correlation-ID", "test-correlation-id")
-	req.Header.Set("X-Application", "550e8400-e29b-41d4-a716-446655440000")
+	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
@@ -248,7 +248,7 @@ func TestAuthHandlers_LogoutHandler_Success(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/auth/logout", nil)
 	req.Header.Set("Authorization", "Bearer valid_token")
 	req.Header.Set("X-Correlation-ID", "test-correlation-id")
-	req.Header.Set("X-Application", "550e8400-e29b-41d4-a716-446655440000")
+	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
@@ -276,7 +276,7 @@ func TestAuthHandlers_LogoutHandler_NoAuthorizationHeader(t *testing.T) {
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodPost, "/auth/logout", nil)
 	req.Header.Set("X-Correlation-ID", "test-correlation-id")
-	req.Header.Set("X-Application", "550e8400-e29b-41d4-a716-446655440000")
+	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
@@ -302,7 +302,7 @@ func TestAuthHandlers_LogoutHandler_InvalidToken(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/auth/logout", nil)
 	req.Header.Set("Authorization", "Bearer ")
 	req.Header.Set("X-Correlation-ID", "test-correlation-id")
-	req.Header.Set("X-Application", "550e8400-e29b-41d4-a716-446655440000")
+	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 

@@ -44,7 +44,7 @@ func TestRetryDecorator_Login_SuccessFirstAttempt(t *testing.T) {
 		Username: "testuser",
 		Password: "testpass",
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedResponse := inboundDto.AuthResponseDTO{
@@ -53,10 +53,10 @@ func TestRetryDecorator_Login_SuccessFirstAttempt(t *testing.T) {
 	}
 
 	// Sucesso na primeira tentativa
-	mockInner.On("Login", ctx, req, xApplication, correlationID).Return(expectedResponse, nil).Once()
+	mockInner.On("Login", ctx, req, tenantId, correlationID).Return(expectedResponse, nil).Once()
 
 	// Act
-	result, err := decorator.Login(ctx, req, xApplication, correlationID)
+	result, err := decorator.Login(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -83,7 +83,7 @@ func TestRetryDecorator_Login_SuccessAfterRetry(t *testing.T) {
 		Username: "testuser",
 		Password: "testpass",
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedResponse := inboundDto.AuthResponseDTO{
@@ -97,14 +97,14 @@ func TestRetryDecorator_Login_SuccessAfterRetry(t *testing.T) {
 		Message:    "Service temporarily unavailable",
 		ErrorCode:  "SERVICE_UNAVAILABLE",
 	}
-	mockInner.On("Login", ctx, req, xApplication, correlationID).Return(inboundDto.AuthResponseDTO{}, retryableError).Once()
+	mockInner.On("Login", ctx, req, tenantId, correlationID).Return(inboundDto.AuthResponseDTO{}, retryableError).Once()
 
 	// Segunda tentativa: sucesso
-	mockInner.On("Login", ctx, req, xApplication, correlationID).Return(expectedResponse, nil).Once()
+	mockInner.On("Login", ctx, req, tenantId, correlationID).Return(expectedResponse, nil).Once()
 
 	// Act
 	start := time.Now()
-	result, err := decorator.Login(ctx, req, xApplication, correlationID)
+	result, err := decorator.Login(ctx, req, tenantId, correlationID)
 	elapsed := time.Since(start)
 
 	// Assert
@@ -133,7 +133,7 @@ func TestRetryDecorator_Login_NonRetryableError(t *testing.T) {
 		Username: "testuser",
 		Password: "wrongpass",
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	// 401 não é retryable (credenciais inválidas)
@@ -143,10 +143,10 @@ func TestRetryDecorator_Login_NonRetryableError(t *testing.T) {
 		ErrorCode:  "INVALID_CREDENTIALS",
 	}
 
-	mockInner.On("Login", ctx, req, xApplication, correlationID).Return(inboundDto.AuthResponseDTO{}, nonRetryableError).Once()
+	mockInner.On("Login", ctx, req, tenantId, correlationID).Return(inboundDto.AuthResponseDTO{}, nonRetryableError).Once()
 
 	// Act
-	result, err := decorator.Login(ctx, req, xApplication, correlationID)
+	result, err := decorator.Login(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.Error(t, err)
@@ -174,7 +174,7 @@ func TestRetryDecorator_Login_MaxAttemptsReached(t *testing.T) {
 		Username: "testuser",
 		Password: "testpass",
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	// Sempre retorna 503 (retryable)
@@ -184,10 +184,10 @@ func TestRetryDecorator_Login_MaxAttemptsReached(t *testing.T) {
 		ErrorCode:  "SERVICE_UNAVAILABLE",
 	}
 
-	mockInner.On("Login", ctx, req, xApplication, correlationID).Return(inboundDto.AuthResponseDTO{}, retryableError).Times(3)
+	mockInner.On("Login", ctx, req, tenantId, correlationID).Return(inboundDto.AuthResponseDTO{}, retryableError).Times(3)
 
 	// Act
-	result, err := decorator.Login(ctx, req, xApplication, correlationID)
+	result, err := decorator.Login(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.Error(t, err)
@@ -206,13 +206,13 @@ func TestRetryDecorator_Logout_Success(t *testing.T) {
 
 	ctx := context.Background()
 	token := "valid_token"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
-	mockInner.On("Logout", ctx, token, xApplication, correlationID).Return(nil).Once()
+	mockInner.On("Logout", ctx, token, tenantId, correlationID).Return(nil).Once()
 
 	// Act
-	err := decorator.Logout(ctx, token, xApplication, correlationID)
+	err := decorator.Logout(ctx, token, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -239,7 +239,7 @@ func TestRetryDecorator_ChangePassword_SuccessAfterRetry(t *testing.T) {
 		NewPassword:        "new_pass",
 		ConfirmNewPassword: "new_pass",
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	// Primeira tentativa: timeout (retryable)
@@ -248,13 +248,13 @@ func TestRetryDecorator_ChangePassword_SuccessAfterRetry(t *testing.T) {
 		Message:    "Request timeout",
 		ErrorCode:  "TIMEOUT",
 	}
-	mockInner.On("ChangePassword", ctx, req, xApplication, correlationID).Return(timeoutError).Once()
+	mockInner.On("ChangePassword", ctx, req, tenantId, correlationID).Return(timeoutError).Once()
 
 	// Segunda tentativa: sucesso
-	mockInner.On("ChangePassword", ctx, req, xApplication, correlationID).Return(nil).Once()
+	mockInner.On("ChangePassword", ctx, req, tenantId, correlationID).Return(nil).Once()
 
 	// Act
-	err := decorator.ChangePassword(ctx, req, xApplication, correlationID)
+	err := decorator.ChangePassword(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)

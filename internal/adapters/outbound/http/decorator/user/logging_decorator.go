@@ -30,18 +30,18 @@ func NewUserLoggingDecorator(
 }
 
 // GetByEmail implementa GetByEmail com logging
-func (d *userLoggingDecorator) GetByEmail(ctx context.Context, email, xApplication, correlationID string) (outboundDto.UserByEmailResponseDTO, error) {
+func (d *userLoggingDecorator) GetByEmail(ctx context.Context, email, tenantId, correlationID string) (outboundDto.UserByEmailResponseDTO, error) {
 	start := time.Now()
 
 	d.logger.Info("Iniciando requisição",
 		zap.String("service", d.serviceName),
 		zap.String("operation", "GetByEmail"),
 		zap.String("correlationID", correlationID),
-		zap.String("xApplication", xApplication),
+		zap.String("tenantId", tenantId),
 		zap.String("email", email),
 	)
 
-	response, err := d.inner.GetByEmail(ctx, email, xApplication, correlationID)
+	response, err := d.inner.GetByEmail(ctx, email, tenantId, correlationID)
 	duration := time.Since(start)
 
 	if err != nil {
@@ -49,7 +49,7 @@ func (d *userLoggingDecorator) GetByEmail(ctx context.Context, email, xApplicati
 			zap.String("service", d.serviceName),
 			zap.String("operation", "GetByEmail"),
 			zap.String("correlationID", correlationID),
-			zap.String("xApplication", xApplication),
+			zap.String("tenantId", tenantId),
 			zap.String("email", email),
 			zap.Duration("duration", duration),
 			zap.Error(err),
@@ -61,7 +61,7 @@ func (d *userLoggingDecorator) GetByEmail(ctx context.Context, email, xApplicati
 		zap.String("service", d.serviceName),
 		zap.String("operation", "GetByEmail"),
 		zap.String("correlationID", correlationID),
-		zap.String("xApplication", xApplication),
+		zap.String("tenantId", tenantId),
 		zap.String("email", email),
 		zap.String("userID", response.ID),
 		zap.String("codeUser", response.CodeUser),

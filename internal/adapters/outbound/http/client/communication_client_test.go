@@ -70,7 +70,7 @@ func TestCommunicationClient_SendMessage_Success(t *testing.T) {
 		assert.Equal(t, "POST", r.Method)
 		assert.Equal(t, "/api/v1/messages/send", r.URL.Path)
 		assert.Equal(t, "test-correlation", r.Header.Get("X-Correlation-ID"))
-		assert.Equal(t, "test-app", r.Header.Get("X-Application"))
+		assert.Equal(t, "test-app", r.Header.Get("X-Tenant-Id"))
 		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
 
 		// Verificar body
@@ -116,11 +116,11 @@ func TestCommunicationClient_SendMessage_Success(t *testing.T) {
 			"token":    "555555",
 		},
 	}
-	xApplication := "test-app"
+	tenantId := "test-app"
 	correlationID := "test-correlation"
 
 	// Act
-	result, err := client.SendMessage(ctx, req, xApplication, correlationID)
+	result, err := client.SendMessage(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -166,11 +166,11 @@ func TestCommunicationClient_SendMessage_HTTPError(t *testing.T) {
 		Recipient:         "test@example.com",
 		Variables:         map[string]interface{}{},
 	}
-	xApplication := "test-app"
+	tenantId := "test-app"
 	correlationID := "test-correlation"
 
 	// Act
-	result, err := client.SendMessage(ctx, req, xApplication, correlationID)
+	result, err := client.SendMessage(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.Error(t, err)
@@ -212,11 +212,11 @@ func TestCommunicationClient_SendMessage_GenericError(t *testing.T) {
 		Recipient:         "test@example.com",
 		Variables:         map[string]interface{}{},
 	}
-	xApplication := "test-app"
+	tenantId := "test-app"
 	correlationID := "test-correlation"
 
 	// Act
-	result, err := client.SendMessage(ctx, req, xApplication, correlationID)
+	result, err := client.SendMessage(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.Error(t, err)
@@ -266,11 +266,11 @@ func TestCommunicationClient_SendMessage_RequestError(t *testing.T) {
 		Recipient:         "test@example.com",
 		Variables:         map[string]interface{}{},
 	}
-	xApplication := "test-app"
+	tenantId := "test-app"
 	correlationID := "test-correlation"
 
 	// Act
-	result, err := commClient.SendMessage(ctx, req, xApplication, correlationID)
+	result, err := commClient.SendMessage(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.Error(t, err)

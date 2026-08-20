@@ -32,7 +32,7 @@ func NewLoginUseCase(authClient authclient.AuthClient, companyClient authclient.
 // Execute executa o caso de uso de login
 func (uc *loginUseCaseImpl) Execute(command appdto.LoginCommand) (dto.AuthResponseDTO, error) {
 	// Primeiro, verifica se a empresa existe consultando o Company Service
-	_, err := uc.companyClient.GetByXApplication(command.Context, command.XApplication, command.CorrelationID)
+	_, err := uc.companyClient.GetByTenantId(command.Context, command.TenantId, command.CorrelationID)
 	if err != nil {
 		return dto.AuthResponseDTO{}, err
 	}
@@ -44,7 +44,7 @@ func (uc *loginUseCaseImpl) Execute(command appdto.LoginCommand) (dto.AuthRespon
 	}
 
 	// Chama o cliente de autenticação
-	response, err := uc.authClient.Login(command.Context, req, command.XApplication, command.CorrelationID)
+	response, err := uc.authClient.Login(command.Context, req, command.TenantId, command.CorrelationID)
 	if err != nil {
 		return dto.AuthResponseDTO{}, err
 	}

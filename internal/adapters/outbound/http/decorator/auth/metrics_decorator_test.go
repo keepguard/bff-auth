@@ -41,7 +41,7 @@ func TestMetricsDecorator_Login_Success(t *testing.T) {
 		Username: "testuser",
 		Password: "testpass",
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedResponse := inboundDto.AuthResponseDTO{
@@ -49,10 +49,10 @@ func TestMetricsDecorator_Login_Success(t *testing.T) {
 		ExpiresIn: 3600,
 	}
 
-	mockInner.On("Login", ctx, req, xApplication, correlationID).Return(expectedResponse, nil)
+	mockInner.On("Login", ctx, req, tenantId, correlationID).Return(expectedResponse, nil)
 
 	// Act
-	result, err := decorator.Login(ctx, req, xApplication, correlationID)
+	result, err := decorator.Login(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -74,15 +74,15 @@ func TestMetricsDecorator_Login_Error(t *testing.T) {
 		Username: "testuser",
 		Password: "testpass",
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedError := errors.New("auth service error")
 
-	mockInner.On("Login", ctx, req, xApplication, correlationID).Return(inboundDto.AuthResponseDTO{}, expectedError)
+	mockInner.On("Login", ctx, req, tenantId, correlationID).Return(inboundDto.AuthResponseDTO{}, expectedError)
 
 	// Act
-	result, err := decorator.Login(ctx, req, xApplication, correlationID)
+	result, err := decorator.Login(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.Error(t, err)
@@ -104,7 +104,7 @@ func TestMetricsDecorator_RefreshToken_Success(t *testing.T) {
 	req := inboundDto.RefreshTokenRequestDTO{
 		Token: "valid_refresh_token",
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedResponse := inboundDto.RefreshTokenResponseDTO{
@@ -112,10 +112,10 @@ func TestMetricsDecorator_RefreshToken_Success(t *testing.T) {
 		ExpiresIn: 3600,
 	}
 
-	mockInner.On("RefreshToken", ctx, req, xApplication, correlationID).Return(expectedResponse, nil)
+	mockInner.On("RefreshToken", ctx, req, tenantId, correlationID).Return(expectedResponse, nil)
 
 	// Act
-	result, err := decorator.RefreshToken(ctx, req, xApplication, correlationID)
+	result, err := decorator.RefreshToken(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -132,13 +132,13 @@ func TestMetricsDecorator_Logout_Success(t *testing.T) {
 
 	ctx := context.Background()
 	token := "valid_token"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
-	mockInner.On("Logout", ctx, token, xApplication, correlationID).Return(nil)
+	mockInner.On("Logout", ctx, token, tenantId, correlationID).Return(nil)
 
 	// Act
-	err := decorator.Logout(ctx, token, xApplication, correlationID)
+	err := decorator.Logout(ctx, token, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -154,13 +154,13 @@ func TestMetricsDecorator_ValidateToken_Success(t *testing.T) {
 
 	ctx := context.Background()
 	token := "valid_token"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
-	mockInner.On("ValidateToken", ctx, token, xApplication, correlationID).Return(nil)
+	mockInner.On("ValidateToken", ctx, token, tenantId, correlationID).Return(nil)
 
 	// Act
-	err := decorator.ValidateToken(ctx, token, xApplication, correlationID)
+	err := decorator.ValidateToken(ctx, token, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -181,13 +181,13 @@ func TestMetricsDecorator_ChangePassword_Success(t *testing.T) {
 		NewPassword:        "new_pass",
 		ConfirmNewPassword: "new_pass",
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
-	mockInner.On("ChangePassword", ctx, req, xApplication, correlationID).Return(nil)
+	mockInner.On("ChangePassword", ctx, req, tenantId, correlationID).Return(nil)
 
 	// Act
-	err := decorator.ChangePassword(ctx, req, xApplication, correlationID)
+	err := decorator.ChangePassword(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -208,13 +208,13 @@ func TestMetricsDecorator_ResetPassword_Success(t *testing.T) {
 		NewPassword:        "new_pass",
 		ConfirmNewPassword: "new_pass",
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
-	mockInner.On("ResetPassword", ctx, req, xApplication, correlationID).Return(nil)
+	mockInner.On("ResetPassword", ctx, req, tenantId, correlationID).Return(nil)
 
 	// Act
-	err := decorator.ResetPassword(ctx, req, xApplication, correlationID)
+	err := decorator.ResetPassword(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)

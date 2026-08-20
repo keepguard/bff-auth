@@ -18,19 +18,19 @@ func TestLogoutUseCase_Execute_Success(t *testing.T) {
 
 	ctx := context.Background()
 	token := "valid_access_token"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	command := appdto.NewLogoutCommand(
 		token,
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
 
 	// Configurar mocks
-	setupCompanyMock(mockCompanyClient, ctx, xApplication, correlationID)
-	mockAuthClient.On("Logout", ctx, token, xApplication, correlationID).Return(nil)
+	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
+	mockAuthClient.On("Logout", ctx, token, tenantId, correlationID).Return(nil)
 
 	// Act
 	err := useCase.Execute(command)
@@ -49,19 +49,19 @@ func TestLogoutUseCase_Execute_AuthServiceError(t *testing.T) {
 
 	ctx := context.Background()
 	token := "invalid_access_token"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	command := appdto.NewLogoutCommand(
 		token,
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
 
 	// Configurar mocks
-	setupCompanyMock(mockCompanyClient, ctx, xApplication, correlationID)
-	mockAuthClient.On("Logout", ctx, token, xApplication, correlationID).Return(assert.AnError)
+	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
+	mockAuthClient.On("Logout", ctx, token, tenantId, correlationID).Return(assert.AnError)
 
 	// Act
 	err := useCase.Execute(command)
@@ -83,19 +83,19 @@ func TestLogoutUseCase_Execute_ContextCancelled(t *testing.T) {
 	cancel() // Cancela o contexto imediatamente
 
 	token := "valid_access_token"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	command := appdto.NewLogoutCommand(
 		token,
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
 
 	// Configurar mocks
-	setupCompanyMock(mockCompanyClient, ctx, xApplication, correlationID)
-	mockAuthClient.On("Logout", ctx, token, xApplication, correlationID).Return(context.Canceled)
+	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
+	mockAuthClient.On("Logout", ctx, token, tenantId, correlationID).Return(context.Canceled)
 
 	// Act
 	err := useCase.Execute(command)
@@ -115,19 +115,19 @@ func TestLogoutUseCase_Execute_EmptyToken(t *testing.T) {
 
 	ctx := context.Background()
 	token := ""
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	command := appdto.NewLogoutCommand(
 		token,
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
 
 	// Configurar mocks
-	setupCompanyMock(mockCompanyClient, ctx, xApplication, correlationID)
-	mockAuthClient.On("Logout", ctx, token, xApplication, correlationID).Return(nil)
+	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
+	mockAuthClient.On("Logout", ctx, token, tenantId, correlationID).Return(nil)
 
 	// Act
 	err := useCase.Execute(command)
@@ -146,12 +146,12 @@ func TestLogoutUseCase_Execute_CompanyNotFound(t *testing.T) {
 
 	ctx := context.Background()
 	token := "valid_access_token"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	command := appdto.NewLogoutCommand(
 		token,
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
@@ -163,7 +163,7 @@ func TestLogoutUseCase_Execute_CompanyNotFound(t *testing.T) {
 		ErrorCode:  "COMPANY_NOT_FOUND",
 	}
 
-	mockCompanyClient.On("GetByXApplication", ctx, xApplication, correlationID).Return(authclient.CompanySimpleResponseDTO{}, companyError)
+	mockCompanyClient.On("GetByTenantId", ctx, tenantId, correlationID).Return(authclient.CompanySimpleResponseDTO{}, companyError)
 
 	// Act
 	err := useCase.Execute(command)

@@ -128,9 +128,9 @@ func (d *retryDecorator) retry(ctx context.Context, operation func() (portsclien
 	return lastResult, lastErr
 }
 
-// GetByXApplication implementa GetByXApplication com retry
-func (d *retryDecorator) GetByXApplication(ctx context.Context, xApplication, correlationID string) (portsclient.CompanySimpleResponseDTO, error) {
+// GetByTenantId implementa GetByTenantId com retry
+func (d *retryDecorator) GetByTenantId(ctx context.Context, tenantId, correlationID string) (portsclient.CompanySimpleResponseDTO, error) {
 	return d.retry(ctx, func() (portsclient.CompanySimpleResponseDTO, error) {
-		return d.inner.GetByXApplication(ctx, xApplication, correlationID)
+		return d.inner.GetByTenantId(ctx, tenantId, correlationID)
 	})
 }

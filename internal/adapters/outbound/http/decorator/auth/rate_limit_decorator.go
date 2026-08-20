@@ -127,57 +127,57 @@ func (d *rateLimitDecorator) checkRateLimit() error {
 }
 
 // Login implementa o método Login com rate limiting
-func (d *rateLimitDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, xApplication, correlationID string) (inboundDto.AuthResponseDTO, error) {
+func (d *rateLimitDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
 	if err := d.checkRateLimit(); err != nil {
 		return inboundDto.AuthResponseDTO{}, err
 	}
-	return d.inner.Login(ctx, req, xApplication, correlationID)
+	return d.inner.Login(ctx, req, tenantId, correlationID)
 }
 
 // RefreshToken implementa o método RefreshToken com rate limiting
-func (d *rateLimitDecorator) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, xApplication, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
+func (d *rateLimitDecorator) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
 	if err := d.checkRateLimit(); err != nil {
 		return inboundDto.RefreshTokenResponseDTO{}, err
 	}
-	return d.inner.RefreshToken(ctx, req, xApplication, correlationID)
+	return d.inner.RefreshToken(ctx, req, tenantId, correlationID)
 }
 
 // Logout implementa o método Logout com rate limiting
-func (d *rateLimitDecorator) Logout(ctx context.Context, token, xApplication, correlationID string) error {
+func (d *rateLimitDecorator) Logout(ctx context.Context, token, tenantId, correlationID string) error {
 	if err := d.checkRateLimit(); err != nil {
 		return err
 	}
-	return d.inner.Logout(ctx, token, xApplication, correlationID)
+	return d.inner.Logout(ctx, token, tenantId, correlationID)
 }
 
 // ValidateToken implementa o método ValidateToken com rate limiting
-func (d *rateLimitDecorator) ValidateToken(ctx context.Context, token, xApplication, correlationID string) error {
+func (d *rateLimitDecorator) ValidateToken(ctx context.Context, token, tenantId, correlationID string) error {
 	if err := d.checkRateLimit(); err != nil {
 		return err
 	}
-	return d.inner.ValidateToken(ctx, token, xApplication, correlationID)
+	return d.inner.ValidateToken(ctx, token, tenantId, correlationID)
 }
 
 // ChangePassword implementa o método ChangePassword com rate limiting
-func (d *rateLimitDecorator) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, xApplication, correlationID string) error {
+func (d *rateLimitDecorator) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, tenantId, correlationID string) error {
 	if err := d.checkRateLimit(); err != nil {
 		return err
 	}
-	return d.inner.ChangePassword(ctx, req, xApplication, correlationID)
+	return d.inner.ChangePassword(ctx, req, tenantId, correlationID)
 }
 
 // ResetPassword implementa o método ResetPassword com rate limiting
-func (d *rateLimitDecorator) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, xApplication, correlationID string) error {
+func (d *rateLimitDecorator) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, tenantId, correlationID string) error {
 	if err := d.checkRateLimit(); err != nil {
 		return err
 	}
-	return d.inner.ResetPassword(ctx, req, xApplication, correlationID)
+	return d.inner.ResetPassword(ctx, req, tenantId, correlationID)
 }
 
 // GenerateResetToken implementa o método GenerateResetToken com rate limiting
-func (d *rateLimitDecorator) GenerateResetToken(ctx context.Context, req map[string]interface{}, xApplication, correlationID string) (outboundDto.GenerateResetTokenMSResponseDTO, error) {
+func (d *rateLimitDecorator) GenerateResetToken(ctx context.Context, req map[string]interface{}, tenantId, correlationID string) (outboundDto.GenerateResetTokenMSResponseDTO, error) {
 	if err := d.checkRateLimit(); err != nil {
 		return outboundDto.GenerateResetTokenMSResponseDTO{}, err
 	}
-	return d.inner.GenerateResetToken(ctx, req, xApplication, correlationID)
+	return d.inner.GenerateResetToken(ctx, req, tenantId, correlationID)
 }

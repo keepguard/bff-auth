@@ -43,24 +43,24 @@ func (d *companyMetricsDecorator) getStatusCodeFromError(err error) int {
 	return http.StatusInternalServerError
 }
 
-// GetByXApplication implementa GetByXApplication com métricas
-func (d *companyMetricsDecorator) GetByXApplication(ctx context.Context, xApplication, correlationID string) (portsclient.CompanySimpleResponseDTO, error) {
+// GetByTenantId implementa GetByTenantId com métricas
+func (d *companyMetricsDecorator) GetByTenantId(ctx context.Context, tenantId, correlationID string) (portsclient.CompanySimpleResponseDTO, error) {
 	start := time.Now()
 
-	response, err := d.inner.GetByXApplication(ctx, xApplication, correlationID)
+	response, err := d.inner.GetByTenantId(ctx, tenantId, correlationID)
 
 	duration := time.Since(start)
 	statusCode := d.getStatusCodeFromError(err)
 
 	// Registra métricas
-	d.metrics.RecordUpstreamRequest(d.serviceName, "GET", "/companies/x-application", statusCode, duration)
+	d.metrics.RecordUpstreamRequest(d.serviceName, "GET", "/companies/x-tenant-id", statusCode, duration)
 
 	if err != nil {
 		errorType := "unknown"
 		if httpErr, ok := err.(*appdto.HTTPError); ok {
 			errorType = httpErr.ErrorCode
 		}
-		d.metrics.RecordUpstreamError(d.serviceName, "GET", "/companies/x-application", errorType)
+		d.metrics.RecordUpstreamError(d.serviceName, "GET", "/companies/x-tenant-id", errorType)
 	}
 
 	return response, err

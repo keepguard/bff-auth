@@ -9,7 +9,7 @@ import (
 // SendResetPasswordMessageCommand representa o comando de envio de mensagem de reset de senha
 type SendResetPasswordMessageCommand struct {
 	Email         string
-	XApplication  string
+	TenantId  string
 	CorrelationID string
 	Context       context.Context
 }
@@ -17,13 +17,13 @@ type SendResetPasswordMessageCommand struct {
 // NewSendResetPasswordMessageCommand cria um novo comando de envio de mensagem de reset
 func NewSendResetPasswordMessageCommand(
 	email string,
-	xApplication string,
+	tenantId string,
 	correlationID string,
 	ctx context.Context,
 ) SendResetPasswordMessageCommand {
 	return SendResetPasswordMessageCommand{
 		Email:         email,
-		XApplication:  xApplication,
+		TenantId:  tenantId,
 		CorrelationID: correlationID,
 		Context:       ctx,
 	}
@@ -41,8 +41,8 @@ func (c SendResetPasswordMessageCommand) Validate() error {
 		return errors.New("formato de email inválido")
 	}
 
-	if c.XApplication == "" {
-		return errors.New("xApplication é obrigatório")
+	if c.TenantId == "" {
+		return errors.New("tenantId é obrigatório")
 	}
 
 	if c.CorrelationID == "" {

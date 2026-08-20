@@ -17,8 +17,8 @@ type MockUserClient struct {
 	mock.Mock
 }
 
-func (m *MockUserClient) GetByEmail(ctx context.Context, email, xApplication, correlationID string) (outboundDto.UserByEmailResponseDTO, error) {
-	args := m.Called(ctx, email, xApplication, correlationID)
+func (m *MockUserClient) GetByEmail(ctx context.Context, email, tenantId, correlationID string) (outboundDto.UserByEmailResponseDTO, error) {
+	args := m.Called(ctx, email, tenantId, correlationID)
 	return args.Get(0).(outboundDto.UserByEmailResponseDTO), args.Error(1)
 }
 
@@ -47,7 +47,7 @@ func TestUserLoggingDecorator_GetByEmail_Success(t *testing.T) {
 
 	ctx := context.Background()
 	email := "user@example.com"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedResponse := outboundDto.UserByEmailResponseDTO{
@@ -59,10 +59,10 @@ func TestUserLoggingDecorator_GetByEmail_Success(t *testing.T) {
 		EmailVerified: true,
 	}
 
-	mockInner.On("GetByEmail", ctx, email, xApplication, correlationID).Return(expectedResponse, nil)
+	mockInner.On("GetByEmail", ctx, email, tenantId, correlationID).Return(expectedResponse, nil)
 
 	// Act
-	result, err := decorator.GetByEmail(ctx, email, xApplication, correlationID)
+	result, err := decorator.GetByEmail(ctx, email, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -86,15 +86,15 @@ func TestUserLoggingDecorator_GetByEmail_Error(t *testing.T) {
 
 	ctx := context.Background()
 	email := "notfound@example.com"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedError := errors.New("user not found")
 
-	mockInner.On("GetByEmail", ctx, email, xApplication, correlationID).Return(outboundDto.UserByEmailResponseDTO{}, expectedError)
+	mockInner.On("GetByEmail", ctx, email, tenantId, correlationID).Return(outboundDto.UserByEmailResponseDTO{}, expectedError)
 
 	// Act
-	_, err := decorator.GetByEmail(ctx, email, xApplication, correlationID)
+	_, err := decorator.GetByEmail(ctx, email, tenantId, correlationID)
 
 	// Assert
 	assert.Error(t, err)

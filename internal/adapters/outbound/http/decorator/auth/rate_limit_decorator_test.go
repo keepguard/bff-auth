@@ -38,7 +38,7 @@ func TestRateLimitDecorator_Login_WithinLimit(t *testing.T) {
 		Username: "testuser",
 		Password: "testpass",
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedResponse := inboundDto.AuthResponseDTO{
@@ -46,10 +46,10 @@ func TestRateLimitDecorator_Login_WithinLimit(t *testing.T) {
 		ExpiresIn: 3600,
 	}
 
-	mockInner.On("Login", ctx, req, xApplication, correlationID).Return(expectedResponse, nil).Once()
+	mockInner.On("Login", ctx, req, tenantId, correlationID).Return(expectedResponse, nil).Once()
 
 	// Act
-	result, err := decorator.Login(ctx, req, xApplication, correlationID)
+	result, err := decorator.Login(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -72,7 +72,7 @@ func TestRateLimitDecorator_Login_ExceedsLimit(t *testing.T) {
 		Username: "testuser",
 		Password: "testpass",
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedResponse := inboundDto.AuthResponseDTO{
@@ -81,14 +81,14 @@ func TestRateLimitDecorator_Login_ExceedsLimit(t *testing.T) {
 	}
 
 	// Permite as primeiras 2 requisições
-	mockInner.On("Login", ctx, req, xApplication, correlationID).Return(expectedResponse, nil).Twice()
+	mockInner.On("Login", ctx, req, tenantId, correlationID).Return(expectedResponse, nil).Twice()
 
 	// Act - Primeira e segunda requisição (dentro do limite)
-	result1, err1 := decorator.Login(ctx, req, xApplication, correlationID)
-	result2, err2 := decorator.Login(ctx, req, xApplication, correlationID)
+	result1, err1 := decorator.Login(ctx, req, tenantId, correlationID)
+	result2, err2 := decorator.Login(ctx, req, tenantId, correlationID)
 
 	// Terceira requisição (excede o limite)
-	result3, err3 := decorator.Login(ctx, req, xApplication, correlationID)
+	result3, err3 := decorator.Login(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err1)
@@ -118,13 +118,13 @@ func TestRateLimitDecorator_Logout_WithinLimit(t *testing.T) {
 
 	ctx := context.Background()
 	token := "valid_token"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
-	mockInner.On("Logout", ctx, token, xApplication, correlationID).Return(nil).Once()
+	mockInner.On("Logout", ctx, token, tenantId, correlationID).Return(nil).Once()
 
 	// Act
-	err := decorator.Logout(ctx, token, xApplication, correlationID)
+	err := decorator.Logout(ctx, token, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -143,14 +143,14 @@ func TestRateLimitDecorator_ValidateToken_ExceedsLimit(t *testing.T) {
 
 	ctx := context.Background()
 	token := "valid_token"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
-	mockInner.On("ValidateToken", ctx, token, xApplication, correlationID).Return(nil).Once()
+	mockInner.On("ValidateToken", ctx, token, tenantId, correlationID).Return(nil).Once()
 
 	// Act
-	err1 := decorator.ValidateToken(ctx, token, xApplication, correlationID) // Primeira: OK
-	err2 := decorator.ValidateToken(ctx, token, xApplication, correlationID) // Segunda: Rate limited
+	err1 := decorator.ValidateToken(ctx, token, tenantId, correlationID) // Primeira: OK
+	err2 := decorator.ValidateToken(ctx, token, tenantId, correlationID) // Segunda: Rate limited
 
 	// Assert
 	assert.NoError(t, err1)
@@ -176,13 +176,13 @@ func TestRateLimitDecorator_ChangePassword_WithinLimit(t *testing.T) {
 		NewPassword:        "new_pass",
 		ConfirmNewPassword: "new_pass",
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
-	mockInner.On("ChangePassword", ctx, req, xApplication, correlationID).Return(nil).Once()
+	mockInner.On("ChangePassword", ctx, req, tenantId, correlationID).Return(nil).Once()
 
 	// Act
-	err := decorator.ChangePassword(ctx, req, xApplication, correlationID)
+	err := decorator.ChangePassword(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -203,13 +203,13 @@ func TestRateLimitDecorator_ResetPassword_WithinLimit(t *testing.T) {
 		NewPassword:        "new_pass",
 		ConfirmNewPassword: "new_pass",
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
-	mockInner.On("ResetPassword", ctx, req, xApplication, correlationID).Return(nil).Once()
+	mockInner.On("ResetPassword", ctx, req, tenantId, correlationID).Return(nil).Once()
 
 	// Act
-	err := decorator.ResetPassword(ctx, req, xApplication, correlationID)
+	err := decorator.ResetPassword(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)

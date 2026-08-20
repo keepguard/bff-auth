@@ -305,23 +305,23 @@ func TestSecurityDomainService_ValidateSecurityHeaders(t *testing.T) {
 		{
 			name: "valid headers",
 			headers: map[string]string{
-				"X-Application":    "my-app",
+				"X-Tenant-Id":    "my-app",
 				"X-Correlation-ID": "correlation-123",
 			},
 			wantErr: false,
 		},
 		{
-			name: "missing X-Application",
+			name: "missing X-Tenant-Id",
 			headers: map[string]string{
 				"X-Correlation-ID": "correlation-123",
 			},
 			wantErr: true,
-			errMsg:  "missing required security header: X-Application",
+			errMsg:  "missing required security header: X-Tenant-Id",
 		},
 		{
 			name: "missing X-Correlation-ID",
 			headers: map[string]string{
-				"X-Application": "my-app",
+				"X-Tenant-Id": "my-app",
 			},
 			wantErr: true,
 			errMsg:  "missing required security header: X-Correlation-ID",

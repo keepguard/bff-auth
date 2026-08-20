@@ -52,7 +52,7 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_Success(t *testing.T) {
 	req := httptest.NewRequest(http.MethodPost, "/message/reset-password/send", bytes.NewReader(reqBodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Correlation-ID", "test-correlation-id")
-	req.Header.Set("X-Application", "550e8400-e29b-41d4-a716-446655440000")
+	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
@@ -90,7 +90,7 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_MissingCorrelationID(t 
 	reqBodyBytes, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest(http.MethodPost, "/message/reset-password/send", bytes.NewReader(reqBodyBytes))
 	req.Header.Set("Content-Type", "application/json")
-	req.Header.Set("X-Application", "550e8400-e29b-41d4-a716-446655440000")
+	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")
 	// Não definir X-Correlation-ID
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
@@ -109,8 +109,8 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_MissingCorrelationID(t 
 	assert.Contains(t, response.Message, "X-Correlation-ID")
 }
 
-// TestMessageHandlers_SendResetPasswordMessageHandler_MissingXApplication testa sem X-Application
-func TestMessageHandlers_SendResetPasswordMessageHandler_MissingXApplication(t *testing.T) {
+// TestMessageHandlers_SendResetPasswordMessageHandler_MissingTenantId testa sem X-Tenant-Id
+func TestMessageHandlers_SendResetPasswordMessageHandler_MissingTenantId(t *testing.T) {
 	// Arrange
 	handlers, _ := setupTestMessageHandlers()
 
@@ -122,7 +122,7 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_MissingXApplication(t *
 	req := httptest.NewRequest(http.MethodPost, "/message/reset-password/send", bytes.NewReader(reqBodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Correlation-ID", "test-correlation-id")
-	// Não definir X-Application
+	// Não definir X-Tenant-Id
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
@@ -137,7 +137,7 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_MissingXApplication(t *
 	err = json.Unmarshal(rec.Body.Bytes(), &response)
 	assert.NoError(t, err)
 	assert.Equal(t, "MISSING_HEADER", response.Error)
-	assert.Contains(t, response.Message, "X-Application")
+	assert.Contains(t, response.Message, "X-Tenant-Id")
 }
 
 // TestMessageHandlers_SendResetPasswordMessageHandler_InvalidJSON testa JSON inválido
@@ -149,7 +149,7 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_InvalidJSON(t *testing.
 	req := httptest.NewRequest(http.MethodPost, "/message/reset-password/send", bytes.NewReader([]byte("invalid json")))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Correlation-ID", "test-correlation-id")
-	req.Header.Set("X-Application", "550e8400-e29b-41d4-a716-446655440000")
+	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
@@ -180,7 +180,7 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_ValidationError(t *test
 	req := httptest.NewRequest(http.MethodPost, "/message/reset-password/send", bytes.NewReader(reqBodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Correlation-ID", "test-correlation-id")
-	req.Header.Set("X-Application", "550e8400-e29b-41d4-a716-446655440000")
+	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
@@ -211,7 +211,7 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_UseCaseHTTPError(t *tes
 	req := httptest.NewRequest(http.MethodPost, "/message/reset-password/send", bytes.NewReader(reqBodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Correlation-ID", "test-correlation-id")
-	req.Header.Set("X-Application", "550e8400-e29b-41d4-a716-446655440000")
+	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
@@ -252,7 +252,7 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_UseCaseAppError(t *test
 	req := httptest.NewRequest(http.MethodPost, "/message/reset-password/send", bytes.NewReader(reqBodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Correlation-ID", "test-correlation-id")
-	req.Header.Set("X-Application", "550e8400-e29b-41d4-a716-446655440000")
+	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
@@ -293,7 +293,7 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_GenericError(t *testing
 	req := httptest.NewRequest(http.MethodPost, "/message/reset-password/send", bytes.NewReader(reqBodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Correlation-ID", "test-correlation-id")
-	req.Header.Set("X-Application", "550e8400-e29b-41d4-a716-446655440000")
+	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
@@ -330,7 +330,7 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_InvalidEmailFormat(t *t
 	req := httptest.NewRequest(http.MethodPost, "/message/reset-password/send", bytes.NewReader(reqBodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Correlation-ID", "test-correlation-id")
-	req.Header.Set("X-Application", "550e8400-e29b-41d4-a716-446655440000")
+	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 

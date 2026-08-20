@@ -20,19 +20,19 @@ func TestValidateTokenUseCase_Execute_Success(t *testing.T) {
 
 	ctx := context.Background()
 	token := "valid_token"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	command := appdto.NewValidateTokenCommand(
 		token,
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
 
 	// Configurar mocks
-	setupCompanyMock(mockCompanyClient, ctx, xApplication, correlationID)
-	mockAuthClient.On("ValidateToken", ctx, token, xApplication, correlationID).Return(nil)
+	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
+	mockAuthClient.On("ValidateToken", ctx, token, tenantId, correlationID).Return(nil)
 
 	// Act
 	err := useCase.Execute(command)
@@ -52,19 +52,19 @@ func TestValidateTokenUseCase_Execute_InvalidToken(t *testing.T) {
 
 	ctx := context.Background()
 	token := "invalid_token"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	command := appdto.NewValidateTokenCommand(
 		token,
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
 
 	// Configurar mocks
-	setupCompanyMock(mockCompanyClient, ctx, xApplication, correlationID)
-	mockAuthClient.On("ValidateToken", ctx, token, xApplication, correlationID).Return(assert.AnError)
+	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
+	mockAuthClient.On("ValidateToken", ctx, token, tenantId, correlationID).Return(assert.AnError)
 
 	// Act
 	err := useCase.Execute(command)
@@ -85,12 +85,12 @@ func TestValidateTokenUseCase_Execute_CompanyNotFound(t *testing.T) {
 
 	ctx := context.Background()
 	token := "valid_token"
-	xApplication := "invalid-app-id"
+	tenantId := "invalid-app-id"
 	correlationID := "test-correlation-id"
 
 	command := appdto.NewValidateTokenCommand(
 		token,
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
@@ -102,7 +102,7 @@ func TestValidateTokenUseCase_Execute_CompanyNotFound(t *testing.T) {
 		ErrorCode:  "COMPANY_NOT_FOUND",
 	}
 
-	mockCompanyClient.On("GetByXApplication", ctx, xApplication, correlationID).Return(authclient.CompanySimpleResponseDTO{}, companyError)
+	mockCompanyClient.On("GetByTenantId", ctx, tenantId, correlationID).Return(authclient.CompanySimpleResponseDTO{}, companyError)
 
 	// Act
 	err := useCase.Execute(command)
@@ -124,19 +124,19 @@ func TestValidateTokenUseCase_Execute_EmptyToken(t *testing.T) {
 
 	ctx := context.Background()
 	token := ""
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	command := appdto.NewValidateTokenCommand(
 		token,
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
 
 	// Configurar mocks
-	setupCompanyMock(mockCompanyClient, ctx, xApplication, correlationID)
-	mockAuthClient.On("ValidateToken", ctx, token, xApplication, correlationID).Return(nil)
+	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
+	mockAuthClient.On("ValidateToken", ctx, token, tenantId, correlationID).Return(nil)
 
 	// Act
 	err := useCase.Execute(command)
@@ -158,19 +158,19 @@ func TestValidateTokenUseCase_Execute_ContextCancelled(t *testing.T) {
 	cancel() // Cancela o contexto imediatamente
 
 	token := "valid_token"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	command := appdto.NewValidateTokenCommand(
 		token,
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
 
 	// Configurar mocks
-	setupCompanyMock(mockCompanyClient, ctx, xApplication, correlationID)
-	mockAuthClient.On("ValidateToken", ctx, token, xApplication, correlationID).Return(context.Canceled)
+	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
+	mockAuthClient.On("ValidateToken", ctx, token, tenantId, correlationID).Return(context.Canceled)
 
 	// Act
 	err := useCase.Execute(command)

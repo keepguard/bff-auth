@@ -22,7 +22,7 @@ func TestChangePasswordUseCase_Execute_Success(t *testing.T) {
 	ctx := context.Background()
 	// Token JWT válido com payload contendo codeUser
 	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb2RlVXNlciI6InVzZXItMTIzIiwic3ViIjoidXNlci0xMjMiLCJ1c2VybmFtZSI6InRlc3R1c2VyIn0.test"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 	currentPassword := "currentpass123"
 	newPassword := "newpass123"
@@ -33,7 +33,7 @@ func TestChangePasswordUseCase_Execute_Success(t *testing.T) {
 		currentPassword,
 		newPassword,
 		confirmNewPassword,
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
@@ -46,8 +46,8 @@ func TestChangePasswordUseCase_Execute_Success(t *testing.T) {
 	}
 
 	// Configurar mocks
-	setupCompanyMock(mockCompanyClient, ctx, xApplication, correlationID)
-	mockAuthClient.On("ChangePassword", ctx, expectedReq, xApplication, correlationID).Return(nil)
+	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
+	mockAuthClient.On("ChangePassword", ctx, expectedReq, tenantId, correlationID).Return(nil)
 
 	// Act
 	err := useCase.Execute(command)
@@ -67,7 +67,7 @@ func TestChangePasswordUseCase_Execute_InvalidToken(t *testing.T) {
 
 	ctx := context.Background()
 	token := "invalid_token_format"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 	currentPassword := "currentpass123"
 	newPassword := "newpass123"
@@ -78,13 +78,13 @@ func TestChangePasswordUseCase_Execute_InvalidToken(t *testing.T) {
 		currentPassword,
 		newPassword,
 		confirmNewPassword,
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
 
 	// Configurar mocks
-	setupCompanyMock(mockCompanyClient, ctx, xApplication, correlationID)
+	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
 
 	// Act
 	err := useCase.Execute(command)
@@ -105,7 +105,7 @@ func TestChangePasswordUseCase_Execute_AuthServiceError(t *testing.T) {
 
 	ctx := context.Background()
 	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb2RlVXNlciI6InVzZXItMTIzIiwic3ViIjoidXNlci0xMjMiLCJ1c2VybmFtZSI6InRlc3R1c2VyIn0.test"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 	currentPassword := "wrongcurrentpass"
 	newPassword := "newpass123"
@@ -116,7 +116,7 @@ func TestChangePasswordUseCase_Execute_AuthServiceError(t *testing.T) {
 		currentPassword,
 		newPassword,
 		confirmNewPassword,
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
@@ -135,8 +135,8 @@ func TestChangePasswordUseCase_Execute_AuthServiceError(t *testing.T) {
 	}
 
 	// Configurar mocks
-	setupCompanyMock(mockCompanyClient, ctx, xApplication, correlationID)
-	mockAuthClient.On("ChangePassword", ctx, expectedReq, xApplication, correlationID).Return(authError)
+	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
+	mockAuthClient.On("ChangePassword", ctx, expectedReq, tenantId, correlationID).Return(authError)
 
 	// Act
 	err := useCase.Execute(command)
@@ -157,7 +157,7 @@ func TestChangePasswordUseCase_Execute_CompanyNotFound(t *testing.T) {
 
 	ctx := context.Background()
 	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb2RlVXNlciI6InVzZXItMTIzIiwic3ViIjoidXNlci0xMjMiLCJ1c2VybmFtZSI6InRlc3R1c2VyIn0.test"
-	xApplication := "invalid-app-id"
+	tenantId := "invalid-app-id"
 	correlationID := "test-correlation-id"
 	currentPassword := "currentpass123"
 	newPassword := "newpass123"
@@ -168,7 +168,7 @@ func TestChangePasswordUseCase_Execute_CompanyNotFound(t *testing.T) {
 		currentPassword,
 		newPassword,
 		confirmNewPassword,
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
@@ -180,7 +180,7 @@ func TestChangePasswordUseCase_Execute_CompanyNotFound(t *testing.T) {
 		ErrorCode:  "COMPANY_NOT_FOUND",
 	}
 
-	mockCompanyClient.On("GetByXApplication", ctx, xApplication, correlationID).Return(authclient.CompanySimpleResponseDTO{}, companyError)
+	mockCompanyClient.On("GetByTenantId", ctx, tenantId, correlationID).Return(authclient.CompanySimpleResponseDTO{}, companyError)
 
 	// Act
 	err := useCase.Execute(command)
@@ -204,7 +204,7 @@ func TestChangePasswordUseCase_Execute_ContextCancelled(t *testing.T) {
 	cancel() // Cancela o contexto imediatamente
 
 	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb2RlVXNlciI6InVzZXItMTIzIiwic3ViIjoidXNlci0xMjMiLCJ1c2VybmFtZSI6InRlc3R1c2VyIn0.test"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 	currentPassword := "currentpass123"
 	newPassword := "newpass123"
@@ -215,7 +215,7 @@ func TestChangePasswordUseCase_Execute_ContextCancelled(t *testing.T) {
 		currentPassword,
 		newPassword,
 		confirmNewPassword,
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
@@ -228,8 +228,8 @@ func TestChangePasswordUseCase_Execute_ContextCancelled(t *testing.T) {
 	}
 
 	// Configurar mocks
-	setupCompanyMock(mockCompanyClient, ctx, xApplication, correlationID)
-	mockAuthClient.On("ChangePassword", ctx, expectedReq, xApplication, correlationID).Return(context.Canceled)
+	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
+	mockAuthClient.On("ChangePassword", ctx, expectedReq, tenantId, correlationID).Return(context.Canceled)
 
 	// Act
 	err := useCase.Execute(command)
@@ -248,7 +248,7 @@ func TestChangePasswordUseCase_Execute_PasswordMismatch(t *testing.T) {
 
 	ctx := context.Background()
 	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb2RlVXNlciI6InVzZXItMTIzIiwic3ViIjoidXNlci0xMjMiLCJ1c2VybmFtZSI6InRlc3R1c2VyIn0.test"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 	currentPassword := "currentpass123"
 	newPassword := "newpass123"
@@ -259,7 +259,7 @@ func TestChangePasswordUseCase_Execute_PasswordMismatch(t *testing.T) {
 		currentPassword,
 		newPassword,
 		confirmNewPassword,
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
@@ -271,6 +271,6 @@ func TestChangePasswordUseCase_Execute_PasswordMismatch(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "newPassword e confirmNewPassword devem ser iguais")
 	// CompanyClient e AuthClient NÃO devem ser chamados se a validação falhar
-	mockCompanyClient.AssertNotCalled(t, "GetByXApplication", mock.Anything, mock.Anything, mock.Anything)
+	mockCompanyClient.AssertNotCalled(t, "GetByTenantId", mock.Anything, mock.Anything, mock.Anything)
 	mockAuthClient.AssertNotCalled(t, "ChangePassword", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
 }

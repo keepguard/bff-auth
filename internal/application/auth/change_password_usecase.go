@@ -27,7 +27,7 @@ func NewChangePasswordUseCase(authClient authclient.AuthClient, companyClient au
 // Execute executa o caso de uso de alteração de senha
 func (uc *changePasswordUseCaseImpl) Execute(command appdto.ChangePasswordCommand) error {
 	// Primeiro, verifica se a empresa existe consultando o Company Service
-	_, err := uc.companyClient.GetByXApplication(command.Context, command.XApplication, command.CorrelationID)
+	_, err := uc.companyClient.GetByTenantId(command.Context, command.TenantId, command.CorrelationID)
 	if err != nil {
 		return err
 	}
@@ -47,7 +47,7 @@ func (uc *changePasswordUseCaseImpl) Execute(command appdto.ChangePasswordComman
 	}
 
 	// Chama o cliente de autenticação para alterar a senha
-	err = uc.authClient.ChangePassword(command.Context, req, command.XApplication, command.CorrelationID)
+	err = uc.authClient.ChangePassword(command.Context, req, command.TenantId, command.CorrelationID)
 	if err != nil {
 		return err
 	}

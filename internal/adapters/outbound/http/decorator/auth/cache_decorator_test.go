@@ -39,7 +39,7 @@ func TestCacheDecorator_Login_NoCaching(t *testing.T) {
 		Username: "testuser",
 		Password: "testpass",
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedResponse := inboundDto.AuthResponseDTO{
@@ -48,13 +48,13 @@ func TestCacheDecorator_Login_NoCaching(t *testing.T) {
 	}
 
 	// Login deve ser chamado sempre (sem cache)
-	mockInner.On("Login", ctx, req, xApplication, correlationID).Return(expectedResponse, nil).Twice()
+	mockInner.On("Login", ctx, req, tenantId, correlationID).Return(expectedResponse, nil).Twice()
 
 	// Act - Primeira chamada
-	result1, err1 := decorator.Login(ctx, req, xApplication, correlationID)
+	result1, err1 := decorator.Login(ctx, req, tenantId, correlationID)
 
 	// Act - Segunda chamada
-	result2, err2 := decorator.Login(ctx, req, xApplication, correlationID)
+	result2, err2 := decorator.Login(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err1)
@@ -77,20 +77,20 @@ func TestCacheDecorator_ValidateToken_WithCaching(t *testing.T) {
 
 	ctx := context.Background()
 	token := "valid_token"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	// Primeira chamada: cache miss, chama o inner
-	mockInner.On("ValidateToken", ctx, token, xApplication, correlationID).Return(nil).Once()
+	mockInner.On("ValidateToken", ctx, token, tenantId, correlationID).Return(nil).Once()
 
 	// Act - Primeira chamada
-	err1 := decorator.ValidateToken(ctx, token, xApplication, correlationID)
+	err1 := decorator.ValidateToken(ctx, token, tenantId, correlationID)
 
 	// Act - Segunda chamada (deve vir do cache)
-	err2 := decorator.ValidateToken(ctx, token, xApplication, correlationID)
+	err2 := decorator.ValidateToken(ctx, token, tenantId, correlationID)
 
 	// Act - Terceira chamada (ainda do cache)
-	err3 := decorator.ValidateToken(ctx, token, xApplication, correlationID)
+	err3 := decorator.ValidateToken(ctx, token, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err1)
@@ -112,19 +112,19 @@ func TestCacheDecorator_ValidateToken_CachesErrors(t *testing.T) {
 
 	ctx := context.Background()
 	token := "invalid_token"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedError := errors.New("invalid token")
 
 	// Primeira chamada: cache miss
-	mockInner.On("ValidateToken", ctx, token, xApplication, correlationID).Return(expectedError).Once()
+	mockInner.On("ValidateToken", ctx, token, tenantId, correlationID).Return(expectedError).Once()
 
 	// Act - Primeira chamada
-	err1 := decorator.ValidateToken(ctx, token, xApplication, correlationID)
+	err1 := decorator.ValidateToken(ctx, token, tenantId, correlationID)
 
 	// Act - Segunda chamada (erro vem do cache)
-	err2 := decorator.ValidateToken(ctx, token, xApplication, correlationID)
+	err2 := decorator.ValidateToken(ctx, token, tenantId, correlationID)
 
 	// Assert
 	assert.Error(t, err1)
@@ -147,26 +147,26 @@ func TestCacheDecorator_Logout_InvalidatesCache(t *testing.T) {
 
 	ctx := context.Background()
 	token := "valid_token"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	// Primeira ValidateToken: popula o cache
-	mockInner.On("ValidateToken", ctx, token, xApplication, correlationID).Return(nil).Once()
+	mockInner.On("ValidateToken", ctx, token, tenantId, correlationID).Return(nil).Once()
 
 	// Logout: deve invalidar o cache
-	mockInner.On("Logout", ctx, token, xApplication, correlationID).Return(nil).Once()
+	mockInner.On("Logout", ctx, token, tenantId, correlationID).Return(nil).Once()
 
 	// Segunda ValidateToken: cache foi invalidado, deve chamar inner novamente
-	mockInner.On("ValidateToken", ctx, token, xApplication, correlationID).Return(nil).Once()
+	mockInner.On("ValidateToken", ctx, token, tenantId, correlationID).Return(nil).Once()
 
 	// Act
-	err1 := decorator.ValidateToken(ctx, token, xApplication, correlationID) // Popula cache
+	err1 := decorator.ValidateToken(ctx, token, tenantId, correlationID) // Popula cache
 	assert.NoError(t, err1)
 
-	err2 := decorator.Logout(ctx, token, xApplication, correlationID) // Invalida cache
+	err2 := decorator.Logout(ctx, token, tenantId, correlationID) // Invalida cache
 	assert.NoError(t, err2)
 
-	err3 := decorator.ValidateToken(ctx, token, xApplication, correlationID) // Cache foi invalidado
+	err3 := decorator.ValidateToken(ctx, token, tenantId, correlationID) // Cache foi invalidado
 	assert.NoError(t, err3)
 
 	// Assert
@@ -188,15 +188,15 @@ func TestCacheDecorator_ChangePassword_NoCaching(t *testing.T) {
 		NewPassword:        "new_pass",
 		ConfirmNewPassword: "new_pass",
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	// Operações de escrita não devem ser cacheadas
-	mockInner.On("ChangePassword", ctx, req, xApplication, correlationID).Return(nil).Twice()
+	mockInner.On("ChangePassword", ctx, req, tenantId, correlationID).Return(nil).Twice()
 
 	// Act
-	err1 := decorator.ChangePassword(ctx, req, xApplication, correlationID)
-	err2 := decorator.ChangePassword(ctx, req, xApplication, correlationID)
+	err1 := decorator.ChangePassword(ctx, req, tenantId, correlationID)
+	err2 := decorator.ChangePassword(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err1)
@@ -218,15 +218,15 @@ func TestCacheDecorator_ResetPassword_NoCaching(t *testing.T) {
 		NewPassword:        "new_pass",
 		ConfirmNewPassword: "new_pass",
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	// Operações de escrita não devem ser cacheadas
-	mockInner.On("ResetPassword", ctx, req, xApplication, correlationID).Return(nil).Twice()
+	mockInner.On("ResetPassword", ctx, req, tenantId, correlationID).Return(nil).Twice()
 
 	// Act
-	err1 := decorator.ResetPassword(ctx, req, xApplication, correlationID)
-	err2 := decorator.ResetPassword(ctx, req, xApplication, correlationID)
+	err1 := decorator.ResetPassword(ctx, req, tenantId, correlationID)
+	err2 := decorator.ResetPassword(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err1)

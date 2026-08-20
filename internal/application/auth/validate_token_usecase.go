@@ -25,13 +25,13 @@ func NewValidateTokenUseCase(authClient authclient.AuthClient, companyClient aut
 // Execute executa o caso de uso de validação de token
 func (uc *validateTokenUseCaseImpl) Execute(command appdto.ValidateTokenCommand) error {
 	// Primeiro, verifica se a empresa existe consultando o Company Service
-	_, err := uc.companyClient.GetByXApplication(command.Context, command.XApplication, command.CorrelationID)
+	_, err := uc.companyClient.GetByTenantId(command.Context, command.TenantId, command.CorrelationID)
 	if err != nil {
 		return err
 	}
 
 	// Chama o cliente de autenticação para validar o token
-	err = uc.authClient.ValidateToken(command.Context, command.Token, command.XApplication, command.CorrelationID)
+	err = uc.authClient.ValidateToken(command.Context, command.Token, command.TenantId, command.CorrelationID)
 	if err != nil {
 		return err
 	}

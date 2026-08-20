@@ -46,13 +46,13 @@ func NewSendResetPasswordMessageUseCase(
 // Execute executa o caso de uso de envio de mensagem de reset de senha
 func (uc *sendResetPasswordMessageUseCaseImpl) Execute(command appdto.SendResetPasswordMessageCommand) (inboundDto.SendResetPasswordMessageResponseDTO, error) {
 	// Passo 1: Verificar se a empresa existe consultando o Company Service
-	_, err := uc.companyClient.GetByXApplication(command.Context, command.XApplication, command.CorrelationID)
+	_, err := uc.companyClient.GetByTenantId(command.Context, command.TenantId, command.CorrelationID)
 	if err != nil {
 		return inboundDto.SendResetPasswordMessageResponseDTO{}, err
 	}
 
 	// Passo 2: Buscar usuário por email no User Service
-	user, err := uc.userClient.GetByEmail(command.Context, command.Email, command.XApplication, command.CorrelationID)
+	user, err := uc.userClient.GetByEmail(command.Context, command.Email, command.TenantId, command.CorrelationID)
 	if err != nil {
 		return inboundDto.SendResetPasswordMessageResponseDTO{}, err
 	}
@@ -74,7 +74,7 @@ func (uc *sendResetPasswordMessageUseCaseImpl) Execute(command appdto.SendResetP
 		"templateType":      enums.TemplateTypeRecuperacaoSenha.String(),
 	}
 
-	tokenResponse, err := uc.authClient.GenerateResetToken(command.Context, generateTokenReq, command.XApplication, command.CorrelationID)
+	tokenResponse, err := uc.authClient.GenerateResetToken(command.Context, generateTokenReq, command.TenantId, command.CorrelationID)
 	if err != nil {
 		return inboundDto.SendResetPasswordMessageResponseDTO{}, err
 	}
@@ -86,7 +86,7 @@ func (uc *sendResetPasswordMessageUseCaseImpl) Execute(command appdto.SendResetP
 	}
 
 	messageReq := messaging.MessageDTO{
-		XApplication:      command.XApplication,
+		TenantId:      command.TenantId,
 		XCorrelationID:    command.CorrelationID,
 		MessageType:       enums.MessageTypeEmail.String(),
 		CommunicationType: enums.CommunicationTypeEmail.String(),

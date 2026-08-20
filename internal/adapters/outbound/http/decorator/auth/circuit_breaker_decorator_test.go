@@ -17,38 +17,38 @@ type MockAuthClient struct {
 	mock.Mock
 }
 
-func (m *MockAuthClient) Login(ctx context.Context, req inboundDto.AuthRequestDTO, xApplication, correlationID string) (inboundDto.AuthResponseDTO, error) {
-	args := m.Called(ctx, req, xApplication, correlationID)
+func (m *MockAuthClient) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
+	args := m.Called(ctx, req, tenantId, correlationID)
 	return args.Get(0).(inboundDto.AuthResponseDTO), args.Error(1)
 }
 
-func (m *MockAuthClient) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, xApplication, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
-	args := m.Called(ctx, req, xApplication, correlationID)
+func (m *MockAuthClient) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
+	args := m.Called(ctx, req, tenantId, correlationID)
 	return args.Get(0).(inboundDto.RefreshTokenResponseDTO), args.Error(1)
 }
 
-func (m *MockAuthClient) Logout(ctx context.Context, token, xApplication, correlationID string) error {
-	args := m.Called(ctx, token, xApplication, correlationID)
+func (m *MockAuthClient) Logout(ctx context.Context, token, tenantId, correlationID string) error {
+	args := m.Called(ctx, token, tenantId, correlationID)
 	return args.Error(0)
 }
 
-func (m *MockAuthClient) ValidateToken(ctx context.Context, token, xApplication, correlationID string) error {
-	args := m.Called(ctx, token, xApplication, correlationID)
+func (m *MockAuthClient) ValidateToken(ctx context.Context, token, tenantId, correlationID string) error {
+	args := m.Called(ctx, token, tenantId, correlationID)
 	return args.Error(0)
 }
 
-func (m *MockAuthClient) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, xApplication, correlationID string) error {
-	args := m.Called(ctx, req, xApplication, correlationID)
+func (m *MockAuthClient) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, tenantId, correlationID string) error {
+	args := m.Called(ctx, req, tenantId, correlationID)
 	return args.Error(0)
 }
 
-func (m *MockAuthClient) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, xApplication, correlationID string) error {
-	args := m.Called(ctx, req, xApplication, correlationID)
+func (m *MockAuthClient) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, tenantId, correlationID string) error {
+	args := m.Called(ctx, req, tenantId, correlationID)
 	return args.Error(0)
 }
 
-func (m *MockAuthClient) GenerateResetToken(ctx context.Context, req map[string]interface{}, xApplication, correlationID string) (outboundDto.GenerateResetTokenMSResponseDTO, error) {
-	args := m.Called(ctx, req, xApplication, correlationID)
+func (m *MockAuthClient) GenerateResetToken(ctx context.Context, req map[string]interface{}, tenantId, correlationID string) (outboundDto.GenerateResetTokenMSResponseDTO, error) {
+	args := m.Called(ctx, req, tenantId, correlationID)
 	return args.Get(0).(outboundDto.GenerateResetTokenMSResponseDTO), args.Error(1)
 }
 
@@ -90,7 +90,7 @@ func TestCircuitBreakerDecorator_Login_Success(t *testing.T) {
 		Username: "testuser",
 		Password: "testpass",
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedResponse := inboundDto.AuthResponseDTO{
@@ -98,10 +98,10 @@ func TestCircuitBreakerDecorator_Login_Success(t *testing.T) {
 		ExpiresIn: 3600,
 	}
 
-	mockInner.On("Login", ctx, req, xApplication, correlationID).Return(expectedResponse, nil)
+	mockInner.On("Login", ctx, req, tenantId, correlationID).Return(expectedResponse, nil)
 
 	// Act
-	result, err := decorator.Login(ctx, req, xApplication, correlationID)
+	result, err := decorator.Login(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -123,15 +123,15 @@ func TestCircuitBreakerDecorator_Login_Error(t *testing.T) {
 		Username: "testuser",
 		Password: "testpass",
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedError := errors.New("auth service error")
 
-	mockInner.On("Login", ctx, req, xApplication, correlationID).Return(inboundDto.AuthResponseDTO{}, expectedError)
+	mockInner.On("Login", ctx, req, tenantId, correlationID).Return(inboundDto.AuthResponseDTO{}, expectedError)
 
 	// Act
-	result, err := decorator.Login(ctx, req, xApplication, correlationID)
+	result, err := decorator.Login(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.Error(t, err)
@@ -153,7 +153,7 @@ func TestCircuitBreakerDecorator_RefreshToken_Success(t *testing.T) {
 	req := inboundDto.RefreshTokenRequestDTO{
 		Token: "valid_refresh_token",
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedResponse := inboundDto.RefreshTokenResponseDTO{
@@ -161,10 +161,10 @@ func TestCircuitBreakerDecorator_RefreshToken_Success(t *testing.T) {
 		ExpiresIn: 3600,
 	}
 
-	mockInner.On("RefreshToken", ctx, req, xApplication, correlationID).Return(expectedResponse, nil)
+	mockInner.On("RefreshToken", ctx, req, tenantId, correlationID).Return(expectedResponse, nil)
 
 	// Act
-	result, err := decorator.RefreshToken(ctx, req, xApplication, correlationID)
+	result, err := decorator.RefreshToken(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -185,15 +185,15 @@ func TestCircuitBreakerDecorator_RefreshToken_Error(t *testing.T) {
 	req := inboundDto.RefreshTokenRequestDTO{
 		Token: "invalid_refresh_token",
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedError := errors.New("refresh token error")
 
-	mockInner.On("RefreshToken", ctx, req, xApplication, correlationID).Return(inboundDto.RefreshTokenResponseDTO{}, expectedError)
+	mockInner.On("RefreshToken", ctx, req, tenantId, correlationID).Return(inboundDto.RefreshTokenResponseDTO{}, expectedError)
 
 	// Act
-	result, err := decorator.RefreshToken(ctx, req, xApplication, correlationID)
+	result, err := decorator.RefreshToken(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.Error(t, err)
@@ -213,13 +213,13 @@ func TestCircuitBreakerDecorator_Logout_Success(t *testing.T) {
 
 	ctx := context.Background()
 	token := "valid_token"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
-	mockInner.On("Logout", ctx, token, xApplication, correlationID).Return(nil)
+	mockInner.On("Logout", ctx, token, tenantId, correlationID).Return(nil)
 
 	// Act
-	err := decorator.Logout(ctx, token, xApplication, correlationID)
+	err := decorator.Logout(ctx, token, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -237,15 +237,15 @@ func TestCircuitBreakerDecorator_Logout_Error(t *testing.T) {
 
 	ctx := context.Background()
 	token := "invalid_token"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedError := errors.New("logout error")
 
-	mockInner.On("Logout", ctx, token, xApplication, correlationID).Return(expectedError)
+	mockInner.On("Logout", ctx, token, tenantId, correlationID).Return(expectedError)
 
 	// Act
-	err := decorator.Logout(ctx, token, xApplication, correlationID)
+	err := decorator.Logout(ctx, token, tenantId, correlationID)
 
 	// Assert
 	assert.Error(t, err)

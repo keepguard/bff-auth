@@ -42,9 +42,9 @@ func NewCompanyClientWithLogger(config *config.Config, log logger.Logger) client
 	return NewCompanyClient(config, zapLogger)
 }
 
-// GetByXApplication busca uma empresa pelo X-Application
-func (c *companyClient) GetByXApplication(ctx context.Context, xApplication, correlationID string) (client.CompanySimpleResponseDTO, error) {
-	url := fmt.Sprintf("%s/api/v1/companies/x-application/%s", c.config.Services.Company.BaseURL, xApplication)
+// GetByTenantId busca uma empresa pelo X-Tenant-Id
+func (c *companyClient) GetByTenantId(ctx context.Context, tenantId, correlationID string) (client.CompanySimpleResponseDTO, error) {
+	url := fmt.Sprintf("%s/api/v1/companies/x-tenant-id/%s", c.config.Services.Company.BaseURL, tenantId)
 
 	resp, err := c.httpClient.R().
 		SetContext(ctx).

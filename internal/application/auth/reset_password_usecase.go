@@ -36,13 +36,13 @@ func NewResetPasswordUseCase(
 // Execute executa o caso de uso de reset de senha
 func (uc *resetPasswordUseCaseImpl) Execute(command appdto.ResetPasswordCommand) error {
 	// Passo 1: Verificar se a empresa existe consultando o Company Service
-	_, err := uc.companyClient.GetByXApplication(command.Context, command.XApplication, command.CorrelationID)
+	_, err := uc.companyClient.GetByTenantId(command.Context, command.TenantId, command.CorrelationID)
 	if err != nil {
 		return err
 	}
 
 	// Passo 2: Buscar usuário por email no User Service
-	user, err := uc.userClient.GetByEmail(command.Context, command.Email, command.XApplication, command.CorrelationID)
+	user, err := uc.userClient.GetByEmail(command.Context, command.Email, command.TenantId, command.CorrelationID)
 	if err != nil {
 		return err
 	}
@@ -67,7 +67,7 @@ func (uc *resetPasswordUseCaseImpl) Execute(command appdto.ResetPasswordCommand)
 	}
 
 	// Chamar o cliente de autenticação para resetar a senha
-	err = uc.authClient.ResetPassword(command.Context, req, command.XApplication, command.CorrelationID)
+	err = uc.authClient.ResetPassword(command.Context, req, command.TenantId, command.CorrelationID)
 	if err != nil {
 		return err
 	}

@@ -412,49 +412,49 @@ func TestAuthDomainService_ShouldLogoutUser(t *testing.T) {
 	}
 }
 
-func TestAuthDomainService_ValidateXApplication(t *testing.T) {
+func TestAuthDomainService_ValidateTenantId(t *testing.T) {
 	service := NewAuthDomainService()
 
 	tests := []struct {
 		name         string
-		xApplication string
+		tenantId string
 		wantErr      bool
 		errMsg       string
 	}{
 		{
-			name:         "valid x-application",
-			xApplication: "my-app",
+			name:         "valid x-tenant-id",
+			tenantId: "my-app",
 			wantErr:      false,
 		},
 		{
-			name:         "empty x-application",
-			xApplication: "",
+			name:         "empty x-tenant-id",
+			tenantId: "",
 			wantErr:      true,
-			errMsg:       "x-application header is required",
+			errMsg:       "x-tenant-id header is required",
 		},
 		{
-			name:         "x-application too short",
-			xApplication: "ab",
+			name:         "x-tenant-id too short",
+			tenantId: "ab",
 			wantErr:      true,
-			errMsg:       "x-application must have at least 3 characters",
+			errMsg:       "x-tenant-id must have at least 3 characters",
 		},
 		{
-			name:         "x-application too long",
-			xApplication: generateLongString(51),
+			name:         "x-tenant-id too long",
+			tenantId: generateLongString(51),
 			wantErr:      true,
-			errMsg:       "x-application must have at most 50 characters",
+			errMsg:       "x-tenant-id must have at most 50 characters",
 		},
 		{
-			name:         "x-application with invalid characters",
-			xApplication: "my@app",
+			name:         "x-tenant-id with invalid characters",
+			tenantId: "my@app",
 			wantErr:      true,
-			errMsg:       "x-application contains invalid characters",
+			errMsg:       "x-tenant-id contains invalid characters",
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			err := service.ValidateXApplication(tt.xApplication)
+			err := service.ValidateTenantId(tt.tenantId)
 			if tt.wantErr {
 				assert.Error(t, err)
 				assert.Contains(t, err.Error(), tt.errMsg)

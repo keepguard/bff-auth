@@ -28,7 +28,7 @@ func TestNewCompanyMetricsDecorator(t *testing.T) {
 	assert.IsType(t, &companyMetricsDecorator{}, decorator)
 }
 
-func TestCompanyMetricsDecorator_GetByXApplication_Success(t *testing.T) {
+func TestCompanyMetricsDecorator_GetByTenantId_Success(t *testing.T) {
 	// Arrange
 	mockInner := new(MockCompanyClient)
 	serviceName := "ms-company"
@@ -36,7 +36,7 @@ func TestCompanyMetricsDecorator_GetByXApplication_Success(t *testing.T) {
 	decorator := NewCompanyMetricsDecorator(mockInner, testMetrics, serviceName)
 
 	ctx := context.Background()
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedResponse := portsclient.CompanySimpleResponseDTO{
@@ -44,10 +44,10 @@ func TestCompanyMetricsDecorator_GetByXApplication_Success(t *testing.T) {
 		Name: "Test Company",
 	}
 
-	mockInner.On("GetByXApplication", ctx, xApplication, correlationID).Return(expectedResponse, nil)
+	mockInner.On("GetByTenantId", ctx, tenantId, correlationID).Return(expectedResponse, nil)
 
 	// Act
-	result, err := decorator.GetByXApplication(ctx, xApplication, correlationID)
+	result, err := decorator.GetByTenantId(ctx, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -55,7 +55,7 @@ func TestCompanyMetricsDecorator_GetByXApplication_Success(t *testing.T) {
 	mockInner.AssertExpectations(t)
 }
 
-func TestCompanyMetricsDecorator_GetByXApplication_Error(t *testing.T) {
+func TestCompanyMetricsDecorator_GetByTenantId_Error(t *testing.T) {
 	// Arrange
 	mockInner := new(MockCompanyClient)
 	serviceName := "ms-company"
@@ -63,15 +63,15 @@ func TestCompanyMetricsDecorator_GetByXApplication_Error(t *testing.T) {
 	decorator := NewCompanyMetricsDecorator(mockInner, testMetrics, serviceName)
 
 	ctx := context.Background()
-	xApplication := "invalid-app-id"
+	tenantId := "invalid-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedError := errors.New("company not found")
 
-	mockInner.On("GetByXApplication", ctx, xApplication, correlationID).Return(portsclient.CompanySimpleResponseDTO{}, expectedError)
+	mockInner.On("GetByTenantId", ctx, tenantId, correlationID).Return(portsclient.CompanySimpleResponseDTO{}, expectedError)
 
 	// Act
-	_, err := decorator.GetByXApplication(ctx, xApplication, correlationID)
+	_, err := decorator.GetByTenantId(ctx, tenantId, correlationID)
 
 	// Assert
 	assert.Error(t, err)

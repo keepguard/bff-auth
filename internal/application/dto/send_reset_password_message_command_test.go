@@ -11,16 +11,16 @@ import (
 func TestNewSendResetPasswordMessageCommand(t *testing.T) {
 	// Arrange
 	email := "test@example.com"
-	xApplication := "test-app-uuid"
+	tenantId := "test-app-uuid"
 	correlationID := "test-correlation-id"
 	ctx := context.Background()
 
 	// Act
-	command := NewSendResetPasswordMessageCommand(email, xApplication, correlationID, ctx)
+	command := NewSendResetPasswordMessageCommand(email, tenantId, correlationID, ctx)
 
 	// Assert
 	assert.Equal(t, email, command.Email)
-	assert.Equal(t, xApplication, command.XApplication)
+	assert.Equal(t, tenantId, command.TenantId)
 	assert.Equal(t, correlationID, command.CorrelationID)
 	assert.Equal(t, ctx, command.Context)
 }
@@ -30,7 +30,7 @@ func TestSendResetPasswordMessageCommand_Validate_Success(t *testing.T) {
 	// Arrange
 	command := SendResetPasswordMessageCommand{
 		Email:         "test@example.com",
-		XApplication:  "test-app-uuid",
+		TenantId:  "test-app-uuid",
 		CorrelationID: "test-correlation-id",
 		Context:       context.Background(),
 	}
@@ -47,7 +47,7 @@ func TestSendResetPasswordMessageCommand_Validate_EmptyEmail(t *testing.T) {
 	// Arrange
 	command := SendResetPasswordMessageCommand{
 		Email:         "",
-		XApplication:  "test-app-uuid",
+		TenantId:  "test-app-uuid",
 		CorrelationID: "test-correlation-id",
 		Context:       context.Background(),
 	}
@@ -81,7 +81,7 @@ func TestSendResetPasswordMessageCommand_Validate_InvalidEmailFormat(t *testing.
 			// Arrange
 			command := SendResetPasswordMessageCommand{
 				Email:         tt.email,
-				XApplication:  "test-app-uuid",
+				TenantId:  "test-app-uuid",
 				CorrelationID: "test-correlation-id",
 				Context:       context.Background(),
 			}
@@ -118,7 +118,7 @@ func TestSendResetPasswordMessageCommand_Validate_ValidEmailFormats(t *testing.T
 			// Arrange
 			command := SendResetPasswordMessageCommand{
 				Email:         tt.email,
-				XApplication:  "test-app-uuid",
+				TenantId:  "test-app-uuid",
 				CorrelationID: "test-correlation-id",
 				Context:       context.Background(),
 			}
@@ -132,12 +132,12 @@ func TestSendResetPasswordMessageCommand_Validate_ValidEmailFormats(t *testing.T
 	}
 }
 
-// TestSendResetPasswordMessageCommand_Validate_EmptyXApplication testa validação com xApplication vazio
-func TestSendResetPasswordMessageCommand_Validate_EmptyXApplication(t *testing.T) {
+// TestSendResetPasswordMessageCommand_Validate_EmptyTenantId testa validação com tenantId vazio
+func TestSendResetPasswordMessageCommand_Validate_EmptyTenantId(t *testing.T) {
 	// Arrange
 	command := SendResetPasswordMessageCommand{
 		Email:         "test@example.com",
-		XApplication:  "",
+		TenantId:  "",
 		CorrelationID: "test-correlation-id",
 		Context:       context.Background(),
 	}
@@ -147,7 +147,7 @@ func TestSendResetPasswordMessageCommand_Validate_EmptyXApplication(t *testing.T
 
 	// Assert
 	assert.Error(t, err)
-	assert.Equal(t, "xApplication é obrigatório", err.Error())
+	assert.Equal(t, "tenantId é obrigatório", err.Error())
 }
 
 // TestSendResetPasswordMessageCommand_Validate_EmptyCorrelationID testa validação com correlationID vazio
@@ -155,7 +155,7 @@ func TestSendResetPasswordMessageCommand_Validate_EmptyCorrelationID(t *testing.
 	// Arrange
 	command := SendResetPasswordMessageCommand{
 		Email:         "test@example.com",
-		XApplication:  "test-app-uuid",
+		TenantId:  "test-app-uuid",
 		CorrelationID: "",
 		Context:       context.Background(),
 	}
@@ -173,7 +173,7 @@ func TestSendResetPasswordMessageCommand_Validate_NilContext(t *testing.T) {
 	// Arrange
 	command := SendResetPasswordMessageCommand{
 		Email:         "test@example.com",
-		XApplication:  "test-app-uuid",
+		TenantId:  "test-app-uuid",
 		CorrelationID: "test-correlation-id",
 		Context:       nil,
 	}

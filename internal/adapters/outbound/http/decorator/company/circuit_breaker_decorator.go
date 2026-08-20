@@ -27,10 +27,10 @@ func NewCircuitBreakerDecorator(
 	}
 }
 
-// GetByXApplication implementa GetByXApplication com circuit breaker
-func (d *circuitBreakerDecorator) GetByXApplication(ctx context.Context, xApplication, correlationID string) (portsclient.CompanySimpleResponseDTO, error) {
+// GetByTenantId implementa GetByTenantId com circuit breaker
+func (d *circuitBreakerDecorator) GetByTenantId(ctx context.Context, tenantId, correlationID string) (portsclient.CompanySimpleResponseDTO, error) {
 	result, err := d.circuitBreaker.Execute(ctx, d.serviceName, func() (interface{}, error) {
-		return d.inner.GetByXApplication(ctx, xApplication, correlationID)
+		return d.inner.GetByTenantId(ctx, tenantId, correlationID)
 	})
 
 	if err != nil {

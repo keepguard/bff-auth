@@ -68,7 +68,7 @@ func getErrorCodeFromProperties(properties map[string]interface{}) string {
 }
 
 // Login realiza login no ms-auth
-func (c *AuthClient) Login(ctx context.Context, req inboundDto.AuthRequestDTO, xApplication, correlationID string) (inboundDto.AuthResponseDTO, error) {
+func (c *AuthClient) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
 	var response inboundDto.AuthResponseDTO
 
 	resp, err := c.client.R().
@@ -76,7 +76,7 @@ func (c *AuthClient) Login(ctx context.Context, req inboundDto.AuthRequestDTO, x
 		SetBody(req).
 		SetResult(&response).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Application", xApplication).
+		SetHeader("X-Tenant-Id", tenantId).
 		Post(c.baseURL + "/api/v1/auth/login")
 
 	if err != nil {
@@ -92,7 +92,7 @@ func (c *AuthClient) Login(ctx context.Context, req inboundDto.AuthRequestDTO, x
 }
 
 // RefreshToken renova o token no ms-auth
-func (c *AuthClient) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, xApplication, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
+func (c *AuthClient) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
 	var response inboundDto.RefreshTokenResponseDTO
 
 	resp, err := c.client.R().
@@ -100,7 +100,7 @@ func (c *AuthClient) RefreshToken(ctx context.Context, req inboundDto.RefreshTok
 		SetBody(req).
 		SetResult(&response).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Application", xApplication).
+		SetHeader("X-Tenant-Id", tenantId).
 		Post(c.baseURL + "/api/v1/auth/refresh")
 
 	if err != nil {
@@ -116,12 +116,12 @@ func (c *AuthClient) RefreshToken(ctx context.Context, req inboundDto.RefreshTok
 }
 
 // Logout realiza logout no ms-auth
-func (c *AuthClient) Logout(ctx context.Context, token, xApplication, correlationID string) error {
+func (c *AuthClient) Logout(ctx context.Context, token, tenantId, correlationID string) error {
 	resp, err := c.client.R().
 		SetContext(ctx).
 		SetHeader("Authorization", "Bearer "+token).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Application", xApplication).
+		SetHeader("X-Tenant-Id", tenantId).
 		Post(c.baseURL + "/api/v1/auth/logout")
 
 	if err != nil {
@@ -137,7 +137,7 @@ func (c *AuthClient) Logout(ctx context.Context, token, xApplication, correlatio
 }
 
 // ValidateToken valida um token no ms-auth
-func (c *AuthClient) ValidateToken(ctx context.Context, token, xApplication, correlationID string) error {
+func (c *AuthClient) ValidateToken(ctx context.Context, token, tenantId, correlationID string) error {
 	req := map[string]string{
 		"token": token,
 	}
@@ -146,7 +146,7 @@ func (c *AuthClient) ValidateToken(ctx context.Context, token, xApplication, cor
 		SetContext(ctx).
 		SetBody(req).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Application", xApplication).
+		SetHeader("X-Tenant-Id", tenantId).
 		Post(c.baseURL + "/api/v1/auth/validate")
 
 	if err != nil {
@@ -162,12 +162,12 @@ func (c *AuthClient) ValidateToken(ctx context.Context, token, xApplication, cor
 }
 
 // ChangePassword altera a senha do usuário no ms-auth
-func (c *AuthClient) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, xApplication, correlationID string) error {
+func (c *AuthClient) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, tenantId, correlationID string) error {
 	resp, err := c.client.R().
 		SetContext(ctx).
 		SetBody(req).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Application", xApplication).
+		SetHeader("X-Tenant-Id", tenantId).
 		Post(c.baseURL + "/api/v1/auth/change-password")
 
 	if err != nil {
@@ -183,12 +183,12 @@ func (c *AuthClient) ChangePassword(ctx context.Context, req outboundDto.ChangeP
 }
 
 // ResetPassword reseta a senha do usuário no ms-auth
-func (c *AuthClient) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, xApplication, correlationID string) error {
+func (c *AuthClient) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, tenantId, correlationID string) error {
 	resp, err := c.client.R().
 		SetContext(ctx).
 		SetBody(req).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Application", xApplication).
+		SetHeader("X-Tenant-Id", tenantId).
 		Post(c.baseURL + "/api/v1/auth/reset-password")
 
 	if err != nil {
@@ -204,7 +204,7 @@ func (c *AuthClient) ResetPassword(ctx context.Context, req outboundDto.ResetPas
 }
 
 // GenerateResetToken gera um token de recuperação de senha no ms-auth
-func (c *AuthClient) GenerateResetToken(ctx context.Context, req map[string]interface{}, xApplication, correlationID string) (outboundDto.GenerateResetTokenMSResponseDTO, error) {
+func (c *AuthClient) GenerateResetToken(ctx context.Context, req map[string]interface{}, tenantId, correlationID string) (outboundDto.GenerateResetTokenMSResponseDTO, error) {
 	// Converter map para DTO
 	reqDTO := outboundDto.GenerateResetTokenMSRequestDTO{}
 	if codeUser, ok := req["codeUser"].(string); ok {
@@ -227,7 +227,7 @@ func (c *AuthClient) GenerateResetToken(ctx context.Context, req map[string]inte
 		SetBody(reqDTO).
 		SetResult(&response).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Application", xApplication).
+		SetHeader("X-Tenant-Id", tenantId).
 		Post(c.baseURL + "/api/v1/auth/generate-reset-token")
 
 	if err != nil {

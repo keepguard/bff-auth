@@ -130,8 +130,8 @@ func (d *retryDecorator) retry(ctx context.Context, operation func() (outboundDt
 }
 
 // SendMessage implementa SendMessage com retry
-func (d *retryDecorator) SendMessage(ctx context.Context, req outboundDto.SendMessageRequestDTO, xApplication, correlationID string) (outboundDto.SendMessageResponseDTO, error) {
+func (d *retryDecorator) SendMessage(ctx context.Context, req outboundDto.SendMessageRequestDTO, tenantId, correlationID string) (outboundDto.SendMessageResponseDTO, error) {
 	return d.retry(ctx, func() (outboundDto.SendMessageResponseDTO, error) {
-		return d.inner.SendMessage(ctx, req, xApplication, correlationID)
+		return d.inner.SendMessage(ctx, req, tenantId, correlationID)
 	})
 }

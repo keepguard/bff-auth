@@ -75,13 +75,13 @@ func (c *authUserClient) handleHTTPError(resp *resty.Response, operation string)
 }
 
 // GetByEmail busca um usuário por email no ms-auth
-func (c *authUserClient) GetByEmail(ctx context.Context, email, xApplication, correlationID string) (outboundDto.UserByEmailResponseDTO, error) {
+func (c *authUserClient) GetByEmail(ctx context.Context, email, tenantId, correlationID string) (outboundDto.UserByEmailResponseDTO, error) {
 	url := fmt.Sprintf("%s/api/v1/users/email/%s", c.config.Services.Auth.BaseURL, email)
 
 	resp, err := c.httpClient.R().
 		SetContext(ctx).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Application", xApplication).
+		SetHeader("X-Tenant-Id", tenantId).
 		SetHeader("Content-Type", "application/json").
 		Get(url)
 

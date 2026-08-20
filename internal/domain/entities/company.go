@@ -11,7 +11,7 @@ import (
 type Company struct {
 	id           valueobjects.CompanyID
 	name         valueobjects.CompanyName
-	xApplication valueobjects.XApplication
+	tenantId valueobjects.TenantId
 	status       CompanyStatus
 	createdAt    time.Time
 	updatedAt    time.Time
@@ -28,7 +28,7 @@ const (
 )
 
 // NewCompany cria uma nova empresa
-func NewCompany(id valueobjects.CompanyID, name valueobjects.CompanyName, xApplication valueobjects.XApplication) (*Company, error) {
+func NewCompany(id valueobjects.CompanyID, name valueobjects.CompanyName, tenantId valueobjects.TenantId) (*Company, error) {
 	if id.IsEmpty() {
 		return nil, errors.New("company ID cannot be empty")
 	}
@@ -37,15 +37,15 @@ func NewCompany(id valueobjects.CompanyID, name valueobjects.CompanyName, xAppli
 		return nil, errors.New("company name cannot be empty")
 	}
 	
-	if xApplication.IsEmpty() {
-		return nil, errors.New("x-application cannot be empty")
+	if tenantId.IsEmpty() {
+		return nil, errors.New("x-tenant-id cannot be empty")
 	}
 	
 	now := time.Now()
 	return &Company{
 		id:           id,
 		name:         name,
-		xApplication: xApplication,
+		tenantId: tenantId,
 		status:       CompanyStatusActive,
 		createdAt:    now,
 		updatedAt:    now,
@@ -61,8 +61,8 @@ func (c *Company) Name() valueobjects.CompanyName {
 	return c.name
 }
 
-func (c *Company) XApplication() valueobjects.XApplication {
-	return c.xApplication
+func (c *Company) TenantId() valueobjects.TenantId {
+	return c.tenantId
 }
 
 func (c *Company) Status() CompanyStatus {
@@ -107,11 +107,11 @@ func (c *Company) UpdateName(name valueobjects.CompanyName) error {
 	return nil
 }
 
-func (c *Company) UpdateXApplication(xApplication valueobjects.XApplication) error {
-	if xApplication.IsEmpty() {
-		return errors.New("x-application cannot be empty")
+func (c *Company) UpdateTenantId(tenantId valueobjects.TenantId) error {
+	if tenantId.IsEmpty() {
+		return errors.New("x-tenant-id cannot be empty")
 	}
-	c.xApplication = xApplication
+	c.tenantId = tenantId
 	c.updatedAt = time.Now()
 	return nil
 }

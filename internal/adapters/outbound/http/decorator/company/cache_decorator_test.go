@@ -23,7 +23,7 @@ func TestNewCacheDecorator(t *testing.T) {
 	assert.IsType(t, &cacheDecorator{}, decorator)
 }
 
-func TestCacheDecorator_GetByXApplication_CacheHit(t *testing.T) {
+func TestCacheDecorator_GetByTenantId_CacheHit(t *testing.T) {
 	// Arrange
 	mockInner := new(MockCompanyClient)
 	config := CacheConfig{
@@ -35,24 +35,24 @@ func TestCacheDecorator_GetByXApplication_CacheHit(t *testing.T) {
 	decorator := NewCacheDecorator(mockInner, config, nil)
 
 	ctx := context.Background()
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedResponse := portsclient.CompanySimpleResponseDTO{
 		ID:           "company-123",
-		XApplication: xApplication,
+		TenantId: tenantId,
 		Name:         "Test Company",
 		Status:       "ACTIVE",
 	}
 
 	// Primeira chamada: cache miss
-	mockInner.On("GetByXApplication", ctx, xApplication, correlationID).Return(expectedResponse, nil).Once()
+	mockInner.On("GetByTenantId", ctx, tenantId, correlationID).Return(expectedResponse, nil).Once()
 
 	// Act - Primeira chamada
-	result1, err1 := decorator.GetByXApplication(ctx, xApplication, correlationID)
+	result1, err1 := decorator.GetByTenantId(ctx, tenantId, correlationID)
 
 	// Act - Segunda chamada (deve vir do cache)
-	result2, err2 := decorator.GetByXApplication(ctx, xApplication, correlationID)
+	result2, err2 := decorator.GetByTenantId(ctx, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err1)
@@ -60,10 +60,10 @@ func TestCacheDecorator_GetByXApplication_CacheHit(t *testing.T) {
 	assert.Equal(t, expectedResponse, result1)
 	assert.Equal(t, expectedResponse, result2)
 	mockInner.AssertExpectations(t)
-	mockInner.AssertNumberOfCalls(t, "GetByXApplication", 1) // Apenas 1 chamada (cache hit na 2ª)
+	mockInner.AssertNumberOfCalls(t, "GetByTenantId", 1) // Apenas 1 chamada (cache hit na 2ª)
 }
 
-func TestCacheDecorator_GetByXApplication_CacheMiss(t *testing.T) {
+func TestCacheDecorator_GetByTenantId_CacheMiss(t *testing.T) {
 	// Arrange
 	mockInner := new(MockCompanyClient)
 	config := CacheConfig{
@@ -75,7 +75,7 @@ func TestCacheDecorator_GetByXApplication_CacheMiss(t *testing.T) {
 	decorator := NewCacheDecorator(mockInner, config, nil)
 
 	ctx := context.Background()
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedResponse := portsclient.CompanySimpleResponseDTO{
@@ -84,16 +84,16 @@ func TestCacheDecorator_GetByXApplication_CacheMiss(t *testing.T) {
 	}
 
 	// Duas chamadas com espera entre elas
-	mockInner.On("GetByXApplication", ctx, xApplication, correlationID).Return(expectedResponse, nil).Twice()
+	mockInner.On("GetByTenantId", ctx, tenantId, correlationID).Return(expectedResponse, nil).Twice()
 
 	// Act - Primeira chamada
-	result1, err1 := decorator.GetByXApplication(ctx, xApplication, correlationID)
+	result1, err1 := decorator.GetByTenantId(ctx, tenantId, correlationID)
 
 	// Aguarda cache expirar
 	time.Sleep(60 * time.Millisecond)
 
 	// Act - Segunda chamada (cache expirado, deve chamar novamente)
-	result2, err2 := decorator.GetByXApplication(ctx, xApplication, correlationID)
+	result2, err2 := decorator.GetByTenantId(ctx, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err1)
@@ -101,10 +101,10 @@ func TestCacheDecorator_GetByXApplication_CacheMiss(t *testing.T) {
 	assert.Equal(t, expectedResponse, result1)
 	assert.Equal(t, expectedResponse, result2)
 	mockInner.AssertExpectations(t)
-	mockInner.AssertNumberOfCalls(t, "GetByXApplication", 2) // 2 chamadas (cache expirou)
+	mockInner.AssertNumberOfCalls(t, "GetByTenantId", 2) // 2 chamadas (cache expirou)
 }
 
-func TestCacheDecorator_GetByXApplication_ErrorNotCached(t *testing.T) {
+func TestCacheDecorator_GetByTenantId_ErrorNotCached(t *testing.T) {
 	// Arrange
 	mockInner := new(MockCompanyClient)
 	config := DefaultCacheConfig()
@@ -112,17 +112,17 @@ func TestCacheDecorator_GetByXApplication_ErrorNotCached(t *testing.T) {
 	decorator := NewCacheDecorator(mockInner, config, nil)
 
 	ctx := context.Background()
-	xApplication := "invalid-app-id"
+	tenantId := "invalid-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedError := errors.New("company not found")
 
 	// Erro não deve ser cacheado, então ambas as chamadas vão ao ms-company
-	mockInner.On("GetByXApplication", ctx, xApplication, correlationID).Return(portsclient.CompanySimpleResponseDTO{}, expectedError).Twice()
+	mockInner.On("GetByTenantId", ctx, tenantId, correlationID).Return(portsclient.CompanySimpleResponseDTO{}, expectedError).Twice()
 
 	// Act
-	_, err1 := decorator.GetByXApplication(ctx, xApplication, correlationID)
-	_, err2 := decorator.GetByXApplication(ctx, xApplication, correlationID)
+	_, err1 := decorator.GetByTenantId(ctx, tenantId, correlationID)
+	_, err2 := decorator.GetByTenantId(ctx, tenantId, correlationID)
 
 	// Assert
 	assert.Error(t, err1)
@@ -130,5 +130,5 @@ func TestCacheDecorator_GetByXApplication_ErrorNotCached(t *testing.T) {
 	assert.Equal(t, expectedError, err1)
 	assert.Equal(t, expectedError, err2)
 	mockInner.AssertExpectations(t)
-	mockInner.AssertNumberOfCalls(t, "GetByXApplication", 2) // 2 chamadas (erro não é cacheado)
+	mockInner.AssertNumberOfCalls(t, "GetByTenantId", 2) // 2 chamadas (erro não é cacheado)
 }

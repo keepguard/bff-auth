@@ -18,18 +18,18 @@ func TestRefreshUseCase_Execute_Success(t *testing.T) {
 	useCase := NewRefreshUseCase(mockAuthClient, mockCompanyClient)
 
 	ctx := context.Background()
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	command := appdto.NewRefreshTokenCommand(
 		"valid_refresh_token",
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
 
 	// Configurar mocks
-	setupCompanyMock(mockCompanyClient, ctx, xApplication, correlationID)
+	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
 
 	expectedResponse := dto.RefreshTokenResponseDTO{
 		Token:     "new_access_token",
@@ -40,7 +40,7 @@ func TestRefreshUseCase_Execute_Success(t *testing.T) {
 		Token: "valid_refresh_token",
 	}
 
-	mockAuthClient.On("RefreshToken", ctx, expectedReq, xApplication, correlationID).Return(expectedResponse, nil)
+	mockAuthClient.On("RefreshToken", ctx, expectedReq, tenantId, correlationID).Return(expectedResponse, nil)
 
 	// Act
 	result, err := useCase.Execute(command)
@@ -60,18 +60,18 @@ func TestRefreshUseCase_Execute_EmptyRefreshToken(t *testing.T) {
 	useCase := NewRefreshUseCase(mockAuthClient, mockCompanyClient)
 
 	ctx := context.Background()
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	command := appdto.NewRefreshTokenCommand(
 		"",
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
 
 	// Configurar mocks
-	setupCompanyMock(mockCompanyClient, ctx, xApplication, correlationID)
+	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
 
 	// Como a validação é feita no handler, o use case sempre chama o cliente
 	// Vamos simular um erro
@@ -79,7 +79,7 @@ func TestRefreshUseCase_Execute_EmptyRefreshToken(t *testing.T) {
 		Token: "",
 	}
 
-	mockAuthClient.On("RefreshToken", ctx, expectedReq, xApplication, correlationID).Return(dto.RefreshTokenResponseDTO{}, assert.AnError)
+	mockAuthClient.On("RefreshToken", ctx, expectedReq, tenantId, correlationID).Return(dto.RefreshTokenResponseDTO{}, assert.AnError)
 
 	// Act
 	result, err := useCase.Execute(command)
@@ -98,24 +98,24 @@ func TestRefreshUseCase_Execute_AuthServiceError(t *testing.T) {
 	useCase := NewRefreshUseCase(mockAuthClient, mockCompanyClient)
 
 	ctx := context.Background()
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	command := appdto.NewRefreshTokenCommand(
 		"invalid_refresh_token",
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
 
 	// Configurar mocks
-	setupCompanyMock(mockCompanyClient, ctx, xApplication, correlationID)
+	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
 
 	expectedReq := dto.RefreshTokenRequestDTO{
 		Token: "invalid_refresh_token",
 	}
 
-	mockAuthClient.On("RefreshToken", ctx, expectedReq, xApplication, correlationID).Return(dto.RefreshTokenResponseDTO{}, assert.AnError)
+	mockAuthClient.On("RefreshToken", ctx, expectedReq, tenantId, correlationID).Return(dto.RefreshTokenResponseDTO{}, assert.AnError)
 
 	// Act
 	result, err := useCase.Execute(command)
@@ -136,24 +136,24 @@ func TestRefreshUseCase_Execute_ContextCancelled(t *testing.T) {
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancela o contexto imediatamente
 
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	command := appdto.NewRefreshTokenCommand(
 		"valid_refresh_token",
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
 
 	// Configurar mocks
-	setupCompanyMock(mockCompanyClient, ctx, xApplication, correlationID)
+	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
 
 	expectedReq := dto.RefreshTokenRequestDTO{
 		Token: "valid_refresh_token",
 	}
 
-	mockAuthClient.On("RefreshToken", ctx, expectedReq, xApplication, correlationID).Return(dto.RefreshTokenResponseDTO{}, context.Canceled)
+	mockAuthClient.On("RefreshToken", ctx, expectedReq, tenantId, correlationID).Return(dto.RefreshTokenResponseDTO{}, context.Canceled)
 
 	// Act
 	result, err := useCase.Execute(command)
@@ -173,12 +173,12 @@ func TestRefreshUseCase_Execute_CompanyNotFound(t *testing.T) {
 	useCase := NewRefreshUseCase(mockAuthClient, mockCompanyClient)
 
 	ctx := context.Background()
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	command := appdto.NewRefreshTokenCommand(
 		"valid_refresh_token",
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
@@ -190,7 +190,7 @@ func TestRefreshUseCase_Execute_CompanyNotFound(t *testing.T) {
 		ErrorCode:  "COMPANY_NOT_FOUND",
 	}
 
-	mockCompanyClient.On("GetByXApplication", ctx, xApplication, correlationID).Return(authclient.CompanySimpleResponseDTO{}, companyError)
+	mockCompanyClient.On("GetByTenantId", ctx, tenantId, correlationID).Return(authclient.CompanySimpleResponseDTO{}, companyError)
 
 	// Act
 	result, err := useCase.Execute(command)

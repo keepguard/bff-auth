@@ -39,7 +39,7 @@ func TestAuthClient_Login_Success(t *testing.T) {
 		assert.Equal(t, "POST", r.Method)
 		assert.Equal(t, "/api/v1/auth/login", r.URL.Path)
 		assert.Equal(t, "test-correlation", r.Header.Get("X-Correlation-ID"))
-		assert.Equal(t, "test-app", r.Header.Get("X-Application"))
+		assert.Equal(t, "test-app", r.Header.Get("X-Tenant-Id"))
 
 		// Verificar body
 		var req inboundDto.AuthRequestDTO
@@ -65,7 +65,7 @@ func TestAuthClient_Login_Success(t *testing.T) {
 		Username: "testuser",
 		Password: "testpass",
 	}
-	xApplication := "test-app"
+	tenantId := "test-app"
 	correlationID := "test-correlation"
 
 	expectedResponse := inboundDto.AuthResponseDTO{
@@ -74,7 +74,7 @@ func TestAuthClient_Login_Success(t *testing.T) {
 	}
 
 	// Act
-	result, err := client.Login(ctx, req, xApplication, correlationID)
+	result, err := client.Login(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -107,11 +107,11 @@ func TestAuthClient_Login_HTTPError(t *testing.T) {
 		Username: "testuser",
 		Password: "testpass",
 	}
-	xApplication := "test-app"
+	tenantId := "test-app"
 	correlationID := "test-correlation"
 
 	// Act
-	result, err := client.Login(ctx, req, xApplication, correlationID)
+	result, err := client.Login(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.Error(t, err)
@@ -141,11 +141,11 @@ func TestAuthClient_Login_GenericError(t *testing.T) {
 		Username: "testuser",
 		Password: "testpass",
 	}
-	xApplication := "test-app"
+	tenantId := "test-app"
 	correlationID := "test-correlation"
 
 	// Act
-	result, err := client.Login(ctx, req, xApplication, correlationID)
+	result, err := client.Login(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.Error(t, err)
@@ -166,7 +166,7 @@ func TestAuthClient_RefreshToken_Success(t *testing.T) {
 		assert.Equal(t, "POST", r.Method)
 		assert.Equal(t, "/api/v1/auth/refresh", r.URL.Path)
 		assert.Equal(t, "test-correlation", r.Header.Get("X-Correlation-ID"))
-		assert.Equal(t, "test-app", r.Header.Get("X-Application"))
+		assert.Equal(t, "test-app", r.Header.Get("X-Tenant-Id"))
 
 		// Verificar body
 		var req inboundDto.RefreshTokenRequestDTO
@@ -190,7 +190,7 @@ func TestAuthClient_RefreshToken_Success(t *testing.T) {
 	req := inboundDto.RefreshTokenRequestDTO{
 		Token: "refresh_token",
 	}
-	xApplication := "test-app"
+	tenantId := "test-app"
 	correlationID := "test-correlation"
 
 	expectedResponse := inboundDto.RefreshTokenResponseDTO{
@@ -199,7 +199,7 @@ func TestAuthClient_RefreshToken_Success(t *testing.T) {
 	}
 
 	// Act
-	result, err := client.RefreshToken(ctx, req, xApplication, correlationID)
+	result, err := client.RefreshToken(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -231,11 +231,11 @@ func TestAuthClient_RefreshToken_HTTPError(t *testing.T) {
 	req := inboundDto.RefreshTokenRequestDTO{
 		Token: "invalid_refresh_token",
 	}
-	xApplication := "test-app"
+	tenantId := "test-app"
 	correlationID := "test-correlation"
 
 	// Act
-	result, err := client.RefreshToken(ctx, req, xApplication, correlationID)
+	result, err := client.RefreshToken(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.Error(t, err)
@@ -257,7 +257,7 @@ func TestAuthClient_Logout_Success(t *testing.T) {
 		assert.Equal(t, "/api/v1/auth/logout", r.URL.Path)
 		assert.Equal(t, "Bearer access_token", r.Header.Get("Authorization"))
 		assert.Equal(t, "test-correlation", r.Header.Get("X-Correlation-ID"))
-		assert.Equal(t, "test-app", r.Header.Get("X-Application"))
+		assert.Equal(t, "test-app", r.Header.Get("X-Tenant-Id"))
 
 		// Resposta de sucesso
 		response := map[string]string{"message": "Logout realizado com sucesso"}
@@ -270,11 +270,11 @@ func TestAuthClient_Logout_Success(t *testing.T) {
 	client := NewAuthClient(server.URL, 30*time.Second)
 	ctx := context.Background()
 	token := "access_token"
-	xApplication := "test-app"
+	tenantId := "test-app"
 	correlationID := "test-correlation"
 
 	// Act
-	err := client.Logout(ctx, token, xApplication, correlationID)
+	err := client.Logout(ctx, token, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -303,11 +303,11 @@ func TestAuthClient_Logout_HTTPError(t *testing.T) {
 	client := NewAuthClient(server.URL, 30*time.Second)
 	ctx := context.Background()
 	token := "invalid_token"
-	xApplication := "test-app"
+	tenantId := "test-app"
 	correlationID := "test-correlation"
 
 	// Act
-	err := client.Logout(ctx, token, xApplication, correlationID)
+	err := client.Logout(ctx, token, tenantId, correlationID)
 
 	// Assert
 	assert.Error(t, err)
@@ -333,11 +333,11 @@ func TestAuthClient_Logout_GenericError(t *testing.T) {
 	client := NewAuthClient(server.URL, 30*time.Second)
 	ctx := context.Background()
 	token := "access_token"
-	xApplication := "test-app"
+	tenantId := "test-app"
 	correlationID := "test-correlation"
 
 	// Act
-	err := client.Logout(ctx, token, xApplication, correlationID)
+	err := client.Logout(ctx, token, tenantId, correlationID)
 
 	// Assert
 	assert.Error(t, err)
@@ -595,11 +595,11 @@ func TestAuthClient_Login_RequestError(t *testing.T) {
 		Username: "testuser",
 		Password: "testpass",
 	}
-	xApplication := "test-app"
+	tenantId := "test-app"
 	correlationID := "test-correlation"
 
 	// Act
-	result, err := client.Login(ctx, req, xApplication, correlationID)
+	result, err := client.Login(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.Error(t, err)
@@ -623,11 +623,11 @@ func TestAuthClient_RefreshToken_RequestError(t *testing.T) {
 	req := inboundDto.RefreshTokenRequestDTO{
 		Token: "refresh_token",
 	}
-	xApplication := "test-app"
+	tenantId := "test-app"
 	correlationID := "test-correlation"
 
 	// Act
-	result, err := client.RefreshToken(ctx, req, xApplication, correlationID)
+	result, err := client.RefreshToken(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.Error(t, err)
@@ -649,11 +649,11 @@ func TestAuthClient_Logout_RequestError(t *testing.T) {
 	client := NewAuthClient(server.URL, 100*time.Millisecond)
 	ctx := context.Background()
 	token := "access_token"
-	xApplication := "test-app"
+	tenantId := "test-app"
 	correlationID := "test-correlation"
 
 	// Act
-	err := client.Logout(ctx, token, xApplication, correlationID)
+	err := client.Logout(ctx, token, tenantId, correlationID)
 
 	// Assert
 	assert.Error(t, err)

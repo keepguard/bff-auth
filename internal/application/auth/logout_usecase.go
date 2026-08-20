@@ -22,13 +22,13 @@ func NewLogoutUseCase(authClient authclient.AuthClient, companyClient authclient
 // Execute executa o caso de uso de logout
 func (uc *logoutUseCaseImpl) Execute(command appdto.LogoutCommand) error {
 	// Primeiro, verifica se a empresa existe consultando o Company Service
-	_, err := uc.companyClient.GetByXApplication(command.Context, command.XApplication, command.CorrelationID)
+	_, err := uc.companyClient.GetByTenantId(command.Context, command.TenantId, command.CorrelationID)
 	if err != nil {
 		return err
 	}
 
 	// Chama o cliente de autenticação
-	err = uc.authClient.Logout(command.Context, command.Token, command.XApplication, command.CorrelationID)
+	err = uc.authClient.Logout(command.Context, command.Token, command.TenantId, command.CorrelationID)
 	if err != nil {
 		return err
 	}

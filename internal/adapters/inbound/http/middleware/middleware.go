@@ -153,7 +153,7 @@ func (m *middlewareImpl) CORSMiddleware() echo.MiddlewareFunc {
 			echo.HeaderAuthorization,
 			echo.HeaderXRequestID,
 			"X-User-ID",
-			"X-Application",
+			"X-Tenant-Id",
 			"X-Correlation-ID",
 			"Idempotency-Key",
 		},

@@ -75,14 +75,14 @@ func (c *communicationClient) handleHTTPError(resp *resty.Response, operation st
 }
 
 // SendMessage envia uma mensagem através do ms-communication
-func (c *communicationClient) SendMessage(ctx context.Context, req outboundDto.SendMessageRequestDTO, xApplication, correlationID string) (outboundDto.SendMessageResponseDTO, error) {
+func (c *communicationClient) SendMessage(ctx context.Context, req outboundDto.SendMessageRequestDTO, tenantId, correlationID string) (outboundDto.SendMessageResponseDTO, error) {
 	url := fmt.Sprintf("%s/api/v1/messages/send", c.config.Services.Communication.BaseURL)
 
 	var response outboundDto.SendMessageResponseDTO
 	resp, err := c.httpClient.R().
 		SetContext(ctx).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Application", xApplication).
+		SetHeader("X-Tenant-Id", tenantId).
 		SetHeader("Content-Type", "application/json").
 		SetBody(req).
 		SetResult(&response).

@@ -32,18 +32,18 @@ func NewLoggingDecorator(
 }
 
 // Login implementa o método Login com logging estruturado
-func (d *loggingDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, xApplication, correlationID string) (inboundDto.AuthResponseDTO, error) {
+func (d *loggingDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
 	start := time.Now()
 
 	d.logger.Info("Iniciando requisição",
 		zap.String("service", d.serviceName),
 		zap.String("operation", "Login"),
 		zap.String("correlationID", correlationID),
-		zap.String("xApplication", xApplication),
+		zap.String("tenantId", tenantId),
 		zap.String("username", req.Username),
 	)
 
-	response, err := d.inner.Login(ctx, req, xApplication, correlationID)
+	response, err := d.inner.Login(ctx, req, tenantId, correlationID)
 	duration := time.Since(start)
 
 	if err != nil {
@@ -51,7 +51,7 @@ func (d *loggingDecorator) Login(ctx context.Context, req inboundDto.AuthRequest
 			zap.String("service", d.serviceName),
 			zap.String("operation", "Login"),
 			zap.String("correlationID", correlationID),
-			zap.String("xApplication", xApplication),
+			zap.String("tenantId", tenantId),
 			zap.Duration("duration", duration),
 			zap.Error(err),
 		)
@@ -62,7 +62,7 @@ func (d *loggingDecorator) Login(ctx context.Context, req inboundDto.AuthRequest
 		zap.String("service", d.serviceName),
 		zap.String("operation", "Login"),
 		zap.String("correlationID", correlationID),
-		zap.String("xApplication", xApplication),
+		zap.String("tenantId", tenantId),
 		zap.Duration("duration", duration),
 		zap.Int64("expiresIn", response.ExpiresIn),
 	)
@@ -71,17 +71,17 @@ func (d *loggingDecorator) Login(ctx context.Context, req inboundDto.AuthRequest
 }
 
 // RefreshToken implementa o método RefreshToken com logging estruturado
-func (d *loggingDecorator) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, xApplication, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
+func (d *loggingDecorator) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
 	start := time.Now()
 
 	d.logger.Info("Iniciando requisição",
 		zap.String("service", d.serviceName),
 		zap.String("operation", "RefreshToken"),
 		zap.String("correlationID", correlationID),
-		zap.String("xApplication", xApplication),
+		zap.String("tenantId", tenantId),
 	)
 
-	response, err := d.inner.RefreshToken(ctx, req, xApplication, correlationID)
+	response, err := d.inner.RefreshToken(ctx, req, tenantId, correlationID)
 	duration := time.Since(start)
 
 	if err != nil {
@@ -89,7 +89,7 @@ func (d *loggingDecorator) RefreshToken(ctx context.Context, req inboundDto.Refr
 			zap.String("service", d.serviceName),
 			zap.String("operation", "RefreshToken"),
 			zap.String("correlationID", correlationID),
-			zap.String("xApplication", xApplication),
+			zap.String("tenantId", tenantId),
 			zap.Duration("duration", duration),
 			zap.Error(err),
 		)
@@ -100,7 +100,7 @@ func (d *loggingDecorator) RefreshToken(ctx context.Context, req inboundDto.Refr
 		zap.String("service", d.serviceName),
 		zap.String("operation", "RefreshToken"),
 		zap.String("correlationID", correlationID),
-		zap.String("xApplication", xApplication),
+		zap.String("tenantId", tenantId),
 		zap.Duration("duration", duration),
 		zap.Int64("expiresIn", response.ExpiresIn),
 	)
@@ -109,17 +109,17 @@ func (d *loggingDecorator) RefreshToken(ctx context.Context, req inboundDto.Refr
 }
 
 // Logout implementa o método Logout com logging estruturado
-func (d *loggingDecorator) Logout(ctx context.Context, token, xApplication, correlationID string) error {
+func (d *loggingDecorator) Logout(ctx context.Context, token, tenantId, correlationID string) error {
 	start := time.Now()
 
 	d.logger.Info("Iniciando requisição",
 		zap.String("service", d.serviceName),
 		zap.String("operation", "Logout"),
 		zap.String("correlationID", correlationID),
-		zap.String("xApplication", xApplication),
+		zap.String("tenantId", tenantId),
 	)
 
-	err := d.inner.Logout(ctx, token, xApplication, correlationID)
+	err := d.inner.Logout(ctx, token, tenantId, correlationID)
 	duration := time.Since(start)
 
 	if err != nil {
@@ -127,7 +127,7 @@ func (d *loggingDecorator) Logout(ctx context.Context, token, xApplication, corr
 			zap.String("service", d.serviceName),
 			zap.String("operation", "Logout"),
 			zap.String("correlationID", correlationID),
-			zap.String("xApplication", xApplication),
+			zap.String("tenantId", tenantId),
 			zap.Duration("duration", duration),
 			zap.Error(err),
 		)
@@ -138,7 +138,7 @@ func (d *loggingDecorator) Logout(ctx context.Context, token, xApplication, corr
 		zap.String("service", d.serviceName),
 		zap.String("operation", "Logout"),
 		zap.String("correlationID", correlationID),
-		zap.String("xApplication", xApplication),
+		zap.String("tenantId", tenantId),
 		zap.Duration("duration", duration),
 	)
 
@@ -146,17 +146,17 @@ func (d *loggingDecorator) Logout(ctx context.Context, token, xApplication, corr
 }
 
 // ValidateToken implementa o método ValidateToken com logging estruturado
-func (d *loggingDecorator) ValidateToken(ctx context.Context, token, xApplication, correlationID string) error {
+func (d *loggingDecorator) ValidateToken(ctx context.Context, token, tenantId, correlationID string) error {
 	start := time.Now()
 
 	d.logger.Debug("Iniciando requisição",
 		zap.String("service", d.serviceName),
 		zap.String("operation", "ValidateToken"),
 		zap.String("correlationID", correlationID),
-		zap.String("xApplication", xApplication),
+		zap.String("tenantId", tenantId),
 	)
 
-	err := d.inner.ValidateToken(ctx, token, xApplication, correlationID)
+	err := d.inner.ValidateToken(ctx, token, tenantId, correlationID)
 	duration := time.Since(start)
 
 	if err != nil {
@@ -164,7 +164,7 @@ func (d *loggingDecorator) ValidateToken(ctx context.Context, token, xApplicatio
 			zap.String("service", d.serviceName),
 			zap.String("operation", "ValidateToken"),
 			zap.String("correlationID", correlationID),
-			zap.String("xApplication", xApplication),
+			zap.String("tenantId", tenantId),
 			zap.Duration("duration", duration),
 			zap.Error(err),
 		)
@@ -175,7 +175,7 @@ func (d *loggingDecorator) ValidateToken(ctx context.Context, token, xApplicatio
 		zap.String("service", d.serviceName),
 		zap.String("operation", "ValidateToken"),
 		zap.String("correlationID", correlationID),
-		zap.String("xApplication", xApplication),
+		zap.String("tenantId", tenantId),
 		zap.Duration("duration", duration),
 	)
 
@@ -183,18 +183,18 @@ func (d *loggingDecorator) ValidateToken(ctx context.Context, token, xApplicatio
 }
 
 // ChangePassword implementa o método ChangePassword com logging estruturado
-func (d *loggingDecorator) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, xApplication, correlationID string) error {
+func (d *loggingDecorator) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, tenantId, correlationID string) error {
 	start := time.Now()
 
 	d.logger.Info("Iniciando requisição",
 		zap.String("service", d.serviceName),
 		zap.String("operation", "ChangePassword"),
 		zap.String("correlationID", correlationID),
-		zap.String("xApplication", xApplication),
+		zap.String("tenantId", tenantId),
 		zap.String("codeUser", req.CodeUser),
 	)
 
-	err := d.inner.ChangePassword(ctx, req, xApplication, correlationID)
+	err := d.inner.ChangePassword(ctx, req, tenantId, correlationID)
 	duration := time.Since(start)
 
 	if err != nil {
@@ -202,7 +202,7 @@ func (d *loggingDecorator) ChangePassword(ctx context.Context, req outboundDto.C
 			zap.String("service", d.serviceName),
 			zap.String("operation", "ChangePassword"),
 			zap.String("correlationID", correlationID),
-			zap.String("xApplication", xApplication),
+			zap.String("tenantId", tenantId),
 			zap.String("codeUser", req.CodeUser),
 			zap.Duration("duration", duration),
 			zap.Error(err),
@@ -214,7 +214,7 @@ func (d *loggingDecorator) ChangePassword(ctx context.Context, req outboundDto.C
 		zap.String("service", d.serviceName),
 		zap.String("operation", "ChangePassword"),
 		zap.String("correlationID", correlationID),
-		zap.String("xApplication", xApplication),
+		zap.String("tenantId", tenantId),
 		zap.String("codeUser", req.CodeUser),
 		zap.Duration("duration", duration),
 	)
@@ -223,7 +223,7 @@ func (d *loggingDecorator) ChangePassword(ctx context.Context, req outboundDto.C
 }
 
 // ResetPassword implementa o método ResetPassword com logging estruturado
-func (d *loggingDecorator) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, xApplication, correlationID string) error {
+func (d *loggingDecorator) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, tenantId, correlationID string) error {
 	start := time.Now()
 
 	// Converte request para JSON para logging (sem senha)
@@ -237,11 +237,11 @@ func (d *loggingDecorator) ResetPassword(ctx context.Context, req outboundDto.Re
 		zap.String("service", d.serviceName),
 		zap.String("operation", "ResetPassword"),
 		zap.String("correlationID", correlationID),
-		zap.String("xApplication", xApplication),
+		zap.String("tenantId", tenantId),
 		zap.String("request", string(reqJSON)),
 	)
 
-	err := d.inner.ResetPassword(ctx, req, xApplication, correlationID)
+	err := d.inner.ResetPassword(ctx, req, tenantId, correlationID)
 	duration := time.Since(start)
 
 	if err != nil {
@@ -249,7 +249,7 @@ func (d *loggingDecorator) ResetPassword(ctx context.Context, req outboundDto.Re
 			zap.String("service", d.serviceName),
 			zap.String("operation", "ResetPassword"),
 			zap.String("correlationID", correlationID),
-			zap.String("xApplication", xApplication),
+			zap.String("tenantId", tenantId),
 			zap.Duration("duration", duration),
 			zap.Error(err),
 		)
@@ -260,7 +260,7 @@ func (d *loggingDecorator) ResetPassword(ctx context.Context, req outboundDto.Re
 		zap.String("service", d.serviceName),
 		zap.String("operation", "ResetPassword"),
 		zap.String("correlationID", correlationID),
-		zap.String("xApplication", xApplication),
+		zap.String("tenantId", tenantId),
 		zap.Duration("duration", duration),
 	)
 
@@ -268,18 +268,18 @@ func (d *loggingDecorator) ResetPassword(ctx context.Context, req outboundDto.Re
 }
 
 // GenerateResetToken implementa o método GenerateResetToken com logging estruturado
-func (d *loggingDecorator) GenerateResetToken(ctx context.Context, req map[string]interface{}, xApplication, correlationID string) (outboundDto.GenerateResetTokenMSResponseDTO, error) {
+func (d *loggingDecorator) GenerateResetToken(ctx context.Context, req map[string]interface{}, tenantId, correlationID string) (outboundDto.GenerateResetTokenMSResponseDTO, error) {
 	start := time.Now()
 
 	d.logger.Info("Iniciando requisição",
 		zap.String("service", d.serviceName),
 		zap.String("operation", "GenerateResetToken"),
 		zap.String("correlationID", correlationID),
-		zap.String("xApplication", xApplication),
+		zap.String("tenantId", tenantId),
 		zap.String("codeUser", getStringFromMap(req, "codeUser")),
 	)
 
-	response, err := d.inner.GenerateResetToken(ctx, req, xApplication, correlationID)
+	response, err := d.inner.GenerateResetToken(ctx, req, tenantId, correlationID)
 	duration := time.Since(start)
 
 	if err != nil {
@@ -287,7 +287,7 @@ func (d *loggingDecorator) GenerateResetToken(ctx context.Context, req map[strin
 			zap.String("service", d.serviceName),
 			zap.String("operation", "GenerateResetToken"),
 			zap.String("correlationID", correlationID),
-			zap.String("xApplication", xApplication),
+			zap.String("tenantId", tenantId),
 			zap.String("codeUser", getStringFromMap(req, "codeUser")),
 			zap.Duration("duration", duration),
 			zap.Error(err),
@@ -299,7 +299,7 @@ func (d *loggingDecorator) GenerateResetToken(ctx context.Context, req map[strin
 		zap.String("service", d.serviceName),
 		zap.String("operation", "GenerateResetToken"),
 		zap.String("correlationID", correlationID),
-		zap.String("xApplication", xApplication),
+		zap.String("tenantId", tenantId),
 		zap.String("codeUser", getStringFromMap(req, "codeUser")),
 		zap.Int64("expiresInSeconds", response.ExpiresInSeconds),
 		zap.Duration("duration", duration),

@@ -45,10 +45,10 @@ func (d *communicationMetricsDecorator) getStatusCodeFromError(err error) int {
 }
 
 // SendMessage implementa SendMessage com métricas
-func (d *communicationMetricsDecorator) SendMessage(ctx context.Context, req outboundDto.SendMessageRequestDTO, xApplication, correlationID string) (outboundDto.SendMessageResponseDTO, error) {
+func (d *communicationMetricsDecorator) SendMessage(ctx context.Context, req outboundDto.SendMessageRequestDTO, tenantId, correlationID string) (outboundDto.SendMessageResponseDTO, error) {
 	start := time.Now()
 
-	response, err := d.inner.SendMessage(ctx, req, xApplication, correlationID)
+	response, err := d.inner.SendMessage(ctx, req, tenantId, correlationID)
 
 	duration := time.Since(start)
 	statusCode := d.getStatusCodeFromError(err)

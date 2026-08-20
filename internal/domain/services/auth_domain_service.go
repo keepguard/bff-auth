@@ -18,7 +18,7 @@ type AuthDomainService interface {
 	GenerateSessionID() string
 	ValidateSessionTimeout(sessionDuration time.Duration) error
 	ShouldLogoutUser(lastActivity time.Duration) bool
-	ValidateXApplication(xApplication string) error
+	ValidateTenantId(tenantId string) error
 }
 
 type authDomainServiceImpl struct{}
@@ -185,24 +185,24 @@ func (s *authDomainServiceImpl) ShouldLogoutUser(lastActivity time.Duration) boo
 	return lastActivity > 2*time.Hour
 }
 
-// ValidateXApplication valida o X-Application header
-func (s *authDomainServiceImpl) ValidateXApplication(xApplication string) error {
-	if xApplication == "" {
-		return errors.New("x-application header is required")
+// ValidateTenantId valida o X-Tenant-Id header
+func (s *authDomainServiceImpl) ValidateTenantId(tenantId string) error {
+	if tenantId == "" {
+		return errors.New("x-tenant-id header is required")
 	}
 	
-	if len(xApplication) < 3 {
-		return errors.New("x-application must have at least 3 characters")
+	if len(tenantId) < 3 {
+		return errors.New("x-tenant-id must have at least 3 characters")
 	}
 	
-	if len(xApplication) > 50 {
-		return errors.New("x-application must have at most 50 characters")
+	if len(tenantId) > 50 {
+		return errors.New("x-tenant-id must have at most 50 characters")
 	}
 	
 	// Verificar se contém apenas caracteres válidos
 	validChars := regexp.MustCompile(`^[a-zA-Z0-9_-]+$`)
-	if !validChars.MatchString(xApplication) {
-		return errors.New("x-application contains invalid characters")
+	if !validChars.MatchString(tenantId) {
+		return errors.New("x-tenant-id contains invalid characters")
 	}
 	
 	return nil

@@ -17,8 +17,8 @@ type MockCommunicationClient struct {
 	mock.Mock
 }
 
-func (m *MockCommunicationClient) SendMessage(ctx context.Context, req outboundDto.SendMessageRequestDTO, xApplication, correlationID string) (outboundDto.SendMessageResponseDTO, error) {
-	args := m.Called(ctx, req, xApplication, correlationID)
+func (m *MockCommunicationClient) SendMessage(ctx context.Context, req outboundDto.SendMessageRequestDTO, tenantId, correlationID string) (outboundDto.SendMessageResponseDTO, error) {
+	args := m.Called(ctx, req, tenantId, correlationID)
 	return args.Get(0).(outboundDto.SendMessageResponseDTO), args.Error(1)
 }
 
@@ -53,7 +53,7 @@ func TestCommunicationLoggingDecorator_SendMessage_Success(t *testing.T) {
 		Recipient:         "user@example.com",
 		Variables:         map[string]interface{}{"token": "123456"},
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedResponse := outboundDto.SendMessageResponseDTO{
@@ -61,10 +61,10 @@ func TestCommunicationLoggingDecorator_SendMessage_Success(t *testing.T) {
 		Message: "Message sent successfully",
 	}
 
-	mockInner.On("SendMessage", ctx, req, xApplication, correlationID).Return(expectedResponse, nil)
+	mockInner.On("SendMessage", ctx, req, tenantId, correlationID).Return(expectedResponse, nil)
 
 	// Act
-	result, err := decorator.SendMessage(ctx, req, xApplication, correlationID)
+	result, err := decorator.SendMessage(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -92,15 +92,15 @@ func TestCommunicationLoggingDecorator_SendMessage_Error(t *testing.T) {
 		Recipient:    "invalid@example.com",
 		TemplateType: "INVALID_TEMPLATE",
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedError := errors.New("template not found")
 
-	mockInner.On("SendMessage", ctx, req, xApplication, correlationID).Return(outboundDto.SendMessageResponseDTO{}, expectedError)
+	mockInner.On("SendMessage", ctx, req, tenantId, correlationID).Return(outboundDto.SendMessageResponseDTO{}, expectedError)
 
 	// Act
-	_, err := decorator.SendMessage(ctx, req, xApplication, correlationID)
+	_, err := decorator.SendMessage(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.Error(t, err)

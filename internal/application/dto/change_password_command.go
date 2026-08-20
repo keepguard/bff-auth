@@ -9,19 +9,19 @@ type ChangePasswordCommand struct {
 	CurrentPassword    string
 	NewPassword        string
 	ConfirmNewPassword string
-	XApplication       string
+	TenantId       string
 	CorrelationID      string
 	Context            context.Context
 }
 
 // NewChangePasswordCommand cria uma nova instância do ChangePasswordCommand
-func NewChangePasswordCommand(token, currentPassword, newPassword, confirmNewPassword, xApplication, correlationID string, ctx context.Context) ChangePasswordCommand {
+func NewChangePasswordCommand(token, currentPassword, newPassword, confirmNewPassword, tenantId, correlationID string, ctx context.Context) ChangePasswordCommand {
 	return ChangePasswordCommand{
 		Token:              token,
 		CurrentPassword:    currentPassword,
 		NewPassword:        newPassword,
 		ConfirmNewPassword: confirmNewPassword,
-		XApplication:       xApplication,
+		TenantId:       tenantId,
 		CorrelationID:      correlationID,
 		Context:            ctx,
 	}
@@ -44,8 +44,8 @@ func (c *ChangePasswordCommand) Validate() error {
 	if c.NewPassword != c.ConfirmNewPassword {
 		return &ValidationError{Field: "confirmNewPassword", Message: "newPassword e confirmNewPassword devem ser iguais"}
 	}
-	if c.XApplication == "" {
-		return &ValidationError{Field: "xApplication", Message: "xApplication é obrigatório"}
+	if c.TenantId == "" {
+		return &ValidationError{Field: "tenantId", Message: "tenantId é obrigatório"}
 	}
 	if c.CorrelationID == "" {
 		return &ValidationError{Field: "correlationID", Message: "correlationID é obrigatório"}

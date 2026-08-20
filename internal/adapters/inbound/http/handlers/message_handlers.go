@@ -44,12 +44,12 @@ func NewMessageHandlersWithLogger(
 
 // SendResetPasswordMessageHandler trata requisições de envio de mensagem de reset de senha
 // @Summary Send reset password message
-// @Description Envia uma mensagem de reset de senha para o email do usuário. Não requer autenticação. Requer headers obrigatórios X-Correlation-ID e X-Application.
+// @Description Envia uma mensagem de reset de senha para o email do usuário. Não requer autenticação. Requer headers obrigatórios X-Correlation-ID e X-Tenant-Id.
 // @Tags messages
 // @Accept json
 // @Produce json
 // @Param X-Correlation-ID header string true "ID de correlação para rastreamento da requisição"
-// @Param X-Application header string true "ID da aplicação cliente (UUID)"
+// @Param X-Tenant-Id header string true "ID da aplicação cliente (UUID)"
 // @Param request body dto.SendResetPasswordMessageRequestDTO true "Email do usuário"
 // @Success 200 {object} dto.SendResetPasswordMessageResponseDTO "Mensagem enviada com sucesso"
 // @Failure 400 {object} pkg.ErrorResponse "Erro de validação (headers ausentes, email inválido ou usuário não ativo)"
@@ -67,7 +67,7 @@ func (h *MessageHandlers) SendResetPasswordMessageHandler(c echo.Context) error 
 		})
 	}
 
-	xApplication, err := GetXApplication(c)
+	tenantId, err := GetTenantId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
 			Error:   "MISSING_HEADER",
@@ -80,7 +80,7 @@ func (h *MessageHandlers) SendResetPasswordMessageHandler(c echo.Context) error 
 	if err := c.Bind(&req); err != nil {
 		h.logger.Error("Erro ao fazer bind da requisição de envio de mensagem de reset",
 			zap.String("correlationId", correlationID),
-			zap.String("applicationId", xApplication),
+			zap.String("applicationId", tenantId),
 			zap.Error(err),
 		)
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
@@ -93,7 +93,7 @@ func (h *MessageHandlers) SendResetPasswordMessageHandler(c echo.Context) error 
 	// Criar comando de domínio encapsulado
 	command := appdto.NewSendResetPasswordMessageCommand(
 		req.Email,
-		xApplication,
+		tenantId,
 		correlationID,
 		c.Request().Context(),
 	)
@@ -102,7 +102,7 @@ func (h *MessageHandlers) SendResetPasswordMessageHandler(c echo.Context) error 
 	if err := command.Validate(); err != nil {
 		h.logger.Error("Erro de validação no comando de envio de mensagem de reset",
 			zap.String("correlationId", correlationID),
-			zap.String("applicationId", xApplication),
+			zap.String("applicationId", tenantId),
 			zap.Error(err),
 		)
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
@@ -117,7 +117,7 @@ func (h *MessageHandlers) SendResetPasswordMessageHandler(c echo.Context) error 
 	if err != nil {
 		h.logger.Error("Erro no caso de uso de envio de mensagem de reset",
 			zap.String("correlationId", correlationID),
-			zap.String("applicationId", xApplication),
+			zap.String("applicationId", tenantId),
 			zap.Error(err),
 		)
 		return handleError(c, err, correlationID)
@@ -125,7 +125,7 @@ func (h *MessageHandlers) SendResetPasswordMessageHandler(c echo.Context) error 
 
 	h.logger.Info("Mensagem de reset de senha enviada com sucesso",
 		zap.String("correlationId", correlationID),
-		zap.String("applicationId", xApplication),
+		zap.String("applicationId", tenantId),
 		zap.String("email", req.Email),
 	)
 

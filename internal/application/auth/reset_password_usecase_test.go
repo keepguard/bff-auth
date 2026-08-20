@@ -19,8 +19,8 @@ type MockUserClient struct {
 	mock.Mock
 }
 
-func (m *MockUserClient) GetByEmail(ctx context.Context, email, xApplication, correlationID string) (outboundDto.UserByEmailResponseDTO, error) {
-	args := m.Called(ctx, email, xApplication, correlationID)
+func (m *MockUserClient) GetByEmail(ctx context.Context, email, tenantId, correlationID string) (outboundDto.UserByEmailResponseDTO, error) {
+	args := m.Called(ctx, email, tenantId, correlationID)
 	return args.Get(0).(outboundDto.UserByEmailResponseDTO), args.Error(1)
 }
 
@@ -37,7 +37,7 @@ func TestResetPasswordUseCase_Execute_Success(t *testing.T) {
 	resetToken := "valid-reset-token"
 	newPassword := "newpass123"
 	confirmNewPassword := "newpass123"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	command := appdto.NewResetPasswordCommand(
@@ -45,7 +45,7 @@ func TestResetPasswordUseCase_Execute_Success(t *testing.T) {
 		resetToken,
 		newPassword,
 		confirmNewPassword,
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
@@ -69,9 +69,9 @@ func TestResetPasswordUseCase_Execute_Success(t *testing.T) {
 	}
 
 	// Configurar mocks
-	setupCompanyMock(mockCompanyClient, ctx, xApplication, correlationID)
-	mockUserClient.On("GetByEmail", ctx, email, xApplication, correlationID).Return(expectedUser, nil)
-	mockAuthClient.On("ResetPassword", ctx, expectedReq, xApplication, correlationID).Return(nil)
+	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
+	mockUserClient.On("GetByEmail", ctx, email, tenantId, correlationID).Return(expectedUser, nil)
+	mockAuthClient.On("ResetPassword", ctx, expectedReq, tenantId, correlationID).Return(nil)
 
 	// Act
 	err := useCase.Execute(command)
@@ -96,7 +96,7 @@ func TestResetPasswordUseCase_Execute_UserNotFound(t *testing.T) {
 	resetToken := "valid-reset-token"
 	newPassword := "newpass123"
 	confirmNewPassword := "newpass123"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	command := appdto.NewResetPasswordCommand(
@@ -104,7 +104,7 @@ func TestResetPasswordUseCase_Execute_UserNotFound(t *testing.T) {
 		resetToken,
 		newPassword,
 		confirmNewPassword,
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
@@ -116,8 +116,8 @@ func TestResetPasswordUseCase_Execute_UserNotFound(t *testing.T) {
 	}
 
 	// Configurar mocks
-	setupCompanyMock(mockCompanyClient, ctx, xApplication, correlationID)
-	mockUserClient.On("GetByEmail", ctx, email, xApplication, correlationID).Return(outboundDto.UserByEmailResponseDTO{}, userError)
+	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
+	mockUserClient.On("GetByEmail", ctx, email, tenantId, correlationID).Return(outboundDto.UserByEmailResponseDTO{}, userError)
 
 	// Act
 	err := useCase.Execute(command)
@@ -144,7 +144,7 @@ func TestResetPasswordUseCase_Execute_UserNotActive(t *testing.T) {
 	resetToken := "valid-reset-token"
 	newPassword := "newpass123"
 	confirmNewPassword := "newpass123"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	command := appdto.NewResetPasswordCommand(
@@ -152,7 +152,7 @@ func TestResetPasswordUseCase_Execute_UserNotActive(t *testing.T) {
 		resetToken,
 		newPassword,
 		confirmNewPassword,
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
@@ -167,8 +167,8 @@ func TestResetPasswordUseCase_Execute_UserNotActive(t *testing.T) {
 	}
 
 	// Configurar mocks
-	setupCompanyMock(mockCompanyClient, ctx, xApplication, correlationID)
-	mockUserClient.On("GetByEmail", ctx, email, xApplication, correlationID).Return(expectedUser, nil)
+	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
+	mockUserClient.On("GetByEmail", ctx, email, tenantId, correlationID).Return(expectedUser, nil)
 
 	// Act
 	err := useCase.Execute(command)
@@ -198,7 +198,7 @@ func TestResetPasswordUseCase_Execute_InvalidResetToken(t *testing.T) {
 	resetToken := "invalid-reset-token"
 	newPassword := "newpass123"
 	confirmNewPassword := "newpass123"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	command := appdto.NewResetPasswordCommand(
@@ -206,7 +206,7 @@ func TestResetPasswordUseCase_Execute_InvalidResetToken(t *testing.T) {
 		resetToken,
 		newPassword,
 		confirmNewPassword,
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
@@ -236,9 +236,9 @@ func TestResetPasswordUseCase_Execute_InvalidResetToken(t *testing.T) {
 	}
 
 	// Configurar mocks
-	setupCompanyMock(mockCompanyClient, ctx, xApplication, correlationID)
-	mockUserClient.On("GetByEmail", ctx, email, xApplication, correlationID).Return(expectedUser, nil)
-	mockAuthClient.On("ResetPassword", ctx, expectedReq, xApplication, correlationID).Return(authError)
+	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
+	mockUserClient.On("GetByEmail", ctx, email, tenantId, correlationID).Return(expectedUser, nil)
+	mockAuthClient.On("ResetPassword", ctx, expectedReq, tenantId, correlationID).Return(authError)
 
 	// Act
 	err := useCase.Execute(command)
@@ -264,7 +264,7 @@ func TestResetPasswordUseCase_Execute_CompanyNotFound(t *testing.T) {
 	resetToken := "valid-reset-token"
 	newPassword := "newpass123"
 	confirmNewPassword := "newpass123"
-	xApplication := "invalid-app-id"
+	tenantId := "invalid-app-id"
 	correlationID := "test-correlation-id"
 
 	command := appdto.NewResetPasswordCommand(
@@ -272,7 +272,7 @@ func TestResetPasswordUseCase_Execute_CompanyNotFound(t *testing.T) {
 		resetToken,
 		newPassword,
 		confirmNewPassword,
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
@@ -284,7 +284,7 @@ func TestResetPasswordUseCase_Execute_CompanyNotFound(t *testing.T) {
 		ErrorCode:  "COMPANY_NOT_FOUND",
 	}
 
-	mockCompanyClient.On("GetByXApplication", ctx, xApplication, correlationID).Return(authclient.CompanySimpleResponseDTO{}, companyError)
+	mockCompanyClient.On("GetByTenantId", ctx, tenantId, correlationID).Return(authclient.CompanySimpleResponseDTO{}, companyError)
 
 	// Act
 	err := useCase.Execute(command)
@@ -309,7 +309,7 @@ func TestResetPasswordUseCase_Execute_PasswordMismatch(t *testing.T) {
 	resetToken := "valid-reset-token"
 	newPassword := "newpass123"
 	confirmNewPassword := "differentpass456"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	command := appdto.NewResetPasswordCommand(
@@ -317,7 +317,7 @@ func TestResetPasswordUseCase_Execute_PasswordMismatch(t *testing.T) {
 		resetToken,
 		newPassword,
 		confirmNewPassword,
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
@@ -329,7 +329,7 @@ func TestResetPasswordUseCase_Execute_PasswordMismatch(t *testing.T) {
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "newPassword e confirmNewPassword devem ser iguais")
 	// Nenhum mock deve ser chamado se a validação falhar
-	mockCompanyClient.AssertNotCalled(t, "GetByXApplication", mock.Anything, mock.Anything, mock.Anything)
+	mockCompanyClient.AssertNotCalled(t, "GetByTenantId", mock.Anything, mock.Anything, mock.Anything)
 	mockUserClient.AssertNotCalled(t, "GetByEmail", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
 	mockAuthClient.AssertNotCalled(t, "ResetPassword", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
 }
@@ -349,7 +349,7 @@ func TestResetPasswordUseCase_Execute_ContextCancelled(t *testing.T) {
 	resetToken := "valid-reset-token"
 	newPassword := "newpass123"
 	confirmNewPassword := "newpass123"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	command := appdto.NewResetPasswordCommand(
@@ -357,7 +357,7 @@ func TestResetPasswordUseCase_Execute_ContextCancelled(t *testing.T) {
 		resetToken,
 		newPassword,
 		confirmNewPassword,
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
@@ -381,9 +381,9 @@ func TestResetPasswordUseCase_Execute_ContextCancelled(t *testing.T) {
 	}
 
 	// Configurar mocks
-	setupCompanyMock(mockCompanyClient, ctx, xApplication, correlationID)
-	mockUserClient.On("GetByEmail", ctx, email, xApplication, correlationID).Return(expectedUser, nil)
-	mockAuthClient.On("ResetPassword", ctx, expectedReq, xApplication, correlationID).Return(context.Canceled)
+	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
+	mockUserClient.On("GetByEmail", ctx, email, tenantId, correlationID).Return(expectedUser, nil)
+	mockAuthClient.On("ResetPassword", ctx, expectedReq, tenantId, correlationID).Return(context.Canceled)
 
 	// Act
 	err := useCase.Execute(command)
@@ -409,7 +409,7 @@ func TestResetPasswordUseCase_Execute_AuthServiceError(t *testing.T) {
 	resetToken := "valid-reset-token"
 	newPassword := "newpass123"
 	confirmNewPassword := "newpass123"
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	command := appdto.NewResetPasswordCommand(
@@ -417,7 +417,7 @@ func TestResetPasswordUseCase_Execute_AuthServiceError(t *testing.T) {
 		resetToken,
 		newPassword,
 		confirmNewPassword,
-		xApplication,
+		tenantId,
 		correlationID,
 		ctx,
 	)
@@ -443,9 +443,9 @@ func TestResetPasswordUseCase_Execute_AuthServiceError(t *testing.T) {
 	authError := errors.New("auth service internal error")
 
 	// Configurar mocks
-	setupCompanyMock(mockCompanyClient, ctx, xApplication, correlationID)
-	mockUserClient.On("GetByEmail", ctx, email, xApplication, correlationID).Return(expectedUser, nil)
-	mockAuthClient.On("ResetPassword", ctx, expectedReq, xApplication, correlationID).Return(authError)
+	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
+	mockUserClient.On("GetByEmail", ctx, email, tenantId, correlationID).Return(expectedUser, nil)
+	mockAuthClient.On("ResetPassword", ctx, expectedReq, tenantId, correlationID).Return(authError)
 
 	// Act
 	err := useCase.Execute(command)

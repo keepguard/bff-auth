@@ -24,7 +24,7 @@ func NewRefreshUseCase(authClient authclient.AuthClient, companyClient authclien
 func (uc *refreshUseCaseImpl) Execute(command appdto.RefreshTokenCommand) (dto.RefreshTokenResponseDTO, error) {
 
 	// Primeiro, verifica se a empresa existe consultando o Company Service
-	_, err := uc.companyClient.GetByXApplication(command.Context, command.XApplication, command.CorrelationID)
+	_, err := uc.companyClient.GetByTenantId(command.Context, command.TenantId, command.CorrelationID)
 	if err != nil {
 		return dto.RefreshTokenResponseDTO{}, err
 	}
@@ -35,7 +35,7 @@ func (uc *refreshUseCaseImpl) Execute(command appdto.RefreshTokenCommand) (dto.R
 	}
 
 	// Chama o cliente de autenticação
-	response, err := uc.authClient.RefreshToken(command.Context, req, command.XApplication, command.CorrelationID)
+	response, err := uc.authClient.RefreshToken(command.Context, req, command.TenantId, command.CorrelationID)
 	if err != nil {
 		return dto.RefreshTokenResponseDTO{}, err
 	}

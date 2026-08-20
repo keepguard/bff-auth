@@ -17,7 +17,7 @@ const docTemplate = `{
     "paths": {
         "/auth/change-password": {
             "post": {
-                "description": "Altera a senha do usuário autenticado. Requer headers obrigatórios X-Correlation-ID, X-Application e Authorization.",
+                "description": "Altera a senha do usuário autenticado. Requer headers obrigatórios X-Correlation-ID, X-Tenant-Id e Authorization.",
                 "consumes": [
                     "application/json"
                 ],
@@ -39,7 +39,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "ID da aplicação cliente (UUID)",
-                        "name": "X-Application",
+                        "name": "X-Tenant-Id",
                         "in": "header",
                         "required": true
                     },
@@ -93,7 +93,7 @@ const docTemplate = `{
         },
         "/auth/login": {
             "post": {
-                "description": "Realiza login do usuário usando credenciais de username e password. Requer headers obrigatórios X-Correlation-ID e X-Application.",
+                "description": "Realiza login do usuário usando credenciais de username e password. Requer headers obrigatórios X-Correlation-ID e X-Tenant-Id.",
                 "consumes": [
                     "application/json"
                 ],
@@ -115,7 +115,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "ID da aplicação cliente (UUID)",
-                        "name": "X-Application",
+                        "name": "X-Tenant-Id",
                         "in": "header",
                         "required": true
                     },
@@ -159,7 +159,7 @@ const docTemplate = `{
         },
         "/auth/logout": {
             "post": {
-                "description": "Realiza logout do usuário invalidando o token de acesso. Requer headers obrigatórios X-Correlation-ID e X-Application, e token no header Authorization.",
+                "description": "Realiza logout do usuário invalidando o token de acesso. Requer headers obrigatórios X-Correlation-ID e X-Tenant-Id, e token no header Authorization.",
                 "consumes": [
                     "application/json"
                 ],
@@ -181,7 +181,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "ID da aplicação cliente (UUID)",
-                        "name": "X-Application",
+                        "name": "X-Tenant-Id",
                         "in": "header",
                         "required": true
                     },
@@ -226,7 +226,7 @@ const docTemplate = `{
         },
         "/auth/refresh": {
             "post": {
-                "description": "Renova o token de acesso usando o refresh token. Requer headers obrigatórios X-Correlation-ID e X-Application.",
+                "description": "Renova o token de acesso usando o refresh token. Requer headers obrigatórios X-Correlation-ID e X-Tenant-Id.",
                 "consumes": [
                     "application/json"
                 ],
@@ -248,7 +248,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "ID da aplicação cliente (UUID)",
-                        "name": "X-Application",
+                        "name": "X-Tenant-Id",
                         "in": "header",
                         "required": true
                     },
@@ -292,7 +292,7 @@ const docTemplate = `{
         },
         "/auth/reset-password": {
             "post": {
-                "description": "Reseta a senha do usuário usando um token de reset válido. Requer headers obrigatórios X-Correlation-ID e X-Application.",
+                "description": "Reseta a senha do usuário usando um token de reset válido. Requer headers obrigatórios X-Correlation-ID e X-Tenant-Id.",
                 "consumes": [
                     "application/json"
                 ],
@@ -314,7 +314,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "ID da aplicação cliente (UUID)",
-                        "name": "X-Application",
+                        "name": "X-Tenant-Id",
                         "in": "header",
                         "required": true
                     },
@@ -361,7 +361,7 @@ const docTemplate = `{
         },
         "/auth/validate": {
             "post": {
-                "description": "Valida se um token JWT é válido e não expirou. Requer headers obrigatórios X-Correlation-ID e X-Application.",
+                "description": "Valida se um token JWT é válido e não expirou. Requer headers obrigatórios X-Correlation-ID e X-Tenant-Id.",
                 "consumes": [
                     "application/json"
                 ],
@@ -383,7 +383,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "ID da aplicação cliente (UUID)",
-                        "name": "X-Application",
+                        "name": "X-Tenant-Id",
                         "in": "header",
                         "required": true
                     },
@@ -453,7 +453,7 @@ const docTemplate = `{
         },
         "/message/reset-password/send": {
             "post": {
-                "description": "Envia uma mensagem de reset de senha para o email do usuário. Não requer autenticação. Requer headers obrigatórios X-Correlation-ID e X-Application.",
+                "description": "Envia uma mensagem de reset de senha para o email do usuário. Não requer autenticação. Requer headers obrigatórios X-Correlation-ID e X-Tenant-Id.",
                 "consumes": [
                     "application/json"
                 ],
@@ -475,7 +475,7 @@ const docTemplate = `{
                     {
                         "type": "string",
                         "description": "ID da aplicação cliente (UUID)",
-                        "name": "X-Application",
+                        "name": "X-Tenant-Id",
                         "in": "header",
                         "required": true
                     },

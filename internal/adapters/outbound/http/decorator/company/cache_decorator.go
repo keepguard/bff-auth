@@ -122,9 +122,9 @@ func (c *companyCache) set(key string, value portsclient.CompanySimpleResponseDT
 	}
 }
 
-// generateCacheKey gera chave de cache para xApplication
-func generateCacheKey(xApplication string) string {
-	hash := sha256.Sum256([]byte(xApplication))
+// generateCacheKey gera chave de cache para tenantId
+func generateCacheKey(tenantId string) string {
+	hash := sha256.Sum256([]byte(tenantId))
 	return hex.EncodeToString(hash[:])
 }
 
@@ -148,9 +148,9 @@ func NewCacheDecorator(
 	}
 }
 
-// GetByXApplication implementa GetByXApplication com cache
-func (d *cacheDecorator) GetByXApplication(ctx context.Context, xApplication, correlationID string) (portsclient.CompanySimpleResponseDTO, error) {
-	cacheKey := generateCacheKey(xApplication)
+// GetByTenantId implementa GetByTenantId com cache
+func (d *cacheDecorator) GetByTenantId(ctx context.Context, tenantId, correlationID string) (portsclient.CompanySimpleResponseDTO, error) {
+	cacheKey := generateCacheKey(tenantId)
 
 	// Tenta obter do cache
 	if cached, found := d.cache.get(cacheKey); found {
@@ -158,7 +158,7 @@ func (d *cacheDecorator) GetByXApplication(ctx context.Context, xApplication, co
 	}
 
 	// Se não encontrou no cache, executa a operação
-	response, err := d.inner.GetByXApplication(ctx, xApplication, correlationID)
+	response, err := d.inner.GetByTenantId(ctx, tenantId, correlationID)
 
 	if err == nil {
 		// Armazena no cache apenas se sucesso

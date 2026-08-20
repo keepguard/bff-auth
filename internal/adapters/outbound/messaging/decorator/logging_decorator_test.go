@@ -42,7 +42,7 @@ func TestLoggingDecorator_PublishMessage_Success(t *testing.T) {
 	mockPublisher := &MockLoggingMessagePublisher{}
 
 	message := messaging.MessageDTO{
-		XApplication:      "test-app",
+		TenantId:      "test-app",
 		XCorrelationID:    "test-correlation-id",
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",
@@ -70,7 +70,7 @@ func TestLoggingDecorator_PublishMessage_Error(t *testing.T) {
 	mockPublisher := &MockLoggingMessagePublisher{}
 
 	message := messaging.MessageDTO{
-		XApplication:      "test-app",
+		TenantId:      "test-app",
 		XCorrelationID:    "test-correlation-id",
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",
@@ -101,7 +101,7 @@ func TestLoggingDecorator_PublishMessage_WithAllFields(t *testing.T) {
 	mockPublisher := &MockLoggingMessagePublisher{}
 
 	message := messaging.MessageDTO{
-		XApplication:      "test-app",
+		TenantId:      "test-app",
 		XCorrelationID:    "test-correlation-id",
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",
@@ -132,7 +132,7 @@ func TestLoggingDecorator_PublishMessage_EmptyFields(t *testing.T) {
 	mockPublisher := &MockLoggingMessagePublisher{}
 
 	message := messaging.MessageDTO{
-		XApplication:      "",
+		TenantId:      "",
 		XCorrelationID:    "",
 		MessageType:       "",
 		CommunicationType: "",
@@ -191,7 +191,7 @@ func TestLoggingDecorator_ContextCancellation(t *testing.T) {
 	mockPublisher := &MockLoggingMessagePublisher{}
 
 	message := messaging.MessageDTO{
-		XApplication:      "test-app",
+		TenantId:      "test-app",
 		XCorrelationID:    "test-correlation-id",
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",
@@ -224,7 +224,7 @@ func TestLoggingDecorator_ContextTimeout(t *testing.T) {
 	mockPublisher := &MockLoggingMessagePublisher{}
 
 	message := messaging.MessageDTO{
-		XApplication:      "test-app",
+		TenantId:      "test-app",
 		XCorrelationID:    "test-correlation-id",
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",
@@ -260,7 +260,7 @@ func TestLoggingDecorator_MultipleMessages(t *testing.T) {
 	mockPublisher := &MockLoggingMessagePublisher{}
 
 	message1 := messaging.MessageDTO{
-		XApplication:      "test-app",
+		TenantId:      "test-app",
 		XCorrelationID:    "test-correlation-id-1",
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",
@@ -273,7 +273,7 @@ func TestLoggingDecorator_MultipleMessages(t *testing.T) {
 	}
 
 	message2 := messaging.MessageDTO{
-		XApplication:      "test-app",
+		TenantId:      "test-app",
 		XCorrelationID:    "test-correlation-id-2",
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",

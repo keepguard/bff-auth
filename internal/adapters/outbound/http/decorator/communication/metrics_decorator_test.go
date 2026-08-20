@@ -41,7 +41,7 @@ func TestCommunicationMetricsDecorator_SendMessage_Success(t *testing.T) {
 		Recipient:    "user@example.com",
 		TemplateType: "RECUPERACAO_SENHA",
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedResponse := outboundDto.SendMessageResponseDTO{
@@ -49,10 +49,10 @@ func TestCommunicationMetricsDecorator_SendMessage_Success(t *testing.T) {
 		Message: "Message sent",
 	}
 
-	mockInner.On("SendMessage", ctx, req, xApplication, correlationID).Return(expectedResponse, nil)
+	mockInner.On("SendMessage", ctx, req, tenantId, correlationID).Return(expectedResponse, nil)
 
 	// Act
-	result, err := decorator.SendMessage(ctx, req, xApplication, correlationID)
+	result, err := decorator.SendMessage(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -73,15 +73,15 @@ func TestCommunicationMetricsDecorator_SendMessage_Error(t *testing.T) {
 		Recipient:    "user@example.com",
 		TemplateType: "INVALID",
 	}
-	xApplication := "test-app-id"
+	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
 	expectedError := errors.New("template not found")
 
-	mockInner.On("SendMessage", ctx, req, xApplication, correlationID).Return(outboundDto.SendMessageResponseDTO{}, expectedError)
+	mockInner.On("SendMessage", ctx, req, tenantId, correlationID).Return(outboundDto.SendMessageResponseDTO{}, expectedError)
 
 	// Act
-	_, err := decorator.SendMessage(ctx, req, xApplication, correlationID)
+	_, err := decorator.SendMessage(ctx, req, tenantId, correlationID)
 
 	// Assert
 	assert.Error(t, err)

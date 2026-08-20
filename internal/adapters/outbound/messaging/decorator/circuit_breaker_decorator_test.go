@@ -45,7 +45,7 @@ func TestCircuitBreakerDecorator_PublishMessage_Success(t *testing.T) {
 	mockPublisher := &MockCircuitBreakerMessagePublisher{}
 
 	message := messaging.MessageDTO{
-		XApplication:      "test-app",
+		TenantId:      "test-app",
 		XCorrelationID:    "test-correlation-id",
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",
@@ -78,7 +78,7 @@ func TestCircuitBreakerDecorator_PublishMessage_Error(t *testing.T) {
 	mockPublisher := &MockCircuitBreakerMessagePublisher{}
 
 	message := messaging.MessageDTO{
-		XApplication:      "test-app",
+		TenantId:      "test-app",
 		XCorrelationID:    "test-correlation-id",
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",

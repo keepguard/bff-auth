@@ -71,12 +71,12 @@ func NewAuthHandlersWithLogger(
 
 // LoginHandler trata requisições de login
 // @Summary Login
-// @Description Realiza login do usuário usando credenciais de username e password. Requer headers obrigatórios X-Correlation-ID e X-Application.
+// @Description Realiza login do usuário usando credenciais de username e password. Requer headers obrigatórios X-Correlation-ID e X-Tenant-Id.
 // @Tags auth
 // @Accept json
 // @Produce json
 // @Param X-Correlation-ID header string true "ID de correlação para rastreamento da requisição"
-// @Param X-Application header string true "ID da aplicação cliente (UUID)"
+// @Param X-Tenant-Id header string true "ID da aplicação cliente (UUID)"
 // @Param request body dto.AuthRequestDTO true "Credenciais de login"
 // @Success 200 {object} dto.AuthResponseDTO "Login realizado com sucesso"
 // @Failure 400 {object} pkg.ErrorResponse "Erro de validação (headers ausentes ou dados inválidos)"
@@ -94,7 +94,7 @@ func (h *AuthHandlers) LoginHandler(c echo.Context) error {
 		})
 	}
 
-	xApplication, err := GetXApplication(c)
+	tenantId, err := GetTenantId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
 			Error:   "MISSING_HEADER",
@@ -107,7 +107,7 @@ func (h *AuthHandlers) LoginHandler(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		h.logger.Error("Erro ao fazer bind da requisição de login",
 			zap.String("correlationId", correlationID),
-			zap.String("applicationId", xApplication),
+			zap.String("applicationId", tenantId),
 			zap.Error(err),
 		)
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
@@ -121,7 +121,7 @@ func (h *AuthHandlers) LoginHandler(c echo.Context) error {
 	command := appdto.NewLoginCommand(
 		req.Username,
 		req.Password,
-		xApplication,
+		tenantId,
 		correlationID,
 		c.Request().Context(),
 	)
@@ -130,7 +130,7 @@ func (h *AuthHandlers) LoginHandler(c echo.Context) error {
 	if err := command.Validate(); err != nil {
 		h.logger.Error("Erro de validação no comando de login",
 			zap.String("correlationId", correlationID),
-			zap.String("applicationId", xApplication),
+			zap.String("applicationId", tenantId),
 			zap.Error(err),
 		)
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
@@ -145,7 +145,7 @@ func (h *AuthHandlers) LoginHandler(c echo.Context) error {
 	if err != nil {
 		h.logger.Error("Erro no caso de uso de login",
 			zap.String("correlationId", correlationID),
-			zap.String("applicationId", xApplication),
+			zap.String("applicationId", tenantId),
 			zap.Error(err),
 		)
 		return handleError(c, err, correlationID)
@@ -153,7 +153,7 @@ func (h *AuthHandlers) LoginHandler(c echo.Context) error {
 
 	h.logger.Info("Login realizado com sucesso",
 		zap.String("correlationId", correlationID),
-		zap.String("applicationId", xApplication),
+		zap.String("applicationId", tenantId),
 		zap.String("username", req.Username),
 	)
 
@@ -162,12 +162,12 @@ func (h *AuthHandlers) LoginHandler(c echo.Context) error {
 
 // RefreshHandler trata requisições de refresh de token
 // @Summary Refresh token
-// @Description Renova o token de acesso usando o refresh token. Requer headers obrigatórios X-Correlation-ID e X-Application.
+// @Description Renova o token de acesso usando o refresh token. Requer headers obrigatórios X-Correlation-ID e X-Tenant-Id.
 // @Tags auth
 // @Accept json
 // @Produce json
 // @Param X-Correlation-ID header string true "ID de correlação para rastreamento da requisição"
-// @Param X-Application header string true "ID da aplicação cliente (UUID)"
+// @Param X-Tenant-Id header string true "ID da aplicação cliente (UUID)"
 // @Param request body dto.RefreshTokenRequestDTO true "Token de refresh para renovação"
 // @Success 200 {object} dto.RefreshTokenResponseDTO "Token renovado com sucesso"
 // @Failure 400 {object} pkg.ErrorResponse "Erro de validação (headers ausentes ou dados inválidos)"
@@ -185,7 +185,7 @@ func (h *AuthHandlers) RefreshHandler(c echo.Context) error {
 		})
 	}
 
-	xApplication, err := GetXApplication(c)
+	tenantId, err := GetTenantId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
 			Error:   "MISSING_HEADER",
@@ -198,7 +198,7 @@ func (h *AuthHandlers) RefreshHandler(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		h.logger.Error("Erro ao fazer bind da requisição de refresh",
 			zap.String("correlationId", correlationID),
-			zap.String("applicationId", xApplication),
+			zap.String("applicationId", tenantId),
 			zap.Error(err),
 		)
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
@@ -211,7 +211,7 @@ func (h *AuthHandlers) RefreshHandler(c echo.Context) error {
 	// Criar comando de domínio encapsulado
 	command := appdto.NewRefreshTokenCommand(
 		req.Token,
-		xApplication,
+		tenantId,
 		correlationID,
 		c.Request().Context(),
 	)
@@ -220,7 +220,7 @@ func (h *AuthHandlers) RefreshHandler(c echo.Context) error {
 	if err := command.Validate(); err != nil {
 		h.logger.Error("Erro de validação no comando de refresh",
 			zap.String("correlationId", correlationID),
-			zap.String("applicationId", xApplication),
+			zap.String("applicationId", tenantId),
 			zap.Error(err),
 		)
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
@@ -235,7 +235,7 @@ func (h *AuthHandlers) RefreshHandler(c echo.Context) error {
 	if err != nil {
 		h.logger.Error("Erro no caso de uso de refresh",
 			zap.String("correlationId", correlationID),
-			zap.String("applicationId", xApplication),
+			zap.String("applicationId", tenantId),
 			zap.Error(err),
 		)
 		return handleError(c, err, correlationID)
@@ -243,7 +243,7 @@ func (h *AuthHandlers) RefreshHandler(c echo.Context) error {
 
 	h.logger.Info("Refresh realizado com sucesso",
 		zap.String("correlationId", correlationID),
-		zap.String("applicationId", xApplication),
+		zap.String("applicationId", tenantId),
 	)
 
 	return c.JSON(http.StatusOK, response)
@@ -251,12 +251,12 @@ func (h *AuthHandlers) RefreshHandler(c echo.Context) error {
 
 // LogoutHandler trata requisições de logout
 // @Summary Logout
-// @Description Realiza logout do usuário invalidando o token de acesso. Requer headers obrigatórios X-Correlation-ID e X-Application, e token no header Authorization.
+// @Description Realiza logout do usuário invalidando o token de acesso. Requer headers obrigatórios X-Correlation-ID e X-Tenant-Id, e token no header Authorization.
 // @Tags auth
 // @Accept json
 // @Produce json
 // @Param X-Correlation-ID header string true "ID de correlação para rastreamento da requisição"
-// @Param X-Application header string true "ID da aplicação cliente (UUID)"
+// @Param X-Tenant-Id header string true "ID da aplicação cliente (UUID)"
 // @Param Authorization header string true "Token Bearer para autenticação"
 // @Success 200 {object} map[string]string "Logout realizado com sucesso"
 // @Failure 400 {object} pkg.ErrorResponse "Erro de validação (headers ausentes)"
@@ -274,7 +274,7 @@ func (h *AuthHandlers) LogoutHandler(c echo.Context) error {
 		})
 	}
 
-	xApplication, err := GetXApplication(c)
+	tenantId, err := GetTenantId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
 			Error:   "MISSING_HEADER",
@@ -306,7 +306,7 @@ func (h *AuthHandlers) LogoutHandler(c echo.Context) error {
 	// Criar comando de domínio encapsulado
 	command := appdto.NewLogoutCommand(
 		token,
-		xApplication,
+		tenantId,
 		correlationID,
 		c.Request().Context(),
 	)
@@ -315,7 +315,7 @@ func (h *AuthHandlers) LogoutHandler(c echo.Context) error {
 	if err := command.Validate(); err != nil {
 		h.logger.Error("Erro de validação no comando de logout",
 			zap.String("correlationId", correlationID),
-			zap.String("applicationId", xApplication),
+			zap.String("applicationId", tenantId),
 			zap.Error(err),
 		)
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
@@ -330,7 +330,7 @@ func (h *AuthHandlers) LogoutHandler(c echo.Context) error {
 	if err != nil {
 		h.logger.Error("Erro no caso de uso de logout",
 			zap.String("correlationId", correlationID),
-			zap.String("applicationId", xApplication),
+			zap.String("applicationId", tenantId),
 			zap.Error(err),
 		)
 		return handleError(c, err, correlationID)
@@ -338,7 +338,7 @@ func (h *AuthHandlers) LogoutHandler(c echo.Context) error {
 
 	h.logger.Info("Logout realizado com sucesso",
 		zap.String("correlationId", correlationID),
-		zap.String("applicationId", xApplication),
+		zap.String("applicationId", tenantId),
 	)
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "Logout realizado com sucesso"})
@@ -368,29 +368,29 @@ func GetCorrelationID(c echo.Context) (string, error) {
 	return correlationID, nil
 }
 
-// GetXApplication obtém o application ID do header (obrigatório)
-func GetXApplication(c echo.Context) (string, error) {
-	xApplication := c.Request().Header.Get("X-Application")
-	if xApplication == "" {
+// GetTenantId obtém o application ID do header (obrigatório)
+func GetTenantId(c echo.Context) (string, error) {
+	tenantId := c.Request().Header.Get("X-Tenant-Id")
+	if tenantId == "" {
 		return "", &HeaderError{
-			Message: "Header X-Application é obrigatório",
+			Message: "Header X-Tenant-Id é obrigatório",
 		}
 	}
 
 	// Define o header na resposta para o frontend
-	c.Response().Header().Set("X-Application", xApplication)
+	c.Response().Header().Set("X-Tenant-Id", tenantId)
 
-	return xApplication, nil
+	return tenantId, nil
 }
 
 // ValidateTokenHandler trata requisições de validação de token
 // @Summary Validate token
-// @Description Valida se um token JWT é válido e não expirou. Requer headers obrigatórios X-Correlation-ID e X-Application.
+// @Description Valida se um token JWT é válido e não expirou. Requer headers obrigatórios X-Correlation-ID e X-Tenant-Id.
 // @Tags auth
 // @Accept json
 // @Produce json
 // @Param X-Correlation-ID header string true "ID de correlação para rastreamento da requisição"
-// @Param X-Application header string true "ID da aplicação cliente (UUID)"
+// @Param X-Tenant-Id header string true "ID da aplicação cliente (UUID)"
 // @Param request body dto.ValidateTokenRequestDTO true "Token para validação"
 // @Success 200 {object} map[string]string "Token válido"
 // @Failure 400 {object} pkg.ErrorResponse "Erro de validação (headers ausentes ou dados inválidos)"
@@ -408,7 +408,7 @@ func (h *AuthHandlers) ValidateTokenHandler(c echo.Context) error {
 		})
 	}
 
-	xApplication, err := GetXApplication(c)
+	tenantId, err := GetTenantId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
 			Error:   "MISSING_HEADER",
@@ -421,7 +421,7 @@ func (h *AuthHandlers) ValidateTokenHandler(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		h.logger.Error("Erro ao fazer bind da requisição de validação de token",
 			zap.String("correlationId", correlationID),
-			zap.String("applicationId", xApplication),
+			zap.String("applicationId", tenantId),
 			zap.Error(err),
 		)
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
@@ -434,7 +434,7 @@ func (h *AuthHandlers) ValidateTokenHandler(c echo.Context) error {
 	// Criar comando de domínio encapsulado
 	command := appdto.NewValidateTokenCommand(
 		req.Token,
-		xApplication,
+		tenantId,
 		correlationID,
 		c.Request().Context(),
 	)
@@ -443,7 +443,7 @@ func (h *AuthHandlers) ValidateTokenHandler(c echo.Context) error {
 	if err := command.Validate(); err != nil {
 		h.logger.Error("Erro de validação no comando de validação de token",
 			zap.String("correlationId", correlationID),
-			zap.String("applicationId", xApplication),
+			zap.String("applicationId", tenantId),
 			zap.Error(err),
 		)
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
@@ -458,7 +458,7 @@ func (h *AuthHandlers) ValidateTokenHandler(c echo.Context) error {
 	if err != nil {
 		h.logger.Error("Erro no caso de uso de validação de token",
 			zap.String("correlationId", correlationID),
-			zap.String("applicationId", xApplication),
+			zap.String("applicationId", tenantId),
 			zap.Error(err),
 		)
 		return handleError(c, err, correlationID)
@@ -466,7 +466,7 @@ func (h *AuthHandlers) ValidateTokenHandler(c echo.Context) error {
 
 	h.logger.Info("Token validado com sucesso",
 		zap.String("correlationId", correlationID),
-		zap.String("applicationId", xApplication),
+		zap.String("applicationId", tenantId),
 	)
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "Token válido"})
@@ -474,12 +474,12 @@ func (h *AuthHandlers) ValidateTokenHandler(c echo.Context) error {
 
 // ChangePasswordHandler trata requisições de alteração de senha
 // @Summary Change password
-// @Description Altera a senha do usuário autenticado. Requer headers obrigatórios X-Correlation-ID, X-Application e Authorization.
+// @Description Altera a senha do usuário autenticado. Requer headers obrigatórios X-Correlation-ID, X-Tenant-Id e Authorization.
 // @Tags auth
 // @Accept json
 // @Produce json
 // @Param X-Correlation-ID header string true "ID de correlação para rastreamento da requisição"
-// @Param X-Application header string true "ID da aplicação cliente (UUID)"
+// @Param X-Tenant-Id header string true "ID da aplicação cliente (UUID)"
 // @Param Authorization header string true "Token Bearer para autenticação"
 // @Param request body dto.ChangePasswordRequestDTO true "Dados para alteração de senha"
 // @Success 200 {object} map[string]string "Senha alterada com sucesso"
@@ -498,7 +498,7 @@ func (h *AuthHandlers) ChangePasswordHandler(c echo.Context) error {
 		})
 	}
 
-	xApplication, err := GetXApplication(c)
+	tenantId, err := GetTenantId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
 			Error:   "MISSING_HEADER",
@@ -531,7 +531,7 @@ func (h *AuthHandlers) ChangePasswordHandler(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		h.logger.Error("Erro ao fazer bind da requisição de alteração de senha",
 			zap.String("correlationId", correlationID),
-			zap.String("applicationId", xApplication),
+			zap.String("applicationId", tenantId),
 			zap.Error(err),
 		)
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
@@ -547,7 +547,7 @@ func (h *AuthHandlers) ChangePasswordHandler(c echo.Context) error {
 		req.CurrentPassword,
 		req.NewPassword,
 		req.ConfirmNewPassword,
-		xApplication,
+		tenantId,
 		correlationID,
 		c.Request().Context(),
 	)
@@ -556,7 +556,7 @@ func (h *AuthHandlers) ChangePasswordHandler(c echo.Context) error {
 	if err := command.Validate(); err != nil {
 		h.logger.Error("Erro de validação no comando de alteração de senha",
 			zap.String("correlationId", correlationID),
-			zap.String("applicationId", xApplication),
+			zap.String("applicationId", tenantId),
 			zap.Error(err),
 		)
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
@@ -571,7 +571,7 @@ func (h *AuthHandlers) ChangePasswordHandler(c echo.Context) error {
 	if err != nil {
 		h.logger.Error("Erro no caso de uso de alteração de senha",
 			zap.String("correlationId", correlationID),
-			zap.String("applicationId", xApplication),
+			zap.String("applicationId", tenantId),
 			zap.Error(err),
 		)
 		return handleError(c, err, correlationID)
@@ -579,7 +579,7 @@ func (h *AuthHandlers) ChangePasswordHandler(c echo.Context) error {
 
 	h.logger.Info("Senha alterada com sucesso",
 		zap.String("correlationId", correlationID),
-		zap.String("applicationId", xApplication),
+		zap.String("applicationId", tenantId),
 	)
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "Senha alterada com sucesso"})
@@ -587,12 +587,12 @@ func (h *AuthHandlers) ChangePasswordHandler(c echo.Context) error {
 
 // ResetPasswordHandler trata requisições de reset de senha
 // @Summary Reset password
-// @Description Reseta a senha do usuário usando um token de reset válido. Requer headers obrigatórios X-Correlation-ID e X-Application.
+// @Description Reseta a senha do usuário usando um token de reset válido. Requer headers obrigatórios X-Correlation-ID e X-Tenant-Id.
 // @Tags auth
 // @Accept json
 // @Produce json
 // @Param X-Correlation-ID header string true "ID de correlação para rastreamento da requisição"
-// @Param X-Application header string true "ID da aplicação cliente (UUID)"
+// @Param X-Tenant-Id header string true "ID da aplicação cliente (UUID)"
 // @Param request body dto.ResetPasswordRequestDTO true "Dados para reset de senha"
 // @Success 200 {object} map[string]string "Senha resetada com sucesso"
 // @Failure 400 {object} pkg.ErrorResponse "Erro de validação (headers ausentes, dados inválidos, token inválido ou usuário não ativo)"
@@ -610,7 +610,7 @@ func (h *AuthHandlers) ResetPasswordHandler(c echo.Context) error {
 		})
 	}
 
-	xApplication, err := GetXApplication(c)
+	tenantId, err := GetTenantId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
 			Error:   "MISSING_HEADER",
@@ -623,7 +623,7 @@ func (h *AuthHandlers) ResetPasswordHandler(c echo.Context) error {
 	if err := c.Bind(&req); err != nil {
 		h.logger.Error("Erro ao fazer bind da requisição de reset de senha",
 			zap.String("correlationId", correlationID),
-			zap.String("applicationId", xApplication),
+			zap.String("applicationId", tenantId),
 			zap.Error(err),
 		)
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
@@ -639,7 +639,7 @@ func (h *AuthHandlers) ResetPasswordHandler(c echo.Context) error {
 		req.ResetToken,
 		req.NewPassword,
 		req.ConfirmNewPassword,
-		xApplication,
+		tenantId,
 		correlationID,
 		c.Request().Context(),
 	)
@@ -648,7 +648,7 @@ func (h *AuthHandlers) ResetPasswordHandler(c echo.Context) error {
 	if err := command.Validate(); err != nil {
 		h.logger.Error("Erro de validação no comando de reset de senha",
 			zap.String("correlationId", correlationID),
-			zap.String("applicationId", xApplication),
+			zap.String("applicationId", tenantId),
 			zap.Error(err),
 		)
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
@@ -663,7 +663,7 @@ func (h *AuthHandlers) ResetPasswordHandler(c echo.Context) error {
 	if err != nil {
 		h.logger.Error("Erro no caso de uso de reset de senha",
 			zap.String("correlationId", correlationID),
-			zap.String("applicationId", xApplication),
+			zap.String("applicationId", tenantId),
 			zap.Error(err),
 		)
 		return handleError(c, err, correlationID)
@@ -671,7 +671,7 @@ func (h *AuthHandlers) ResetPasswordHandler(c echo.Context) error {
 
 	h.logger.Info("Senha resetada com sucesso",
 		zap.String("correlationId", correlationID),
-		zap.String("applicationId", xApplication),
+		zap.String("applicationId", tenantId),
 	)
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "Senha resetada com sucesso"})

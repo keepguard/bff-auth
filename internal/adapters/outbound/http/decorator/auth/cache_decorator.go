@@ -174,29 +174,29 @@ func (d *cacheDecorator) generateCacheKey(operation string, params ...interface{
 }
 
 // Login - NÃO CACHEIA (autenticação sempre deve ser validada)
-func (d *cacheDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, xApplication, correlationID string) (inboundDto.AuthResponseDTO, error) {
-	return d.inner.Login(ctx, req, xApplication, correlationID)
+func (d *cacheDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
+	return d.inner.Login(ctx, req, tenantId, correlationID)
 }
 
 // RefreshToken - NÃO CACHEIA (tokens sempre devem ser validados)
-func (d *cacheDecorator) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, xApplication, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
-	return d.inner.RefreshToken(ctx, req, xApplication, correlationID)
+func (d *cacheDecorator) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
+	return d.inner.RefreshToken(ctx, req, tenantId, correlationID)
 }
 
 // Logout - NÃO CACHEIA e INVALIDA cache relacionado
-func (d *cacheDecorator) Logout(ctx context.Context, token, xApplication, correlationID string) error {
-	err := d.inner.Logout(ctx, token, xApplication, correlationID)
+func (d *cacheDecorator) Logout(ctx context.Context, token, tenantId, correlationID string) error {
+	err := d.inner.Logout(ctx, token, tenantId, correlationID)
 
 	// Invalida cache de validação de token
-	cacheKey := d.generateCacheKey("ValidateToken", token, xApplication)
+	cacheKey := d.generateCacheKey("ValidateToken", token, tenantId)
 	d.cache.invalidate(cacheKey)
 
 	return err
 }
 
 // ValidateToken - CACHEIA (validação de token pode ser cacheada por curto período)
-func (d *cacheDecorator) ValidateToken(ctx context.Context, token, xApplication, correlationID string) error {
-	cacheKey := d.generateCacheKey("ValidateToken", token, xApplication)
+func (d *cacheDecorator) ValidateToken(ctx context.Context, token, tenantId, correlationID string) error {
+	cacheKey := d.generateCacheKey("ValidateToken", token, tenantId)
 
 	// Tenta obter do cache
 	if cached, found := d.cache.get(cacheKey); found {
@@ -207,7 +207,7 @@ func (d *cacheDecorator) ValidateToken(ctx context.Context, token, xApplication,
 	}
 
 	// Se não encontrou no cache, executa a operação
-	err := d.inner.ValidateToken(ctx, token, xApplication, correlationID)
+	err := d.inner.ValidateToken(ctx, token, tenantId, correlationID)
 
 	// Armazena no cache (mesmo erros, para evitar validações repetidas)
 	d.cache.set(cacheKey, err)
@@ -216,16 +216,16 @@ func (d *cacheDecorator) ValidateToken(ctx context.Context, token, xApplication,
 }
 
 // ChangePassword - NÃO CACHEIA (operação de escrita)
-func (d *cacheDecorator) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, xApplication, correlationID string) error {
-	return d.inner.ChangePassword(ctx, req, xApplication, correlationID)
+func (d *cacheDecorator) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, tenantId, correlationID string) error {
+	return d.inner.ChangePassword(ctx, req, tenantId, correlationID)
 }
 
 // ResetPassword - NÃO CACHEIA (operação de escrita)
-func (d *cacheDecorator) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, xApplication, correlationID string) error {
-	return d.inner.ResetPassword(ctx, req, xApplication, correlationID)
+func (d *cacheDecorator) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, tenantId, correlationID string) error {
+	return d.inner.ResetPassword(ctx, req, tenantId, correlationID)
 }
 
 // GenerateResetToken implementa o método GenerateResetToken (sem cache)
-func (d *cacheDecorator) GenerateResetToken(ctx context.Context, req map[string]interface{}, xApplication, correlationID string) (outboundDto.GenerateResetTokenMSResponseDTO, error) {
-	return d.inner.GenerateResetToken(ctx, req, xApplication, correlationID)
+func (d *cacheDecorator) GenerateResetToken(ctx context.Context, req map[string]interface{}, tenantId, correlationID string) (outboundDto.GenerateResetTokenMSResponseDTO, error) {
+	return d.inner.GenerateResetToken(ctx, req, tenantId, correlationID)
 }

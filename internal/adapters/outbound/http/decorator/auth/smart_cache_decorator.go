@@ -36,7 +36,7 @@ type tokenMetadata struct {
 	token        string
 	expiresAt    time.Time
 	createdAt    time.Time
-	xApplication string
+	tenantId string
 }
 
 // isExpired verifica se o token expirou
@@ -105,7 +105,7 @@ func (c *smartCache) cleanup() {
 }
 
 // storeTokenMetadata armazena metadados de um token
-func (c *smartCache) storeTokenMetadata(token string, expiresIn int64, xApplication string) {
+func (c *smartCache) storeTokenMetadata(token string, expiresIn int64, tenantId string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
@@ -120,21 +120,21 @@ func (c *smartCache) storeTokenMetadata(token string, expiresIn int64, xApplicat
 		ttl = c.config.MinTTL
 	}
 
-	key := c.generateTokenKey(token, xApplication)
+	key := c.generateTokenKey(token, tenantId)
 	c.tokens[key] = &tokenMetadata{
 		token:        token,
 		expiresAt:    time.Now().Add(ttl),
 		createdAt:    time.Now(),
-		xApplication: xApplication,
+		tenantId: tenantId,
 	}
 }
 
 // getTokenMetadata obtém metadados de um token
-func (c *smartCache) getTokenMetadata(token, xApplication string) (*tokenMetadata, bool) {
+func (c *smartCache) getTokenMetadata(token, tenantId string) (*tokenMetadata, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	key := c.generateTokenKey(token, xApplication)
+	key := c.generateTokenKey(token, tenantId)
 	metadata, exists := c.tokens[key]
 
 	if !exists || metadata.isExpired() {
@@ -145,21 +145,21 @@ func (c *smartCache) getTokenMetadata(token, xApplication string) (*tokenMetadat
 }
 
 // invalidateToken invalida um token específico
-func (c *smartCache) invalidateToken(token, xApplication string) {
+func (c *smartCache) invalidateToken(token, tenantId string) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	key := c.generateTokenKey(token, xApplication)
+	key := c.generateTokenKey(token, tenantId)
 	delete(c.tokens, key)
 	delete(c.results, key)
 }
 
 // cacheValidationResult cacheia resultado de ValidateToken
-func (c *smartCache) cacheValidationResult(token, xApplication string, err error) {
+func (c *smartCache) cacheValidationResult(token, tenantId string, err error) {
 	c.mu.Lock()
 	defer c.mu.Unlock()
 
-	key := c.generateTokenKey(token, xApplication)
+	key := c.generateTokenKey(token, tenantId)
 
 	// Busca metadados do token para usar TTL correto
 	metadata, exists := c.tokens[key]
@@ -180,11 +180,11 @@ func (c *smartCache) cacheValidationResult(token, xApplication string, err error
 }
 
 // getValidationResult obtém resultado cacheado de ValidateToken
-func (c *smartCache) getValidationResult(token, xApplication string) (error, bool) {
+func (c *smartCache) getValidationResult(token, tenantId string) (error, bool) {
 	c.mu.RLock()
 	defer c.mu.RUnlock()
 
-	key := c.generateTokenKey(token, xApplication)
+	key := c.generateTokenKey(token, tenantId)
 	entry, exists := c.results[key]
 
 	if !exists || entry.isExpired() {
@@ -205,8 +205,8 @@ func (c *smartCache) getValidationResult(token, xApplication string) (error, boo
 }
 
 // generateTokenKey gera chave de cache para o token
-func (c *smartCache) generateTokenKey(token, xApplication string) string {
-	data := token + ":" + xApplication
+func (c *smartCache) generateTokenKey(token, tenantId string) string {
+	data := token + ":" + tenantId
 	hash := sha256.Sum256([]byte(data))
 	return hex.EncodeToString(hash[:])
 }
@@ -232,66 +232,66 @@ func NewSmartCacheDecorator(
 }
 
 // Login - NÃO CACHEIA mas ARMAZENA metadados do token
-func (d *smartCacheDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, xApplication, correlationID string) (inboundDto.AuthResponseDTO, error) {
-	response, err := d.inner.Login(ctx, req, xApplication, correlationID)
+func (d *smartCacheDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
+	response, err := d.inner.Login(ctx, req, tenantId, correlationID)
 
 	if err == nil {
 		// Armazena metadados do token para uso futuro no cache
-		d.cache.storeTokenMetadata(response.Token, response.ExpiresIn, xApplication)
+		d.cache.storeTokenMetadata(response.Token, response.ExpiresIn, tenantId)
 	}
 
 	return response, err
 }
 
 // RefreshToken - NÃO CACHEIA mas ARMAZENA metadados do token
-func (d *smartCacheDecorator) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, xApplication, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
-	response, err := d.inner.RefreshToken(ctx, req, xApplication, correlationID)
+func (d *smartCacheDecorator) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
+	response, err := d.inner.RefreshToken(ctx, req, tenantId, correlationID)
 
 	if err == nil {
 		// Armazena metadados do novo token
-		d.cache.storeTokenMetadata(response.Token, response.ExpiresIn, xApplication)
+		d.cache.storeTokenMetadata(response.Token, response.ExpiresIn, tenantId)
 	}
 
 	return response, err
 }
 
 // Logout - INVALIDA token do cache
-func (d *smartCacheDecorator) Logout(ctx context.Context, token, xApplication, correlationID string) error {
-	err := d.inner.Logout(ctx, token, xApplication, correlationID)
+func (d *smartCacheDecorator) Logout(ctx context.Context, token, tenantId, correlationID string) error {
+	err := d.inner.Logout(ctx, token, tenantId, correlationID)
 
 	// Invalida token (mesmo se logout falhar, por segurança)
-	d.cache.invalidateToken(token, xApplication)
+	d.cache.invalidateToken(token, tenantId)
 
 	return err
 }
 
 // ValidateToken - CACHEIA com TTL baseado no ExpiresIn do token
-func (d *smartCacheDecorator) ValidateToken(ctx context.Context, token, xApplication, correlationID string) error {
+func (d *smartCacheDecorator) ValidateToken(ctx context.Context, token, tenantId, correlationID string) error {
 	// Tenta obter do cache
-	if cachedErr, found := d.cache.getValidationResult(token, xApplication); found {
+	if cachedErr, found := d.cache.getValidationResult(token, tenantId); found {
 		return cachedErr
 	}
 
 	// Se não encontrou no cache, executa validação
-	err := d.inner.ValidateToken(ctx, token, xApplication, correlationID)
+	err := d.inner.ValidateToken(ctx, token, tenantId, correlationID)
 
 	// Armazena resultado no cache (com TTL baseado no token)
-	d.cache.cacheValidationResult(token, xApplication, err)
+	d.cache.cacheValidationResult(token, tenantId, err)
 
 	return err
 }
 
 // ChangePassword - NÃO CACHEIA
-func (d *smartCacheDecorator) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, xApplication, correlationID string) error {
-	return d.inner.ChangePassword(ctx, req, xApplication, correlationID)
+func (d *smartCacheDecorator) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, tenantId, correlationID string) error {
+	return d.inner.ChangePassword(ctx, req, tenantId, correlationID)
 }
 
 // ResetPassword - NÃO CACHEIA
-func (d *smartCacheDecorator) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, xApplication, correlationID string) error {
-	return d.inner.ResetPassword(ctx, req, xApplication, correlationID)
+func (d *smartCacheDecorator) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, tenantId, correlationID string) error {
+	return d.inner.ResetPassword(ctx, req, tenantId, correlationID)
 }
 
 // GenerateResetToken implementa o método GenerateResetToken (sem cache)
-func (d *smartCacheDecorator) GenerateResetToken(ctx context.Context, req map[string]interface{}, xApplication, correlationID string) (outboundDto.GenerateResetTokenMSResponseDTO, error) {
-	return d.inner.GenerateResetToken(ctx, req, xApplication, correlationID)
+func (d *smartCacheDecorator) GenerateResetToken(ctx context.Context, req map[string]interface{}, tenantId, correlationID string) (outboundDto.GenerateResetTokenMSResponseDTO, error) {
+	return d.inner.GenerateResetToken(ctx, req, tenantId, correlationID)
 }
