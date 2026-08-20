@@ -174,13 +174,13 @@ func (d *cacheDecorator) generateCacheKey(operation string, params ...interface{
 }
 
 // Login - NÃO CACHEIA (autenticação sempre deve ser validada)
-func (d *cacheDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
-	return d.inner.Login(ctx, req, tenantId, correlationID)
+func (d *cacheDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId string) (inboundDto.AuthResponseDTO, error) {
+	return d.inner.Login(ctx, req, tenantId, correlationID, clientId)
 }
 
 // RefreshToken - NÃO CACHEIA (tokens sempre devem ser validados)
-func (d *cacheDecorator) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
-	return d.inner.RefreshToken(ctx, req, tenantId, correlationID)
+func (d *cacheDecorator) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID, clientId string) (inboundDto.RefreshTokenResponseDTO, error) {
+	return d.inner.RefreshToken(ctx, req, tenantId, correlationID, clientId)
 }
 
 // Logout - NÃO CACHEIA e INVALIDA cache relacionado

@@ -94,7 +94,7 @@ func (h *AuthHandlers) LoginHandler(c echo.Context) error {
 		})
 	}
 
-	tenantId, err := GetTenantId(c)
+	tenantId, clientId, err := GetTenantAndClientId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
 			Error:   "MISSING_HEADER",
@@ -123,6 +123,7 @@ func (h *AuthHandlers) LoginHandler(c echo.Context) error {
 		req.Password,
 		tenantId,
 		correlationID,
+		clientId,
 		c.Request().Context(),
 	)
 
@@ -185,7 +186,7 @@ func (h *AuthHandlers) RefreshHandler(c echo.Context) error {
 		})
 	}
 
-	tenantId, err := GetTenantId(c)
+	tenantId, clientId, err := GetTenantAndClientId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
 			Error:   "MISSING_HEADER",
@@ -213,6 +214,7 @@ func (h *AuthHandlers) RefreshHandler(c echo.Context) error {
 		req.Token,
 		tenantId,
 		correlationID,
+		clientId,
 		c.Request().Context(),
 	)
 
@@ -274,7 +276,7 @@ func (h *AuthHandlers) LogoutHandler(c echo.Context) error {
 		})
 	}
 
-	tenantId, err := GetTenantId(c)
+	tenantId, _, err := GetTenantAndClientId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
 			Error:   "MISSING_HEADER",
@@ -368,11 +370,15 @@ func GetCorrelationID(c echo.Context) (string, error) {
 	return correlationID, nil
 }
 
-// GetTenantId obtém o application ID do header (obrigatório)
-func GetTenantId(c echo.Context) (string, error) {
+// GetTenantAndClientId obtém o application ID e client ID do header
+func GetTenantAndClientId(c echo.Context) (string, string, error) {
 	tenantId := c.Request().Header.Get("X-Tenant-Id")
+	clientId := c.Request().Header.Get("X-Client-ID")
+	if clientId == "" {
+		clientId = "keepguard-default-client"
+	}
 	if tenantId == "" {
-		return "", &HeaderError{
+		return "", "", &HeaderError{
 			Message: "Header X-Tenant-Id é obrigatório",
 		}
 	}
@@ -380,7 +386,7 @@ func GetTenantId(c echo.Context) (string, error) {
 	// Define o header na resposta para o frontend
 	c.Response().Header().Set("X-Tenant-Id", tenantId)
 
-	return tenantId, nil
+	return tenantId, clientId, nil
 }
 
 // ValidateTokenHandler trata requisições de validação de token
@@ -408,7 +414,7 @@ func (h *AuthHandlers) ValidateTokenHandler(c echo.Context) error {
 		})
 	}
 
-	tenantId, err := GetTenantId(c)
+	tenantId, _, err := GetTenantAndClientId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
 			Error:   "MISSING_HEADER",
@@ -498,7 +504,7 @@ func (h *AuthHandlers) ChangePasswordHandler(c echo.Context) error {
 		})
 	}
 
-	tenantId, err := GetTenantId(c)
+	tenantId, _, err := GetTenantAndClientId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
 			Error:   "MISSING_HEADER",
@@ -610,7 +616,7 @@ func (h *AuthHandlers) ResetPasswordHandler(c echo.Context) error {
 		})
 	}
 
-	tenantId, err := GetTenantId(c)
+	tenantId, _, err := GetTenantAndClientId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
 			Error:   "MISSING_HEADER",

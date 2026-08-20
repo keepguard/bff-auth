@@ -48,10 +48,10 @@ func (d *metricsDecorator) getStatusCodeFromError(err error) int {
 }
 
 // Login implementa o método Login com coleta de métricas
-func (d *metricsDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
+func (d *metricsDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId string) (inboundDto.AuthResponseDTO, error) {
 	start := time.Now()
 
-	response, err := d.inner.Login(ctx, req, tenantId, correlationID)
+	response, err := d.inner.Login(ctx, req, tenantId, correlationID, clientId)
 
 	duration := time.Since(start)
 	statusCode := d.getStatusCodeFromError(err)
@@ -71,10 +71,10 @@ func (d *metricsDecorator) Login(ctx context.Context, req inboundDto.AuthRequest
 }
 
 // RefreshToken implementa o método RefreshToken com coleta de métricas
-func (d *metricsDecorator) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
+func (d *metricsDecorator) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID, clientId string) (inboundDto.RefreshTokenResponseDTO, error) {
 	start := time.Now()
 
-	response, err := d.inner.RefreshToken(ctx, req, tenantId, correlationID)
+	response, err := d.inner.RefreshToken(ctx, req, tenantId, correlationID, clientId)
 
 	duration := time.Since(start)
 	statusCode := d.getStatusCodeFromError(err)

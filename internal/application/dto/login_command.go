@@ -9,16 +9,18 @@ type LoginCommand struct {
 	Password      string
 	TenantId  string
 	CorrelationID string
+	ClientId      string
 	Context       context.Context
 }
 
 // NewLoginCommand cria uma nova instância do LoginCommand
-func NewLoginCommand(username, password, tenantId, correlationID string, ctx context.Context) LoginCommand {
+func NewLoginCommand(username, password, tenantId, correlationID, clientId string, ctx context.Context) LoginCommand {
 	return LoginCommand{
 		Username:      username,
 		Password:      password,
 		TenantId:  tenantId,
 		CorrelationID: correlationID,
+		ClientId:      clientId,
 		Context:       ctx,
 	}
 }

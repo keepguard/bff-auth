@@ -44,7 +44,7 @@ func (uc *loginUseCaseImpl) Execute(command appdto.LoginCommand) (dto.AuthRespon
 	}
 
 	// Chama o cliente de autenticação
-	response, err := uc.authClient.Login(command.Context, req, command.TenantId, command.CorrelationID)
+	response, err := uc.authClient.Login(command.Context, req, command.TenantId, command.CorrelationID, command.ClientId)
 	if err != nil {
 		return dto.AuthResponseDTO{}, err
 	}

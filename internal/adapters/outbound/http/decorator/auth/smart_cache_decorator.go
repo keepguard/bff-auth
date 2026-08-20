@@ -232,8 +232,8 @@ func NewSmartCacheDecorator(
 }
 
 // Login - NÃO CACHEIA mas ARMAZENA metadados do token
-func (d *smartCacheDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
-	response, err := d.inner.Login(ctx, req, tenantId, correlationID)
+func (d *smartCacheDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId string) (inboundDto.AuthResponseDTO, error) {
+	response, err := d.inner.Login(ctx, req, tenantId, correlationID, clientId)
 
 	if err == nil {
 		// Armazena metadados do token para uso futuro no cache
@@ -244,8 +244,8 @@ func (d *smartCacheDecorator) Login(ctx context.Context, req inboundDto.AuthRequ
 }
 
 // RefreshToken - NÃO CACHEIA mas ARMAZENA metadados do token
-func (d *smartCacheDecorator) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
-	response, err := d.inner.RefreshToken(ctx, req, tenantId, correlationID)
+func (d *smartCacheDecorator) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID, clientId string) (inboundDto.RefreshTokenResponseDTO, error) {
+	response, err := d.inner.RefreshToken(ctx, req, tenantId, correlationID, clientId)
 
 	if err == nil {
 		// Armazena metadados do novo token

@@ -127,19 +127,19 @@ func (d *rateLimitDecorator) checkRateLimit() error {
 }
 
 // Login implementa o método Login com rate limiting
-func (d *rateLimitDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
+func (d *rateLimitDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId string) (inboundDto.AuthResponseDTO, error) {
 	if err := d.checkRateLimit(); err != nil {
 		return inboundDto.AuthResponseDTO{}, err
 	}
-	return d.inner.Login(ctx, req, tenantId, correlationID)
+	return d.inner.Login(ctx, req, tenantId, correlationID, clientId)
 }
 
 // RefreshToken implementa o método RefreshToken com rate limiting
-func (d *rateLimitDecorator) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
+func (d *rateLimitDecorator) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID, clientId string) (inboundDto.RefreshTokenResponseDTO, error) {
 	if err := d.checkRateLimit(); err != nil {
 		return inboundDto.RefreshTokenResponseDTO{}, err
 	}
-	return d.inner.RefreshToken(ctx, req, tenantId, correlationID)
+	return d.inner.RefreshToken(ctx, req, tenantId, correlationID, clientId)
 }
 
 // Logout implementa o método Logout com rate limiting

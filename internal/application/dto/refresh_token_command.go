@@ -8,15 +8,17 @@ type RefreshTokenCommand struct {
 	RefreshToken  string
 	TenantId  string
 	CorrelationID string
+	ClientId      string
 	Context       context.Context
 }
 
 // NewRefreshTokenCommand cria uma nova instância do RefreshTokenCommand
-func NewRefreshTokenCommand(refreshToken, tenantId, correlationID string, ctx context.Context) RefreshTokenCommand {
+func NewRefreshTokenCommand(refreshToken, tenantId, correlationID, clientId string, ctx context.Context) RefreshTokenCommand {
 	return RefreshTokenCommand{
 		RefreshToken:  refreshToken,
 		TenantId:  tenantId,
 		CorrelationID: correlationID,
+		ClientId:      clientId,
 		Context:       ctx,
 	}
 }

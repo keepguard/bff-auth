@@ -9,8 +9,8 @@ import (
 
 // AuthClient define a interface para o cliente de autenticação
 type AuthClient interface {
-	Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error)
-	RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID string) (inboundDto.RefreshTokenResponseDTO, error)
+	Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId string) (inboundDto.AuthResponseDTO, error)
+	RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID, clientId string) (inboundDto.RefreshTokenResponseDTO, error)
 	Logout(ctx context.Context, token, tenantId, correlationID string) error
 	ValidateToken(ctx context.Context, token, tenantId, correlationID string) error
 	ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, tenantId, correlationID string) error

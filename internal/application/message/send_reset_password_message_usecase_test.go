@@ -21,12 +21,12 @@ type MockAuthClient struct {
 	mock.Mock
 }
 
-func (m *MockAuthClient) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
+func (m *MockAuthClient) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId string) (inboundDto.AuthResponseDTO, error) {
 	args := m.Called(ctx, req, tenantId, correlationID)
 	return args.Get(0).(inboundDto.AuthResponseDTO), args.Error(1)
 }
 
-func (m *MockAuthClient) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
+func (m *MockAuthClient) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID, clientId string) (inboundDto.RefreshTokenResponseDTO, error) {
 	args := m.Called(ctx, req, tenantId, correlationID)
 	return args.Get(0).(inboundDto.RefreshTokenResponseDTO), args.Error(1)
 }

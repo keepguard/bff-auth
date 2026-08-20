@@ -25,6 +25,7 @@ func TestRefreshUseCase_Execute_Success(t *testing.T) {
 		"valid_refresh_token",
 		tenantId,
 		correlationID,
+		"keepguard-default-client",
 		ctx,
 	)
 
@@ -67,6 +68,7 @@ func TestRefreshUseCase_Execute_EmptyRefreshToken(t *testing.T) {
 		"",
 		tenantId,
 		correlationID,
+		"keepguard-default-client",
 		ctx,
 	)
 
@@ -105,6 +107,7 @@ func TestRefreshUseCase_Execute_AuthServiceError(t *testing.T) {
 		"invalid_refresh_token",
 		tenantId,
 		correlationID,
+		"keepguard-default-client",
 		ctx,
 	)
 
@@ -143,6 +146,7 @@ func TestRefreshUseCase_Execute_ContextCancelled(t *testing.T) {
 		"valid_refresh_token",
 		tenantId,
 		correlationID,
+		"keepguard-default-client",
 		ctx,
 	)
 
@@ -180,6 +184,7 @@ func TestRefreshUseCase_Execute_CompanyNotFound(t *testing.T) {
 		"valid_refresh_token",
 		tenantId,
 		correlationID,
+		"keepguard-default-client",
 		ctx,
 	)
 

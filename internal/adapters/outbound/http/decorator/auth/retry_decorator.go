@@ -141,12 +141,12 @@ func (d *retryDecorator) retry(ctx context.Context, operation func() error) erro
 }
 
 // Login implementa o método Login com retry
-func (d *retryDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
+func (d *retryDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId string) (inboundDto.AuthResponseDTO, error) {
 	var result inboundDto.AuthResponseDTO
 	var err error
 
 	retryErr := d.retry(ctx, func() error {
-		result, err = d.inner.Login(ctx, req, tenantId, correlationID)
+		result, err = d.inner.Login(ctx, req, tenantId, correlationID, clientId)
 		return err
 	})
 
@@ -154,12 +154,12 @@ func (d *retryDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDT
 }
 
 // RefreshToken implementa o método RefreshToken com retry
-func (d *retryDecorator) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
+func (d *retryDecorator) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID, clientId string) (inboundDto.RefreshTokenResponseDTO, error) {
 	var result inboundDto.RefreshTokenResponseDTO
 	var err error
 
 	retryErr := d.retry(ctx, func() error {
-		result, err = d.inner.RefreshToken(ctx, req, tenantId, correlationID)
+		result, err = d.inner.RefreshToken(ctx, req, tenantId, correlationID, clientId)
 		return err
 	})
 

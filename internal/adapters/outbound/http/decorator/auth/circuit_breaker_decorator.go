@@ -30,9 +30,9 @@ func NewCircuitBreakerDecorator(
 }
 
 // Login implementa o método Login com circuit breaker
-func (d *circuitBreakerDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
+func (d *circuitBreakerDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId string) (inboundDto.AuthResponseDTO, error) {
 	result, err := d.circuitBreaker.Execute(ctx, d.serviceName, func() (interface{}, error) {
-		return d.inner.Login(ctx, req, tenantId, correlationID)
+		return d.inner.Login(ctx, req, tenantId, correlationID, clientId)
 	})
 
 	if err != nil {
@@ -43,9 +43,9 @@ func (d *circuitBreakerDecorator) Login(ctx context.Context, req inboundDto.Auth
 }
 
 // RefreshToken implementa o método RefreshToken com circuit breaker
-func (d *circuitBreakerDecorator) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
+func (d *circuitBreakerDecorator) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID, clientId string) (inboundDto.RefreshTokenResponseDTO, error) {
 	result, err := d.circuitBreaker.Execute(ctx, d.serviceName, func() (interface{}, error) {
-		return d.inner.RefreshToken(ctx, req, tenantId, correlationID)
+		return d.inner.RefreshToken(ctx, req, tenantId, correlationID, clientId)
 	})
 
 	if err != nil {

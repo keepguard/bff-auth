@@ -32,7 +32,7 @@ func NewLoggingDecorator(
 }
 
 // Login implementa o método Login com logging estruturado
-func (d *loggingDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
+func (d *loggingDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId string) (inboundDto.AuthResponseDTO, error) {
 	start := time.Now()
 
 	d.logger.Info("Iniciando requisição",
@@ -43,7 +43,7 @@ func (d *loggingDecorator) Login(ctx context.Context, req inboundDto.AuthRequest
 		zap.String("username", req.Username),
 	)
 
-	response, err := d.inner.Login(ctx, req, tenantId, correlationID)
+	response, err := d.inner.Login(ctx, req, tenantId, correlationID, clientId)
 	duration := time.Since(start)
 
 	if err != nil {
@@ -71,7 +71,7 @@ func (d *loggingDecorator) Login(ctx context.Context, req inboundDto.AuthRequest
 }
 
 // RefreshToken implementa o método RefreshToken com logging estruturado
-func (d *loggingDecorator) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
+func (d *loggingDecorator) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID, clientId string) (inboundDto.RefreshTokenResponseDTO, error) {
 	start := time.Now()
 
 	d.logger.Info("Iniciando requisição",
@@ -81,7 +81,7 @@ func (d *loggingDecorator) RefreshToken(ctx context.Context, req inboundDto.Refr
 		zap.String("tenantId", tenantId),
 	)
 
-	response, err := d.inner.RefreshToken(ctx, req, tenantId, correlationID)
+	response, err := d.inner.RefreshToken(ctx, req, tenantId, correlationID, clientId)
 	duration := time.Since(start)
 
 	if err != nil {

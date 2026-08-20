@@ -17,12 +17,12 @@ type MockAuthClient struct {
 	mock.Mock
 }
 
-func (m *MockAuthClient) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
+func (m *MockAuthClient) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId string) (inboundDto.AuthResponseDTO, error) {
 	args := m.Called(ctx, req, tenantId, correlationID)
 	return args.Get(0).(inboundDto.AuthResponseDTO), args.Error(1)
 }
 
-func (m *MockAuthClient) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
+func (m *MockAuthClient) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID, clientId string) (inboundDto.RefreshTokenResponseDTO, error) {
 	args := m.Called(ctx, req, tenantId, correlationID)
 	return args.Get(0).(inboundDto.RefreshTokenResponseDTO), args.Error(1)
 }
@@ -90,6 +90,7 @@ func TestLoginUseCase_Execute_Success(t *testing.T) {
 		"testpass",
 		tenantId,
 		correlationID,
+		"keepguard-default-client",
 		ctx,
 	)
 
@@ -132,6 +133,7 @@ func TestLoginUseCase_Execute_EmptyUsername(t *testing.T) {
 		"testpass",
 		tenantId,
 		correlationID,
+		"keepguard-default-client",
 		ctx,
 	)
 
@@ -179,6 +181,7 @@ func TestLoginUseCase_Execute_EmptyPassword(t *testing.T) {
 		"",
 		tenantId,
 		correlationID,
+		"keepguard-default-client",
 		ctx,
 	)
 
@@ -217,6 +220,7 @@ func TestLoginUseCase_Execute_EmptyUsernameAndPassword(t *testing.T) {
 		"",
 		tenantId,
 		correlationID,
+		"keepguard-default-client",
 		ctx,
 	)
 
@@ -255,6 +259,7 @@ func TestLoginUseCase_Execute_AuthServiceError(t *testing.T) {
 		"testpass",
 		tenantId,
 		correlationID,
+		"keepguard-default-client",
 		ctx,
 	)
 
@@ -293,6 +298,7 @@ func TestLoginUseCase_Execute_ContextCancelled(t *testing.T) {
 		"testpass",
 		tenantId,
 		correlationID,
+		"keepguard-default-client",
 		ctx,
 	)
 
@@ -330,6 +336,7 @@ func TestLoginUseCase_Execute_InvalidCredentials(t *testing.T) {
 		"wrongpass",
 		tenantId,
 		correlationID,
+		"keepguard-default-client",
 		ctx,
 	)
 
@@ -373,6 +380,7 @@ func TestLoginUseCase_Execute_CompanyNotFound(t *testing.T) {
 		"testpass",
 		tenantId,
 		correlationID,
+		"keepguard-default-client",
 		ctx,
 	)
 

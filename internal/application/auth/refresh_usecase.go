@@ -35,7 +35,7 @@ func (uc *refreshUseCaseImpl) Execute(command appdto.RefreshTokenCommand) (dto.R
 	}
 
 	// Chama o cliente de autenticação
-	response, err := uc.authClient.RefreshToken(command.Context, req, command.TenantId, command.CorrelationID)
+	response, err := uc.authClient.RefreshToken(command.Context, req, command.TenantId, command.CorrelationID, command.ClientId)
 	if err != nil {
 		return dto.RefreshTokenResponseDTO{}, err
 	}

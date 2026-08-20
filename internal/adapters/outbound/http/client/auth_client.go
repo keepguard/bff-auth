@@ -68,7 +68,7 @@ func getErrorCodeFromProperties(properties map[string]interface{}) string {
 }
 
 // Login realiza login no ms-auth
-func (c *AuthClient) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
+func (c *AuthClient) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId string) (inboundDto.AuthResponseDTO, error) {
 	var response inboundDto.AuthResponseDTO
 
 	resp, err := c.client.R().
@@ -77,6 +77,7 @@ func (c *AuthClient) Login(ctx context.Context, req inboundDto.AuthRequestDTO, t
 		SetResult(&response).
 		SetHeader("X-Correlation-ID", correlationID).
 		SetHeader("X-Tenant-Id", tenantId).
+		SetHeader("X-Client-ID", clientId).
 		Post(c.baseURL + "/api/v1/auth/login")
 
 	if err != nil {
@@ -92,7 +93,7 @@ func (c *AuthClient) Login(ctx context.Context, req inboundDto.AuthRequestDTO, t
 }
 
 // RefreshToken renova o token no ms-auth
-func (c *AuthClient) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID string) (inboundDto.RefreshTokenResponseDTO, error) {
+func (c *AuthClient) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID, clientId string) (inboundDto.RefreshTokenResponseDTO, error) {
 	var response inboundDto.RefreshTokenResponseDTO
 
 	resp, err := c.client.R().
@@ -101,6 +102,7 @@ func (c *AuthClient) RefreshToken(ctx context.Context, req inboundDto.RefreshTok
 		SetResult(&response).
 		SetHeader("X-Correlation-ID", correlationID).
 		SetHeader("X-Tenant-Id", tenantId).
+		SetHeader("X-Client-ID", clientId).
 		Post(c.baseURL + "/api/v1/auth/refresh")
 
 	if err != nil {

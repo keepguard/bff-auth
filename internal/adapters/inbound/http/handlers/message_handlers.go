@@ -67,7 +67,7 @@ func (h *MessageHandlers) SendResetPasswordMessageHandler(c echo.Context) error 
 		})
 	}
 
-	tenantId, err := GetTenantId(c)
+	tenantId, _, err := GetTenantAndClientId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
 			Error:   "MISSING_HEADER",
