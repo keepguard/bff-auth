@@ -43,9 +43,9 @@ func NewMessageHandlersWithLogger(
 }
 
 // SendResetPasswordMessageHandler trata requisições de envio de mensagem de reset de senha
-// @Summary Send reset password message
-// @Description Envia uma mensagem de reset de senha para o email do usuário. Não requer autenticação. Requer headers obrigatórios X-Correlation-ID e X-Tenant-Id.
-// @Tags messages
+// @Summary Send forgot password message
+// @Description Envia uma mensagem com token de recuperação de senha para o email do usuário. Não requer autenticação. Requer headers obrigatórios X-Correlation-ID e X-Tenant-Id.
+// @Tags auth
 // @Accept json
 // @Produce json
 // @Param X-Correlation-ID header string true "ID de correlação para rastreamento da requisição"
@@ -55,7 +55,7 @@ func NewMessageHandlersWithLogger(
 // @Failure 400 {object} pkg.ErrorResponse "Erro de validação (headers ausentes, email inválido ou usuário não ativo)"
 // @Failure 404 {object} pkg.ErrorResponse "Usuário não encontrado"
 // @Failure 500 {object} pkg.ErrorResponse "Erro interno do servidor"
-// @Router /message/reset-password/send [post]
+// @Router /auth/forgot-password [post]
 func (h *MessageHandlers) SendResetPasswordMessageHandler(c echo.Context) error {
 	// Obter correlation ID e application ID (obrigatórios)
 	correlationID, err := GetCorrelationID(c)

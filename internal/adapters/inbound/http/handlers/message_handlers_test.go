@@ -49,7 +49,7 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_Success(t *testing.T) {
 		Email: "test@example.com",
 	}
 	reqBodyBytes, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/message/reset-password/send", bytes.NewReader(reqBodyBytes))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/forgot-password", bytes.NewReader(reqBodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Correlation-ID", "test-correlation-id")
 	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")
@@ -88,7 +88,7 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_MissingCorrelationID(t 
 		Email: "test@example.com",
 	}
 	reqBodyBytes, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/message/reset-password/send", bytes.NewReader(reqBodyBytes))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/forgot-password", bytes.NewReader(reqBodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")
 	// Não definir X-Correlation-ID
@@ -119,7 +119,7 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_MissingTenantId(t *test
 		Email: "test@example.com",
 	}
 	reqBodyBytes, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/message/reset-password/send", bytes.NewReader(reqBodyBytes))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/forgot-password", bytes.NewReader(reqBodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Correlation-ID", "test-correlation-id")
 	// Não definir X-Tenant-Id
@@ -146,7 +146,7 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_InvalidJSON(t *testing.
 	handlers, _ := setupTestMessageHandlers()
 
 	e := echo.New()
-	req := httptest.NewRequest(http.MethodPost, "/message/reset-password/send", bytes.NewReader([]byte("invalid json")))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/forgot-password", bytes.NewReader([]byte("invalid json")))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Correlation-ID", "test-correlation-id")
 	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")
@@ -177,7 +177,7 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_ValidationError(t *test
 		Email: "", // Email vazio deve falhar na validação
 	}
 	reqBodyBytes, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/message/reset-password/send", bytes.NewReader(reqBodyBytes))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/forgot-password", bytes.NewReader(reqBodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Correlation-ID", "test-correlation-id")
 	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")
@@ -208,7 +208,7 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_UseCaseHTTPError(t *tes
 		Email: "test@example.com",
 	}
 	reqBodyBytes, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/message/reset-password/send", bytes.NewReader(reqBodyBytes))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/forgot-password", bytes.NewReader(reqBodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Correlation-ID", "test-correlation-id")
 	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")
@@ -249,7 +249,7 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_UseCaseAppError(t *test
 		Email: "test@example.com",
 	}
 	reqBodyBytes, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/message/reset-password/send", bytes.NewReader(reqBodyBytes))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/forgot-password", bytes.NewReader(reqBodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Correlation-ID", "test-correlation-id")
 	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")
@@ -290,7 +290,7 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_GenericError(t *testing
 		Email: "test@example.com",
 	}
 	reqBodyBytes, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/message/reset-password/send", bytes.NewReader(reqBodyBytes))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/forgot-password", bytes.NewReader(reqBodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Correlation-ID", "test-correlation-id")
 	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")
@@ -327,7 +327,7 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_InvalidEmailFormat(t *t
 		Email: "invalid-email", // Email com formato inválido
 	}
 	reqBodyBytes, _ := json.Marshal(reqBody)
-	req := httptest.NewRequest(http.MethodPost, "/message/reset-password/send", bytes.NewReader(reqBodyBytes))
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/forgot-password", bytes.NewReader(reqBodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Correlation-ID", "test-correlation-id")
 	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")

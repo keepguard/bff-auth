@@ -82,10 +82,6 @@ func (s *serverImpl) SetupRoutes(handlers Handler) {
 	authGroup.POST("/reset-password", handlers.ResetPasswordHandler)
 	authGroup.POST("/forgot-password", handlers.SendResetPasswordMessageHandler)
 
-	// Message routes (public - legacy compatibility)
-	messageGroup := s.echo.Group("/api/v1/message")
-	messageGroup.POST("/reset-password/send", handlers.SendResetPasswordMessageHandler)
-
 	s.logger.Info("Rotas configuradas com sucesso",
 		zap.String("port", s.config.Server.Port),
 	)
