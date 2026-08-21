@@ -80,8 +80,9 @@ func (s *serverImpl) SetupRoutes(handlers Handler) {
 	authGroup.POST("/validate", handlers.ValidateTokenHandler)
 	authGroup.POST("/change-password", handlers.ChangePasswordHandler)
 	authGroup.POST("/reset-password", handlers.ResetPasswordHandler)
+	authGroup.POST("/forgot-password", handlers.SendResetPasswordMessageHandler)
 
-	// Message routes (public - no authentication required)
+	// Message routes (public - legacy compatibility)
 	messageGroup := s.echo.Group("/api/v1/message")
 	messageGroup.POST("/reset-password/send", handlers.SendResetPasswordMessageHandler)
 
