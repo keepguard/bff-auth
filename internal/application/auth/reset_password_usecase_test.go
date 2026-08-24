@@ -8,6 +8,7 @@ import (
 	outboundDto "github.com/keepguard/bff-auth/internal/adapters/outbound/http/dto"
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
 	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	"github.com/keepguard/bff-auth/internal/domain/ports/messaging"
 	"github.com/keepguard/bff-auth/internal/pkg"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -24,13 +25,29 @@ func (m *MockUserClient) GetByEmail(ctx context.Context, email, tenantId, correl
 	return args.Get(0).(outboundDto.UserByEmailResponseDTO), args.Error(1)
 }
 
+// MockMessagePublisher é um mock para MessagePublisher
+type MockResetMessagePublisher struct {
+	mock.Mock
+}
+
+func (m *MockResetMessagePublisher) PublishMessage(ctx context.Context, message messaging.MessageDTO) error {
+	args := m.Called(ctx, message)
+	return args.Error(0)
+}
+
+func (m *MockResetMessagePublisher) Close() error {
+	args := m.Called()
+	return args.Error(0)
+}
+
 func TestResetPasswordUseCase_Execute_Success(t *testing.T) {
 	// Arrange
 	mockAuthClient := new(MockAuthClient)
 	mockUserClient := new(MockUserClient)
 	mockCompanyClient := new(MockCompanyClient)
+	mockMessagePublisher := new(MockResetMessagePublisher)
 	logger, _ := zap.NewDevelopment()
-	useCase := NewResetPasswordUseCase(mockAuthClient, mockUserClient, mockCompanyClient, logger)
+	useCase := NewResetPasswordUseCase(mockAuthClient, mockUserClient, mockCompanyClient, mockMessagePublisher, logger)
 
 	ctx := context.Background()
 	email := "user@example.com"
@@ -72,6 +89,9 @@ func TestResetPasswordUseCase_Execute_Success(t *testing.T) {
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
 	mockUserClient.On("GetByEmail", ctx, email, tenantId, correlationID).Return(expectedUser, nil)
 	mockAuthClient.On("ResetPassword", ctx, expectedReq, tenantId, correlationID).Return(nil)
+	mockMessagePublisher.On("PublishMessage", ctx, mock.MatchedBy(func(msg messaging.MessageDTO) bool {
+		return msg.Recipient == email && msg.TemplateType == "SENHA_ALTERADA_SUCESSO"
+	})).Return(nil)
 
 	// Act
 	err := useCase.Execute(command)
@@ -81,6 +101,7 @@ func TestResetPasswordUseCase_Execute_Success(t *testing.T) {
 	mockCompanyClient.AssertExpectations(t)
 	mockUserClient.AssertExpectations(t)
 	mockAuthClient.AssertExpectations(t)
+	mockMessagePublisher.AssertExpectations(t)
 }
 
 func TestResetPasswordUseCase_Execute_UserNotFound(t *testing.T) {
@@ -88,8 +109,9 @@ func TestResetPasswordUseCase_Execute_UserNotFound(t *testing.T) {
 	mockAuthClient := new(MockAuthClient)
 	mockUserClient := new(MockUserClient)
 	mockCompanyClient := new(MockCompanyClient)
+	mockMessagePublisher := new(MockResetMessagePublisher)
 	logger, _ := zap.NewDevelopment()
-	useCase := NewResetPasswordUseCase(mockAuthClient, mockUserClient, mockCompanyClient, logger)
+	useCase := NewResetPasswordUseCase(mockAuthClient, mockUserClient, mockCompanyClient, mockMessagePublisher, logger)
 
 	ctx := context.Background()
 	email := "notfound@example.com"
@@ -136,8 +158,9 @@ func TestResetPasswordUseCase_Execute_UserNotActive(t *testing.T) {
 	mockAuthClient := new(MockAuthClient)
 	mockUserClient := new(MockUserClient)
 	mockCompanyClient := new(MockCompanyClient)
+	mockMessagePublisher := new(MockResetMessagePublisher)
 	logger, _ := zap.NewDevelopment()
-	useCase := NewResetPasswordUseCase(mockAuthClient, mockUserClient, mockCompanyClient, logger)
+	useCase := NewResetPasswordUseCase(mockAuthClient, mockUserClient, mockCompanyClient, mockMessagePublisher, logger)
 
 	ctx := context.Background()
 	email := "user@example.com"
@@ -190,8 +213,9 @@ func TestResetPasswordUseCase_Execute_InvalidResetToken(t *testing.T) {
 	mockAuthClient := new(MockAuthClient)
 	mockUserClient := new(MockUserClient)
 	mockCompanyClient := new(MockCompanyClient)
+	mockMessagePublisher := new(MockResetMessagePublisher)
 	logger, _ := zap.NewDevelopment()
-	useCase := NewResetPasswordUseCase(mockAuthClient, mockUserClient, mockCompanyClient, logger)
+	useCase := NewResetPasswordUseCase(mockAuthClient, mockUserClient, mockCompanyClient, mockMessagePublisher, logger)
 
 	ctx := context.Background()
 	email := "user@example.com"
@@ -256,8 +280,9 @@ func TestResetPasswordUseCase_Execute_CompanyNotFound(t *testing.T) {
 	mockAuthClient := new(MockAuthClient)
 	mockUserClient := new(MockUserClient)
 	mockCompanyClient := new(MockCompanyClient)
+	mockMessagePublisher := new(MockResetMessagePublisher)
 	logger, _ := zap.NewDevelopment()
-	useCase := NewResetPasswordUseCase(mockAuthClient, mockUserClient, mockCompanyClient, logger)
+	useCase := NewResetPasswordUseCase(mockAuthClient, mockUserClient, mockCompanyClient, mockMessagePublisher, logger)
 
 	ctx := context.Background()
 	email := "user@example.com"
@@ -339,8 +364,9 @@ func TestResetPasswordUseCase_Execute_ContextCancelled(t *testing.T) {
 	mockAuthClient := new(MockAuthClient)
 	mockUserClient := new(MockUserClient)
 	mockCompanyClient := new(MockCompanyClient)
+	mockMessagePublisher := new(MockResetMessagePublisher)
 	logger, _ := zap.NewDevelopment()
-	useCase := NewResetPasswordUseCase(mockAuthClient, mockUserClient, mockCompanyClient, logger)
+	useCase := NewResetPasswordUseCase(mockAuthClient, mockUserClient, mockCompanyClient, mockMessagePublisher, logger)
 
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel() // Cancela o contexto imediatamente
@@ -401,8 +427,9 @@ func TestResetPasswordUseCase_Execute_AuthServiceError(t *testing.T) {
 	mockAuthClient := new(MockAuthClient)
 	mockUserClient := new(MockUserClient)
 	mockCompanyClient := new(MockCompanyClient)
+	mockMessagePublisher := new(MockResetMessagePublisher)
 	logger, _ := zap.NewDevelopment()
-	useCase := NewResetPasswordUseCase(mockAuthClient, mockUserClient, mockCompanyClient, logger)
+	useCase := NewResetPasswordUseCase(mockAuthClient, mockUserClient, mockCompanyClient, mockMessagePublisher, logger)
 
 	ctx := context.Background()
 	email := "user@example.com"

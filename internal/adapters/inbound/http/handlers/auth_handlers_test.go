@@ -2,12 +2,14 @@ package http
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
 	"testing"
 
 	"github.com/keepguard/bff-auth/internal/adapters/inbound/http/dto"
+	outboundDto "github.com/keepguard/bff-auth/internal/adapters/outbound/http/dto"
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
 	"github.com/keepguard/bff-auth/internal/pkg"
 	"github.com/labstack/echo/v4"
@@ -15,6 +17,91 @@ import (
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap"
 )
+
+// MockAuthClient para os testes de handlers
+type MockAuthClient struct {
+	mock.Mock
+}
+
+func (m *MockAuthClient) Login(ctx context.Context, req dto.AuthRequestDTO, tenantId, correlationID, clientId, deviceId, deviceName, deviceType, ipAddress, userAgent string) (dto.AuthResponseDTO, error) {
+	args := m.Called(ctx, req, tenantId, correlationID)
+	return args.Get(0).(dto.AuthResponseDTO), args.Error(1)
+}
+
+func (m *MockAuthClient) RefreshToken(ctx context.Context, req dto.RefreshTokenRequestDTO, tenantId, correlationID, clientId string) (dto.RefreshTokenResponseDTO, error) {
+	args := m.Called(ctx, req, tenantId, correlationID)
+	return args.Get(0).(dto.RefreshTokenResponseDTO), args.Error(1)
+}
+
+func (m *MockAuthClient) Logout(ctx context.Context, token, tenantId, correlationID string) error {
+	args := m.Called(ctx, token, tenantId, correlationID)
+	return args.Error(0)
+}
+
+func (m *MockAuthClient) ValidateToken(ctx context.Context, token, tenantId, correlationID string) error {
+	args := m.Called(ctx, token, tenantId, correlationID)
+	return args.Error(0)
+}
+
+func (m *MockAuthClient) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, tenantId, correlationID string) error {
+	args := m.Called(ctx, req, tenantId, correlationID)
+	return args.Error(0)
+}
+
+func (m *MockAuthClient) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, tenantId, correlationID string) error {
+	args := m.Called(ctx, req, tenantId, correlationID)
+	return args.Error(0)
+}
+
+func (m *MockAuthClient) GenerateResetToken(ctx context.Context, req map[string]interface{}, tenantId, correlationID string) (outboundDto.GenerateResetTokenMSResponseDTO, error) {
+	args := m.Called(ctx, req, tenantId, correlationID)
+	return args.Get(0).(outboundDto.GenerateResetTokenMSResponseDTO), args.Error(1)
+}
+
+func (m *MockAuthClient) SendDeviceChallenge(ctx context.Context, req dto.DeviceChallengeSendRequestDTO, tenantId, correlationID string) (map[string]interface{}, error) {
+	args := m.Called(ctx, req, tenantId, correlationID)
+	return args.Get(0).(map[string]interface{}), args.Error(1)
+}
+
+func (m *MockAuthClient) VerifyDeviceChallenge(ctx context.Context, req dto.DeviceChallengeVerifyRequestDTO, tenantId, correlationID string) (dto.AuthResponseDTO, error) {
+	args := m.Called(ctx, req, tenantId, correlationID)
+	return args.Get(0).(dto.AuthResponseDTO), args.Error(1)
+}
+
+func (m *MockAuthClient) ListUserSessions(ctx context.Context, token, deviceId, tenantId, correlationID string) ([]dto.DeviceSessionDTO, error) {
+	args := m.Called(ctx, token, deviceId, tenantId, correlationID)
+	return args.Get(0).([]dto.DeviceSessionDTO), args.Error(1)
+}
+
+func (m *MockAuthClient) RevokeSession(ctx context.Context, deviceIdToRevoke, token, tenantId, correlationID string) error {
+	args := m.Called(ctx, deviceIdToRevoke, token, tenantId, correlationID)
+	return args.Error(0)
+}
+
+func (m *MockAuthClient) RevokeAllOtherSessions(ctx context.Context, token, currentDeviceId, tenantId, correlationID string) error {
+	args := m.Called(ctx, token, currentDeviceId, tenantId, correlationID)
+	return args.Error(0)
+}
+
+func (m *MockAuthClient) QuickRevoke(ctx context.Context, token string, blacklist bool, tenantId, correlationID string) (map[string]interface{}, error) {
+	args := m.Called(ctx, token, blacklist, tenantId, correlationID)
+	return args.Get(0).(map[string]interface{}), args.Error(1)
+}
+
+func (m *MockAuthClient) ListDeviceBlacklist(ctx context.Context, token, tenantId, correlationID string) ([]dto.DeviceBlacklistDTO, error) {
+	args := m.Called(ctx, token, tenantId, correlationID)
+	return args.Get(0).([]dto.DeviceBlacklistDTO), args.Error(1)
+}
+
+func (m *MockAuthClient) AddDeviceToBlacklist(ctx context.Context, req dto.AddDeviceBlacklistRequestDTO, token, tenantId, correlationID string) error {
+	args := m.Called(ctx, req, token, tenantId, correlationID)
+	return args.Error(0)
+}
+
+func (m *MockAuthClient) RemoveDeviceFromBlacklist(ctx context.Context, deviceId, token, tenantId, correlationID string) error {
+	args := m.Called(ctx, deviceId, token, tenantId, correlationID)
+	return args.Error(0)
+}
 
 // MockUseCases são mocks para os casos de uso
 type MockLoginUseCase struct {
@@ -78,6 +165,7 @@ func setupTestHandlers() (*AuthHandlers, *MockLoginUseCase, *MockRefreshUseCase,
 	mockValidateTokenUseCase := new(MockValidateTokenUseCase)
 	mockChangePasswordUseCase := new(MockChangePasswordUseCase)
 	mockResetPasswordUseCase := new(MockResetPasswordUseCase)
+	mockAuthClient := new(MockAuthClient)
 	logger, _ := zap.NewDevelopment()
 
 	handlers := NewAuthHandlers(
@@ -87,6 +175,7 @@ func setupTestHandlers() (*AuthHandlers, *MockLoginUseCase, *MockRefreshUseCase,
 		mockValidateTokenUseCase,
 		mockChangePasswordUseCase,
 		mockResetPasswordUseCase,
+		mockAuthClient,
 		logger,
 	)
 

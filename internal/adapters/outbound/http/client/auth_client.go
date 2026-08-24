@@ -40,11 +40,14 @@ func (c *AuthClient) handleHTTPError(resp *resty.Response, operation string) err
 
 	// Tenta extrair erro do ms-auth (ProblemDetail)
 	var msError appdto.MSAuthErrorResponse
-	if err := json.Unmarshal(resp.Body(), &msError); err == nil && msError.Title != "" {
-		// Erro estruturado do ms-auth
+	if err := json.Unmarshal(resp.Body(), &msError); err == nil && (msError.Title != "" || msError.Detail != "") {
+		message := msError.Detail
+		if message == "" {
+			message = msError.Title
+		}
 		return &appdto.HTTPError{
 			StatusCode: msError.Status,
-			Message:    msError.Detail,
+			Message:    message,
 			ErrorCode:  getErrorCodeFromProperties(msError.Properties),
 			Details:    msError.Properties,
 		}
@@ -333,41 +336,105 @@ func (c *AuthClient) ResetPassword(ctx context.Context, req outboundDto.ResetPas
 	return nil
 }
 
-// GenerateResetToken gera um token de recuperação de senha no ms-auth
+// GenerateResetToken gera um token de reset no ms-auth
 func (c *AuthClient) GenerateResetToken(ctx context.Context, req map[string]interface{}, tenantId, correlationID string) (outboundDto.GenerateResetTokenMSResponseDTO, error) {
-	// Converter map para DTO
-	reqDTO := outboundDto.GenerateResetTokenMSRequestDTO{}
-	if codeUser, ok := req["codeUser"].(string); ok {
-		reqDTO.CodeUser = codeUser
-	}
-	if messageType, ok := req["messageType"].(string); ok {
-		reqDTO.MessageType = messageType
-	}
-	if communicationType, ok := req["communicationType"].(string); ok {
-		reqDTO.CommunicationType = communicationType
-	}
-	if templateType, ok := req["templateType"].(string); ok {
-		reqDTO.TemplateType = templateType
-	}
-
 	var response outboundDto.GenerateResetTokenMSResponseDTO
 
 	resp, err := c.client.R().
 		SetContext(ctx).
-		SetBody(reqDTO).
+		SetBody(req).
 		SetResult(&response).
 		SetHeader("X-Correlation-ID", correlationID).
 		SetHeader("X-Tenant-Id", tenantId).
-		Post(c.baseURL + "/api/v1/auth/generate-reset-token")
+		Post(c.baseURL + "/api/v1/auth/reset-token")
 
 	if err != nil {
-		return outboundDto.GenerateResetTokenMSResponseDTO{}, fmt.Errorf("erro ao fazer requisição de geração de token de reset: %w", err)
+		return outboundDto.GenerateResetTokenMSResponseDTO{}, fmt.Errorf("erro ao fazer requisição de gerar reset token: %w", err)
 	}
 
-	// Trata erros HTTP do ms-auth
-	if httpErr := c.handleHTTPError(resp, "generate reset token"); httpErr != nil {
+	if httpErr := c.handleHTTPError(resp, "generate_reset_token"); httpErr != nil {
 		return outboundDto.GenerateResetTokenMSResponseDTO{}, httpErr
 	}
 
 	return response, nil
+}
+
+// QuickRevoke realiza revogação rápida via token de e-mail
+func (c *AuthClient) QuickRevoke(ctx context.Context, token string, blacklist bool, tenantId, correlationID string) (map[string]interface{}, error) {
+	var response map[string]interface{}
+
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetResult(&response).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Tenant-Id", tenantId).
+		SetQueryParam("token", token).
+		SetQueryParam("blacklist", fmt.Sprintf("%t", blacklist)).
+		Get(c.baseURL + "/api/v1/auth/device/quick-revoke")
+
+	if err != nil {
+		return nil, fmt.Errorf("erro ao fazer quick revoke: %w", err)
+	}
+
+	if httpErr := c.handleHTTPError(resp, "quick_revoke"); httpErr != nil {
+		return nil, httpErr
+	}
+
+	return response, nil
+}
+
+// ListDeviceBlacklist lista dispositivos na blacklist do usuário
+func (c *AuthClient) ListDeviceBlacklist(ctx context.Context, token, tenantId, correlationID string) ([]inboundDto.DeviceBlacklistDTO, error) {
+	var response []inboundDto.DeviceBlacklistDTO
+
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetResult(&response).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Tenant-Id", tenantId).
+		SetAuthToken(token).
+		Get(c.baseURL + "/api/v1/users/me/devices/blacklist")
+
+	if err != nil {
+		return nil, fmt.Errorf("erro ao listar blacklist de dispositivos: %w", err)
+	}
+
+	if httpErr := c.handleHTTPError(resp, "list_device_blacklist"); httpErr != nil {
+		return nil, httpErr
+	}
+
+	return response, nil
+}
+
+// AddDeviceToBlacklist adiciona dispositivo à blacklist
+func (c *AuthClient) AddDeviceToBlacklist(ctx context.Context, req inboundDto.AddDeviceBlacklistRequestDTO, token, tenantId, correlationID string) error {
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetBody(req).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Tenant-Id", tenantId).
+		SetAuthToken(token).
+		Post(c.baseURL + "/api/v1/users/me/devices/blacklist")
+
+	if err != nil {
+		return fmt.Errorf("erro ao adicionar dispositivo à blacklist: %w", err)
+	}
+
+	return c.handleHTTPError(resp, "add_device_blacklist")
+}
+
+// RemoveDeviceFromBlacklist remove dispositivo da blacklist
+func (c *AuthClient) RemoveDeviceFromBlacklist(ctx context.Context, deviceId, token, tenantId, correlationID string) error {
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Tenant-Id", tenantId).
+		SetAuthToken(token).
+		Delete(fmt.Sprintf("%s/api/v1/users/me/devices/blacklist/%s", c.baseURL, deviceId))
+
+	if err != nil {
+		return fmt.Errorf("erro ao remover dispositivo da blacklist: %w", err)
+	}
+
+	return c.handleHTTPError(resp, "remove_device_blacklist")
 }

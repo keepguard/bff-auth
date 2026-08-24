@@ -69,3 +69,19 @@ func (h *CombinedHandlers) RevokeSessionHandler(c echo.Context) error {
 func (h *CombinedHandlers) RevokeAllOtherSessionsHandler(c echo.Context) error {
 	return h.AuthHandlers.RevokeAllOtherSessionsHandler(c)
 }
+
+func (h *CombinedHandlers) QuickRevokeHandler(c echo.Context) error {
+	return h.AuthHandlers.QuickRevokeHandler(c)
+}
+
+func (h *CombinedHandlers) ListDeviceBlacklistHandler(c echo.Context) error {
+	return h.AuthHandlers.ListDeviceBlacklistHandler(c)
+}
+
+func (h *CombinedHandlers) AddDeviceBlacklistHandler(c echo.Context) error {
+	return h.AuthHandlers.AddDeviceBlacklistHandler(c)
+}
+
+func (h *CombinedHandlers) RemoveDeviceBlacklistHandler(c echo.Context) error {
+	return h.AuthHandlers.RemoveDeviceBlacklistHandler(c)
+}

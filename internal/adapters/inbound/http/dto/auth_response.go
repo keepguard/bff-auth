@@ -49,3 +49,20 @@ type DeviceSessionDTO struct {
 	LastActiveAt string `json:"lastActiveAt"`
 	CreatedAt    string `json:"createdAt"`
 }
+
+// DeviceBlacklistDTO representa um dispositivo na blacklist
+type DeviceBlacklistDTO struct {
+	CodeUser   string `json:"codeUser"`
+	DeviceID   string `json:"deviceId"`
+	DeviceName string `json:"deviceName"`
+	Reason     string `json:"reason"`
+	BlockedAt  string `json:"blockedAt"`
+	BlockedBy  string `json:"blockedBy"`
+}
+
+// AddDeviceBlacklistRequestDTO representa a requisição para adicionar dispositivo à blacklist
+type AddDeviceBlacklistRequestDTO struct {
+	DeviceID   string `json:"deviceId" validate:"required"`
+	DeviceName string `json:"deviceName,omitempty"`
+	Reason     string `json:"reason,omitempty"`
+}

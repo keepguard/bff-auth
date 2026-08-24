@@ -221,3 +221,35 @@ func (d *rateLimitDecorator) RevokeAllOtherSessions(ctx context.Context, token, 
 	}
 	return d.inner.RevokeAllOtherSessions(ctx, token, currentDeviceId, tenantId, correlationID)
 }
+
+// QuickRevoke implementa o método QuickRevoke com rate limiting
+func (d *rateLimitDecorator) QuickRevoke(ctx context.Context, token string, blacklist bool, tenantId, correlationID string) (map[string]interface{}, error) {
+	if err := d.checkRateLimit(); err != nil {
+		return nil, err
+	}
+	return d.inner.QuickRevoke(ctx, token, blacklist, tenantId, correlationID)
+}
+
+// ListDeviceBlacklist implementa o método ListDeviceBlacklist com rate limiting
+func (d *rateLimitDecorator) ListDeviceBlacklist(ctx context.Context, token, tenantId, correlationID string) ([]inboundDto.DeviceBlacklistDTO, error) {
+	if err := d.checkRateLimit(); err != nil {
+		return nil, err
+	}
+	return d.inner.ListDeviceBlacklist(ctx, token, tenantId, correlationID)
+}
+
+// AddDeviceToBlacklist implementa o método AddDeviceToBlacklist com rate limiting
+func (d *rateLimitDecorator) AddDeviceToBlacklist(ctx context.Context, req inboundDto.AddDeviceBlacklistRequestDTO, token, tenantId, correlationID string) error {
+	if err := d.checkRateLimit(); err != nil {
+		return err
+	}
+	return d.inner.AddDeviceToBlacklist(ctx, req, token, tenantId, correlationID)
+}
+
+// RemoveDeviceFromBlacklist implementa o método RemoveDeviceFromBlacklist com rate limiting
+func (d *rateLimitDecorator) RemoveDeviceFromBlacklist(ctx context.Context, deviceId, token, tenantId, correlationID string) error {
+	if err := d.checkRateLimit(); err != nil {
+		return err
+	}
+	return d.inner.RemoveDeviceFromBlacklist(ctx, deviceId, token, tenantId, correlationID)
+}

@@ -52,7 +52,7 @@ func TestMetricsDecorator_Login_Success(t *testing.T) {
 	mockInner.On("Login", ctx, req, tenantId, correlationID).Return(expectedResponse, nil)
 
 	// Act
-	result, err := decorator.Login(ctx, req, tenantId, correlationID)
+	result, err := decorator.Login(ctx, req, tenantId, correlationID, "keepguard-default-client", "", "", "", "", "")
 
 	// Assert
 	assert.NoError(t, err)
@@ -82,7 +82,7 @@ func TestMetricsDecorator_Login_Error(t *testing.T) {
 	mockInner.On("Login", ctx, req, tenantId, correlationID).Return(inboundDto.AuthResponseDTO{}, expectedError)
 
 	// Act
-	result, err := decorator.Login(ctx, req, tenantId, correlationID)
+	result, err := decorator.Login(ctx, req, tenantId, correlationID, "keepguard-default-client", "", "", "", "", "")
 
 	// Assert
 	assert.Error(t, err)
@@ -115,7 +115,7 @@ func TestMetricsDecorator_RefreshToken_Success(t *testing.T) {
 	mockInner.On("RefreshToken", ctx, req, tenantId, correlationID).Return(expectedResponse, nil)
 
 	// Act
-	result, err := decorator.RefreshToken(ctx, req, tenantId, correlationID)
+	result, err := decorator.RefreshToken(ctx, req, tenantId, correlationID, "keepguard-default-client")
 
 	// Assert
 	assert.NoError(t, err)

@@ -21,4 +21,8 @@ type AuthClient interface {
 	ListUserSessions(ctx context.Context, token, deviceId, tenantId, correlationID string) ([]inboundDto.DeviceSessionDTO, error)
 	RevokeSession(ctx context.Context, deviceIdToRevoke, token, tenantId, correlationID string) error
 	RevokeAllOtherSessions(ctx context.Context, token, currentDeviceId, tenantId, correlationID string) error
+	QuickRevoke(ctx context.Context, token string, blacklist bool, tenantId, correlationID string) (map[string]interface{}, error)
+	ListDeviceBlacklist(ctx context.Context, token, tenantId, correlationID string) ([]inboundDto.DeviceBlacklistDTO, error)
+	AddDeviceToBlacklist(ctx context.Context, req inboundDto.AddDeviceBlacklistRequestDTO, token, tenantId, correlationID string) error
+	RemoveDeviceFromBlacklist(ctx context.Context, deviceId, token, tenantId, correlationID string) error
 }

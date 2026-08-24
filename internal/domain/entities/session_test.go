@@ -136,15 +136,21 @@ func TestSession_Refresh_Invalid(t *testing.T) {
 	assert.Contains(t, err.Error(), "access token cannot be empty")
 	
 	// Teste com tempo de expiração inválido
-	newToken, _ := valueobjects.NewToken("new-token")
-	err = session.Refresh(newToken, 0)
+	validToken, _ := valueobjects.NewToken("valid-token")
+	err = session.Refresh(validToken, 0)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "expiration time must be positive")
 	
 	// Teste com sessão expirada
-	expiredSession, err := NewSession(id, userID, accessToken, refreshToken, -1, "192.168.1.1", "Mozilla/5.0")
-	assert.NoError(t, err)
-	err = expiredSession.Refresh(newToken, 7200)
+	expiredSession := &Session{
+		id:           id,
+		userID:       userID,
+		accessToken:  accessToken,
+		refreshToken: refreshToken,
+		expiresAt:    time.Now().Add(-1 * time.Hour),
+		active:       true,
+	}
+	err = expiredSession.Refresh(validToken, 7200)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "cannot refresh expired session")
 }
@@ -207,8 +213,14 @@ func TestSession_IsExpired(t *testing.T) {
 	assert.False(t, session.IsExpired())
 	
 	// Sessão expirada
-	expiredSession, err := NewSession(id, userID, accessToken, refreshToken, -1, "192.168.1.1", "Mozilla/5.0")
-	assert.NoError(t, err)
+	expiredSession := &Session{
+		id:           id,
+		userID:       userID,
+		accessToken:  accessToken,
+		refreshToken: refreshToken,
+		expiresAt:    time.Now().Add(-1 * time.Hour),
+		active:       true,
+	}
 	assert.True(t, expiredSession.IsExpired())
 }
 
@@ -241,7 +253,14 @@ func TestSession_ShouldBeTerminated(t *testing.T) {
 	assert.False(t, session.ShouldBeTerminated(maxDuration, idleTimeout))
 	
 	// Sessão expirada
-	session, _ = NewSession(id, userID, accessToken, refreshToken, -1, "192.168.1.1", "Mozilla/5.0")
+	session = &Session{
+		id:           id,
+		userID:       userID,
+		accessToken:  accessToken,
+		refreshToken: refreshToken,
+		expiresAt:    time.Now().Add(-1 * time.Hour),
+		active:       true,
+	}
 	assert.True(t, session.ShouldBeTerminated(maxDuration, idleTimeout))
 }
 
@@ -258,7 +277,14 @@ func TestSession_GetRemainingTime(t *testing.T) {
 	assert.True(t, remaining <= 3600*time.Second)
 	
 	// Sessão expirada
-	session, _ = NewSession(id, userID, accessToken, refreshToken, -1, "192.168.1.1", "Mozilla/5.0")
+	session = &Session{
+		id:           id,
+		userID:       userID,
+		accessToken:  accessToken,
+		refreshToken: refreshToken,
+		expiresAt:    time.Now().Add(-1 * time.Hour),
+		active:       true,
+	}
 	remaining = session.GetRemainingTime()
 	assert.Equal(t, time.Duration(0), remaining)
 }
@@ -271,10 +297,10 @@ func TestSession_GetIdleTime(t *testing.T) {
 	
 	session, _ := NewSession(id, userID, accessToken, refreshToken, 3600, "192.168.1.1", "Mozilla/5.0")
 	
+	time.Sleep(10 * time.Millisecond)
 	idleTime := session.GetIdleTime()
 	assert.True(t, idleTime >= 0)
 	
-	time.Sleep(10 * time.Millisecond)
 	session.UpdateActivity()
 	
 	newIdleTime := session.GetIdleTime()
@@ -292,7 +318,14 @@ func TestSession_CanBeRefreshed(t *testing.T) {
 	assert.True(t, session.CanBeRefreshed())
 	
 	// Sessão expirada
-	session, _ = NewSession(id, userID, accessToken, refreshToken, -1, "192.168.1.1", "Mozilla/5.0")
+	session = &Session{
+		id:           id,
+		userID:       userID,
+		accessToken:  accessToken,
+		refreshToken: refreshToken,
+		expiresAt:    time.Now().Add(-1 * time.Hour),
+		active:       true,
+	}
 	assert.False(t, session.CanBeRefreshed())
 	
 	// Sessão terminada
@@ -312,7 +345,14 @@ func TestSession_IsValid(t *testing.T) {
 	assert.True(t, session.IsValid())
 	
 	// Sessão expirada
-	session, _ = NewSession(id, userID, accessToken, refreshToken, -1, "192.168.1.1", "Mozilla/5.0")
+	session = &Session{
+		id:           id,
+		userID:       userID,
+		accessToken:  accessToken,
+		refreshToken: refreshToken,
+		expiresAt:    time.Now().Add(-1 * time.Hour),
+		active:       true,
+	}
 	assert.False(t, session.IsValid())
 	
 	// Sessão terminada

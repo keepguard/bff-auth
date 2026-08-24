@@ -295,7 +295,7 @@ func main() {
 	logoutUseCase := auth.NewLogoutUseCase(authClient, companyClient)
 	validateTokenUseCase := auth.NewValidateTokenUseCase(authClient, companyClient, zapLogger)
 	changePasswordUseCase := auth.NewChangePasswordUseCase(authClient, companyClient, zapLogger)
-	resetPasswordUseCase := auth.NewResetPasswordUseCase(authClient, authUserClient, companyClient, zapLogger)
+	resetPasswordUseCase := auth.NewResetPasswordUseCase(authClient, authUserClient, companyClient, messagePublisher, zapLogger)
 
 	// Inicializa use cases de mensagens
 	sendResetPasswordMessageUseCase := message.NewSendResetPasswordMessageUseCase(authClient, authUserClient, companyClient, messagePublisher, zapLogger)

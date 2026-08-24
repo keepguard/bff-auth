@@ -251,3 +251,39 @@ func (d *retryDecorator) RevokeAllOtherSessions(ctx context.Context, token, curr
 		return d.inner.RevokeAllOtherSessions(ctx, token, currentDeviceId, tenantId, correlationID)
 	})
 }
+
+// QuickRevoke implementa o método QuickRevoke com retry
+func (d *retryDecorator) QuickRevoke(ctx context.Context, token string, blacklist bool, tenantId, correlationID string) (map[string]interface{}, error) {
+	var response map[string]interface{}
+	err := d.retry(ctx, func() error {
+		var innerErr error
+		response, innerErr = d.inner.QuickRevoke(ctx, token, blacklist, tenantId, correlationID)
+		return innerErr
+	})
+	return response, err
+}
+
+// ListDeviceBlacklist implementa o método ListDeviceBlacklist com retry
+func (d *retryDecorator) ListDeviceBlacklist(ctx context.Context, token, tenantId, correlationID string) ([]inboundDto.DeviceBlacklistDTO, error) {
+	var response []inboundDto.DeviceBlacklistDTO
+	err := d.retry(ctx, func() error {
+		var innerErr error
+		response, innerErr = d.inner.ListDeviceBlacklist(ctx, token, tenantId, correlationID)
+		return innerErr
+	})
+	return response, err
+}
+
+// AddDeviceToBlacklist implementa o método AddDeviceToBlacklist com retry
+func (d *retryDecorator) AddDeviceToBlacklist(ctx context.Context, req inboundDto.AddDeviceBlacklistRequestDTO, token, tenantId, correlationID string) error {
+	return d.retry(ctx, func() error {
+		return d.inner.AddDeviceToBlacklist(ctx, req, token, tenantId, correlationID)
+	})
+}
+
+// RemoveDeviceFromBlacklist implementa o método RemoveDeviceFromBlacklist com retry
+func (d *retryDecorator) RemoveDeviceFromBlacklist(ctx context.Context, deviceId, token, tenantId, correlationID string) error {
+	return d.retry(ctx, func() error {
+		return d.inner.RemoveDeviceFromBlacklist(ctx, deviceId, token, tenantId, correlationID)
+	})
+}

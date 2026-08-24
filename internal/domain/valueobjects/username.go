@@ -55,3 +55,8 @@ func (u Username) Equals(other Username) bool {
 func (u Username) IsEmpty() bool {
 	return u.value == ""
 }
+
+// NewUsernameUnsafe cria um Username sem validação (usado para testes ou bypass)
+func NewUsernameUnsafe(value string) Username {
+	return Username{value: value}
+}

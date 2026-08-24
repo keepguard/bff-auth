@@ -163,6 +163,9 @@ func (s *Session) UpdateLocation(ipAddress, userAgent string) {
 }
 
 func (s *Session) IsExpired() bool {
+	if s == nil {
+		return true
+	}
 	return time.Now().After(s.expiresAt)
 }
 

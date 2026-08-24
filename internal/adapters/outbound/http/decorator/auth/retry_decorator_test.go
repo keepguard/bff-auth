@@ -56,7 +56,7 @@ func TestRetryDecorator_Login_SuccessFirstAttempt(t *testing.T) {
 	mockInner.On("Login", ctx, req, tenantId, correlationID).Return(expectedResponse, nil).Once()
 
 	// Act
-	result, err := decorator.Login(ctx, req, tenantId, correlationID)
+	result, err := decorator.Login(ctx, req, tenantId, correlationID, "keepguard-default-client", "", "", "", "", "")
 
 	// Assert
 	assert.NoError(t, err)
@@ -104,7 +104,7 @@ func TestRetryDecorator_Login_SuccessAfterRetry(t *testing.T) {
 
 	// Act
 	start := time.Now()
-	result, err := decorator.Login(ctx, req, tenantId, correlationID)
+	result, err := decorator.Login(ctx, req, tenantId, correlationID, "keepguard-default-client", "", "", "", "", "")
 	elapsed := time.Since(start)
 
 	// Assert
@@ -146,7 +146,7 @@ func TestRetryDecorator_Login_NonRetryableError(t *testing.T) {
 	mockInner.On("Login", ctx, req, tenantId, correlationID).Return(inboundDto.AuthResponseDTO{}, nonRetryableError).Once()
 
 	// Act
-	result, err := decorator.Login(ctx, req, tenantId, correlationID)
+	result, err := decorator.Login(ctx, req, tenantId, correlationID, "keepguard-default-client", "", "", "", "", "")
 
 	// Assert
 	assert.Error(t, err)
@@ -187,7 +187,7 @@ func TestRetryDecorator_Login_MaxAttemptsReached(t *testing.T) {
 	mockInner.On("Login", ctx, req, tenantId, correlationID).Return(inboundDto.AuthResponseDTO{}, retryableError).Times(3)
 
 	// Act
-	result, err := decorator.Login(ctx, req, tenantId, correlationID)
+	result, err := decorator.Login(ctx, req, tenantId, correlationID, "keepguard-default-client", "", "", "", "", "")
 
 	// Assert
 	assert.Error(t, err)

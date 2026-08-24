@@ -17,7 +17,7 @@ type MockAuthClient struct {
 	mock.Mock
 }
 
-func (m *MockAuthClient) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId string) (inboundDto.AuthResponseDTO, error) {
+func (m *MockAuthClient) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId, deviceId, deviceName, deviceType, ipAddress, userAgent string) (inboundDto.AuthResponseDTO, error) {
 	args := m.Called(ctx, req, tenantId, correlationID)
 	return args.Get(0).(inboundDto.AuthResponseDTO), args.Error(1)
 }
@@ -50,6 +50,51 @@ func (m *MockAuthClient) ResetPassword(ctx context.Context, req outboundDto.Rese
 func (m *MockAuthClient) GenerateResetToken(ctx context.Context, req map[string]interface{}, tenantId, correlationID string) (outboundDto.GenerateResetTokenMSResponseDTO, error) {
 	args := m.Called(ctx, req, tenantId, correlationID)
 	return args.Get(0).(outboundDto.GenerateResetTokenMSResponseDTO), args.Error(1)
+}
+
+func (m *MockAuthClient) SendDeviceChallenge(ctx context.Context, req inboundDto.DeviceChallengeSendRequestDTO, tenantId, correlationID string) (map[string]interface{}, error) {
+	args := m.Called(ctx, req, tenantId, correlationID)
+	return args.Get(0).(map[string]interface{}), args.Error(1)
+}
+
+func (m *MockAuthClient) VerifyDeviceChallenge(ctx context.Context, req inboundDto.DeviceChallengeVerifyRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
+	args := m.Called(ctx, req, tenantId, correlationID)
+	return args.Get(0).(inboundDto.AuthResponseDTO), args.Error(1)
+}
+
+func (m *MockAuthClient) ListUserSessions(ctx context.Context, token, deviceId, tenantId, correlationID string) ([]inboundDto.DeviceSessionDTO, error) {
+	args := m.Called(ctx, token, deviceId, tenantId, correlationID)
+	return args.Get(0).([]inboundDto.DeviceSessionDTO), args.Error(1)
+}
+
+func (m *MockAuthClient) RevokeSession(ctx context.Context, deviceIdToRevoke, token, tenantId, correlationID string) error {
+	args := m.Called(ctx, deviceIdToRevoke, token, tenantId, correlationID)
+	return args.Error(0)
+}
+
+func (m *MockAuthClient) RevokeAllOtherSessions(ctx context.Context, token, currentDeviceId, tenantId, correlationID string) error {
+	args := m.Called(ctx, token, currentDeviceId, tenantId, correlationID)
+	return args.Error(0)
+}
+
+func (m *MockAuthClient) QuickRevoke(ctx context.Context, token string, blacklist bool, tenantId, correlationID string) (map[string]interface{}, error) {
+	args := m.Called(ctx, token, blacklist, tenantId, correlationID)
+	return args.Get(0).(map[string]interface{}), args.Error(1)
+}
+
+func (m *MockAuthClient) ListDeviceBlacklist(ctx context.Context, token, tenantId, correlationID string) ([]inboundDto.DeviceBlacklistDTO, error) {
+	args := m.Called(ctx, token, tenantId, correlationID)
+	return args.Get(0).([]inboundDto.DeviceBlacklistDTO), args.Error(1)
+}
+
+func (m *MockAuthClient) AddDeviceToBlacklist(ctx context.Context, req inboundDto.AddDeviceBlacklistRequestDTO, token, tenantId, correlationID string) error {
+	args := m.Called(ctx, req, token, tenantId, correlationID)
+	return args.Error(0)
+}
+
+func (m *MockAuthClient) RemoveDeviceFromBlacklist(ctx context.Context, deviceId, token, tenantId, correlationID string) error {
+	args := m.Called(ctx, deviceId, token, tenantId, correlationID)
+	return args.Error(0)
 }
 
 // MockCompanyClient é um mock para CompanyClient

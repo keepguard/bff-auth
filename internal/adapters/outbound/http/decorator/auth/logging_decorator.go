@@ -445,6 +445,117 @@ func (d *loggingDecorator) RevokeAllOtherSessions(ctx context.Context, token, cu
 	return nil
 }
 
+// QuickRevoke implementa o método QuickRevoke com logging estruturado
+func (d *loggingDecorator) QuickRevoke(ctx context.Context, token string, blacklist bool, tenantId, correlationID string) (map[string]interface{}, error) {
+	start := time.Now()
+	d.logger.Info("Iniciando quick revoke de dispositivo",
+		zap.String("service", d.serviceName),
+		zap.String("operation", "QuickRevoke"),
+		zap.String("correlationID", correlationID),
+		zap.String("tenantId", tenantId),
+		zap.Bool("blacklist", blacklist),
+	)
+
+	response, err := d.inner.QuickRevoke(ctx, token, blacklist, tenantId, correlationID)
+	duration := time.Since(start)
+
+	if err != nil {
+		d.logger.Error("Erro no quick revoke",
+			zap.String("service", d.serviceName),
+			zap.String("operation", "QuickRevoke"),
+			zap.String("correlationID", correlationID),
+			zap.Duration("duration", duration),
+			zap.Error(err),
+		)
+		return nil, err
+	}
+
+	return response, nil
+}
+
+// ListDeviceBlacklist implementa o método ListDeviceBlacklist com logging estruturado
+func (d *loggingDecorator) ListDeviceBlacklist(ctx context.Context, token, tenantId, correlationID string) ([]inboundDto.DeviceBlacklistDTO, error) {
+	start := time.Now()
+	d.logger.Info("Iniciando listagem da blacklist de dispositivos",
+		zap.String("service", d.serviceName),
+		zap.String("operation", "ListDeviceBlacklist"),
+		zap.String("correlationID", correlationID),
+		zap.String("tenantId", tenantId),
+	)
+
+	response, err := d.inner.ListDeviceBlacklist(ctx, token, tenantId, correlationID)
+	duration := time.Since(start)
+
+	if err != nil {
+		d.logger.Error("Erro ao listar blacklist de dispositivos",
+			zap.String("service", d.serviceName),
+			zap.String("operation", "ListDeviceBlacklist"),
+			zap.String("correlationID", correlationID),
+			zap.Duration("duration", duration),
+			zap.Error(err),
+		)
+		return nil, err
+	}
+
+	return response, nil
+}
+
+// AddDeviceToBlacklist implementa o método AddDeviceToBlacklist com logging estruturado
+func (d *loggingDecorator) AddDeviceToBlacklist(ctx context.Context, req inboundDto.AddDeviceBlacklistRequestDTO, token, tenantId, correlationID string) error {
+	start := time.Now()
+	d.logger.Info("Iniciando adição de dispositivo à blacklist",
+		zap.String("service", d.serviceName),
+		zap.String("operation", "AddDeviceToBlacklist"),
+		zap.String("correlationID", correlationID),
+		zap.String("tenantId", tenantId),
+		zap.String("deviceId", req.DeviceID),
+	)
+
+	err := d.inner.AddDeviceToBlacklist(ctx, req, token, tenantId, correlationID)
+	duration := time.Since(start)
+
+	if err != nil {
+		d.logger.Error("Erro ao adicionar dispositivo à blacklist",
+			zap.String("service", d.serviceName),
+			zap.String("operation", "AddDeviceToBlacklist"),
+			zap.String("correlationID", correlationID),
+			zap.Duration("duration", duration),
+			zap.Error(err),
+		)
+		return err
+	}
+
+	return nil
+}
+
+// RemoveDeviceFromBlacklist implementa o método RemoveDeviceFromBlacklist com logging estruturado
+func (d *loggingDecorator) RemoveDeviceFromBlacklist(ctx context.Context, deviceId, token, tenantId, correlationID string) error {
+	start := time.Now()
+	d.logger.Info("Iniciando remoção de dispositivo da blacklist",
+		zap.String("service", d.serviceName),
+		zap.String("operation", "RemoveDeviceFromBlacklist"),
+		zap.String("correlationID", correlationID),
+		zap.String("tenantId", tenantId),
+		zap.String("deviceId", deviceId),
+	)
+
+	err := d.inner.RemoveDeviceFromBlacklist(ctx, deviceId, token, tenantId, correlationID)
+	duration := time.Since(start)
+
+	if err != nil {
+		d.logger.Error("Erro ao remover dispositivo da blacklist",
+			zap.String("service", d.serviceName),
+			zap.String("operation", "RemoveDeviceFromBlacklist"),
+			zap.String("correlationID", correlationID),
+			zap.Duration("duration", duration),
+			zap.Error(err),
+		)
+		return err
+	}
+
+	return nil
+}
+
 // getStringFromMap extrai uma string de um map[string]interface{}
 func getStringFromMap(m map[string]interface{}, key string) string {
 	if val, ok := m[key].(string); ok {

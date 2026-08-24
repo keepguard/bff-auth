@@ -49,7 +49,7 @@ func TestRateLimitDecorator_Login_WithinLimit(t *testing.T) {
 	mockInner.On("Login", ctx, req, tenantId, correlationID).Return(expectedResponse, nil).Once()
 
 	// Act
-	result, err := decorator.Login(ctx, req, tenantId, correlationID)
+	result, err := decorator.Login(ctx, req, tenantId, correlationID, "keepguard-default-client", "", "", "", "", "")
 
 	// Assert
 	assert.NoError(t, err)
@@ -84,11 +84,11 @@ func TestRateLimitDecorator_Login_ExceedsLimit(t *testing.T) {
 	mockInner.On("Login", ctx, req, tenantId, correlationID).Return(expectedResponse, nil).Twice()
 
 	// Act - Primeira e segunda requisição (dentro do limite)
-	result1, err1 := decorator.Login(ctx, req, tenantId, correlationID)
-	result2, err2 := decorator.Login(ctx, req, tenantId, correlationID)
+	result1, err1 := decorator.Login(ctx, req, tenantId, correlationID, "keepguard-default-client", "", "", "", "", "")
+	result2, err2 := decorator.Login(ctx, req, tenantId, correlationID, "keepguard-default-client", "", "", "", "", "")
 
 	// Terceira requisição (excede o limite)
-	result3, err3 := decorator.Login(ctx, req, tenantId, correlationID)
+	result3, err3 := decorator.Login(ctx, req, tenantId, correlationID, "keepguard-default-client", "", "", "", "", "")
 
 	// Assert
 	assert.NoError(t, err1)

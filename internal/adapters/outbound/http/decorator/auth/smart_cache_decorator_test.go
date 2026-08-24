@@ -52,7 +52,7 @@ func TestSmartCacheDecorator_Login_StoresTokenMetadata(t *testing.T) {
 	mockInner.On("Login", ctx, req, tenantId, correlationID).Return(expectedResponse, nil).Once()
 
 	// Act
-	response, err := decorator.Login(ctx, req, tenantId, correlationID)
+	response, err := decorator.Login(ctx, req, tenantId, correlationID, "keepguard-default-client", "", "", "", "", "")
 
 	// Assert
 	assert.NoError(t, err)
@@ -92,7 +92,7 @@ func TestSmartCacheDecorator_ValidateToken_UsesDynamicTTL(t *testing.T) {
 		ExpiresIn: 3600, // 1 hora
 	}
 	mockInner.On("Login", ctx, loginReq, tenantId, correlationID).Return(loginResponse, nil).Once()
-	decorator.Login(ctx, loginReq, tenantId, correlationID)
+	decorator.Login(ctx, loginReq, tenantId, correlationID, "keepguard-default-client", "", "", "", "", "")
 
 	// 2. Primeira validação: cache miss
 	mockInner.On("ValidateToken", ctx, token, tenantId, correlationID).Return(nil).Once()
@@ -135,7 +135,7 @@ func TestSmartCacheDecorator_ValidateToken_RespectsMaxTTL(t *testing.T) {
 		ExpiresIn: 36000, // 10 horas (mas MaxTTL é 1 minuto)
 	}
 	mockInner.On("Login", ctx, loginReq, tenantId, correlationID).Return(loginResponse, nil).Once()
-	decorator.Login(ctx, loginReq, tenantId, correlationID)
+	decorator.Login(ctx, loginReq, tenantId, correlationID, "keepguard-default-client", "", "", "", "", "")
 
 	// Verifica se TTL foi limitado ao MaxTTL
 	metadata, found := decorator.cache.getTokenMetadata(token, tenantId)
@@ -172,7 +172,7 @@ func TestSmartCacheDecorator_ValidateToken_RespectsMinTTL(t *testing.T) {
 		ExpiresIn: 10, // 10 segundos (mas MinTTL é 1 minuto)
 	}
 	mockInner.On("Login", ctx, loginReq, tenantId, correlationID).Return(loginResponse, nil).Once()
-	decorator.Login(ctx, loginReq, tenantId, correlationID)
+	decorator.Login(ctx, loginReq, tenantId, correlationID, "keepguard-default-client", "", "", "", "", "")
 
 	// Verifica se TTL foi ajustado ao MinTTL
 	metadata, found := decorator.cache.getTokenMetadata(token, tenantId)
@@ -200,7 +200,7 @@ func TestSmartCacheDecorator_Logout_InvalidatesToken(t *testing.T) {
 	loginReq := inboundDto.AuthRequestDTO{Username: "user", Password: "pass"}
 	loginResponse := inboundDto.AuthResponseDTO{Token: token, ExpiresIn: 3600}
 	mockInner.On("Login", ctx, loginReq, tenantId, correlationID).Return(loginResponse, nil).Once()
-	decorator.Login(ctx, loginReq, tenantId, correlationID)
+	decorator.Login(ctx, loginReq, tenantId, correlationID, "keepguard-default-client", "", "", "", "", "")
 
 	// 2. Valida token (popula cache)
 	mockInner.On("ValidateToken", ctx, token, tenantId, correlationID).Return(nil).Once()
@@ -273,7 +273,7 @@ func TestSmartCacheDecorator_RefreshToken_UpdatesMetadata(t *testing.T) {
 	loginReq := inboundDto.AuthRequestDTO{Username: "user", Password: "pass"}
 	loginResponse := inboundDto.AuthResponseDTO{Token: "old-token", ExpiresIn: 3600}
 	mockInner.On("Login", ctx, loginReq, tenantId, correlationID).Return(loginResponse, nil).Once()
-	decorator.Login(ctx, loginReq, tenantId, correlationID)
+	decorator.Login(ctx, loginReq, tenantId, correlationID, "keepguard-default-client", "", "", "", "", "")
 
 	// 2. Refresh gera novo token
 	refreshReq := inboundDto.RefreshTokenRequestDTO{Token: "old-token"}
@@ -281,7 +281,7 @@ func TestSmartCacheDecorator_RefreshToken_UpdatesMetadata(t *testing.T) {
 	mockInner.On("RefreshToken", ctx, refreshReq, tenantId, correlationID).Return(refreshResponse, nil).Once()
 
 	// Act
-	response, err := decorator.RefreshToken(ctx, refreshReq, tenantId, correlationID)
+	response, err := decorator.RefreshToken(ctx, refreshReq, tenantId, correlationID, "keepguard-default-client")
 
 	// Assert
 	assert.NoError(t, err)

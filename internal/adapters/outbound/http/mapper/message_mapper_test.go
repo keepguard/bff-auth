@@ -46,7 +46,11 @@ func TestMessageMapper_ToSendMessageRequest(t *testing.T) {
 	assert.Equal(t, "RECUPERACAO_SENHA", result.TemplateType)
 	assert.Equal(t, recipient, result.Recipient)
 	assert.Equal(t, codeUser, result.CodeUser)
-	assert.Equal(t, variables, result.Variables)
+	expectedMap := make(map[string]interface{})
+	for k, v := range variables {
+		expectedMap[k] = v
+	}
+	assert.Equal(t, expectedMap, result.Variables)
 }
 
 // TestMessageMapper_ToSendMessageRequest_DifferentTypes testa com diferentes tipos de enums
@@ -120,7 +124,11 @@ func TestMessageMapper_ToSendMessageRequest_DifferentTypes(t *testing.T) {
 			assert.Equal(t, tt.expectedComm, result.CommunicationType)
 			assert.Equal(t, tt.expectedTemplate, result.TemplateType)
 			assert.Equal(t, recipient, result.Recipient)
-			assert.Equal(t, variables, result.Variables)
+			expectedMap := make(map[string]interface{})
+			for k, v := range variables {
+				expectedMap[k] = v
+			}
+			assert.Equal(t, expectedMap, result.Variables)
 		})
 	}
 }

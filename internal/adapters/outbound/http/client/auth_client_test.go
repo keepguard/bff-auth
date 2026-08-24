@@ -74,7 +74,7 @@ func TestAuthClient_Login_Success(t *testing.T) {
 	}
 
 	// Act
-	result, err := client.Login(ctx, req, tenantId, correlationID)
+	result, err := client.Login(ctx, req, tenantId, correlationID, "keepguard-default-client", "", "", "", "", "")
 
 	// Assert
 	assert.NoError(t, err)
@@ -111,7 +111,7 @@ func TestAuthClient_Login_HTTPError(t *testing.T) {
 	correlationID := "test-correlation"
 
 	// Act
-	result, err := client.Login(ctx, req, tenantId, correlationID)
+	result, err := client.Login(ctx, req, tenantId, correlationID, "keepguard-default-client", "", "", "", "", "")
 
 	// Assert
 	assert.Error(t, err)
@@ -145,7 +145,7 @@ func TestAuthClient_Login_GenericError(t *testing.T) {
 	correlationID := "test-correlation"
 
 	// Act
-	result, err := client.Login(ctx, req, tenantId, correlationID)
+	result, err := client.Login(ctx, req, tenantId, correlationID, "keepguard-default-client", "", "", "", "", "")
 
 	// Assert
 	assert.Error(t, err)
@@ -199,7 +199,7 @@ func TestAuthClient_RefreshToken_Success(t *testing.T) {
 	}
 
 	// Act
-	result, err := client.RefreshToken(ctx, req, tenantId, correlationID)
+	result, err := client.RefreshToken(ctx, req, tenantId, correlationID, "keepguard-default-client")
 
 	// Assert
 	assert.NoError(t, err)
@@ -235,7 +235,7 @@ func TestAuthClient_RefreshToken_HTTPError(t *testing.T) {
 	correlationID := "test-correlation"
 
 	// Act
-	result, err := client.RefreshToken(ctx, req, tenantId, correlationID)
+	result, err := client.RefreshToken(ctx, req, tenantId, correlationID, "keepguard-default-client")
 
 	// Assert
 	assert.Error(t, err)
@@ -599,7 +599,7 @@ func TestAuthClient_Login_RequestError(t *testing.T) {
 	correlationID := "test-correlation"
 
 	// Act
-	result, err := client.Login(ctx, req, tenantId, correlationID)
+	result, err := client.Login(ctx, req, tenantId, correlationID, "keepguard-default-client", "", "", "", "", "")
 
 	// Assert
 	assert.Error(t, err)
@@ -627,7 +627,7 @@ func TestAuthClient_RefreshToken_RequestError(t *testing.T) {
 	correlationID := "test-correlation"
 
 	// Act
-	result, err := client.RefreshToken(ctx, req, tenantId, correlationID)
+	result, err := client.RefreshToken(ctx, req, tenantId, correlationID, "keepguard-default-client")
 
 	// Assert
 	assert.Error(t, err)

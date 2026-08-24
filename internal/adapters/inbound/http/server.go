@@ -83,12 +83,17 @@ func (s *serverImpl) SetupRoutes(handlers Handler) {
 	authGroup.POST("/forgot-password", handlers.SendResetPasswordMessageHandler)
 	authGroup.POST("/device/challenge/send", handlers.SendDeviceChallengeHandler)
 	authGroup.POST("/device/challenge/verify", handlers.VerifyDeviceChallengeHandler)
+	authGroup.POST("/device/quick-revoke", handlers.QuickRevokeHandler)
+	authGroup.GET("/device/quick-revoke", handlers.QuickRevokeHandler)
 
-	// User Sessions routes
+	// User Sessions & Device Blacklist routes
 	userGroup := s.echo.Group("/api/v1/users/me")
 	userGroup.GET("/sessions", handlers.ListUserSessionsHandler)
 	userGroup.DELETE("/sessions/:deviceId", handlers.RevokeSessionHandler)
 	userGroup.DELETE("/sessions", handlers.RevokeAllOtherSessionsHandler)
+	userGroup.GET("/devices/blacklist", handlers.ListDeviceBlacklistHandler)
+	userGroup.POST("/devices/blacklist", handlers.AddDeviceBlacklistHandler)
+	userGroup.DELETE("/devices/blacklist/:deviceId", handlers.RemoveDeviceBlacklistHandler)
 
 	s.logger.Info("Rotas configuradas com sucesso",
 		zap.String("port", s.config.Server.Port),

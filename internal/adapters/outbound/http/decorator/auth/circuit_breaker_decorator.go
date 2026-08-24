@@ -158,3 +158,41 @@ func (d *circuitBreakerDecorator) RevokeAllOtherSessions(ctx context.Context, to
 	})
 	return err
 }
+
+// QuickRevoke implementa o método QuickRevoke com circuit breaker
+func (d *circuitBreakerDecorator) QuickRevoke(ctx context.Context, token string, blacklist bool, tenantId, correlationID string) (map[string]interface{}, error) {
+	result, err := d.circuitBreaker.Execute(ctx, d.serviceName, func() (interface{}, error) {
+		return d.inner.QuickRevoke(ctx, token, blacklist, tenantId, correlationID)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.(map[string]interface{}), nil
+}
+
+// ListDeviceBlacklist implementa o método ListDeviceBlacklist com circuit breaker
+func (d *circuitBreakerDecorator) ListDeviceBlacklist(ctx context.Context, token, tenantId, correlationID string) ([]inboundDto.DeviceBlacklistDTO, error) {
+	result, err := d.circuitBreaker.Execute(ctx, d.serviceName, func() (interface{}, error) {
+		return d.inner.ListDeviceBlacklist(ctx, token, tenantId, correlationID)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.([]inboundDto.DeviceBlacklistDTO), nil
+}
+
+// AddDeviceToBlacklist implementa o método AddDeviceToBlacklist com circuit breaker
+func (d *circuitBreakerDecorator) AddDeviceToBlacklist(ctx context.Context, req inboundDto.AddDeviceBlacklistRequestDTO, token, tenantId, correlationID string) error {
+	_, err := d.circuitBreaker.Execute(ctx, d.serviceName, func() (interface{}, error) {
+		return nil, d.inner.AddDeviceToBlacklist(ctx, req, token, tenantId, correlationID)
+	})
+	return err
+}
+
+// RemoveDeviceFromBlacklist implementa o método RemoveDeviceFromBlacklist com circuit breaker
+func (d *circuitBreakerDecorator) RemoveDeviceFromBlacklist(ctx context.Context, deviceId, token, tenantId, correlationID string) error {
+	_, err := d.circuitBreaker.Execute(ctx, d.serviceName, func() (interface{}, error) {
+		return nil, d.inner.RemoveDeviceFromBlacklist(ctx, deviceId, token, tenantId, correlationID)
+	})
+	return err
+}

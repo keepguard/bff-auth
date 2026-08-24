@@ -22,6 +22,10 @@ type Handler interface {
 	ListUserSessionsHandler(c echo.Context) error
 	RevokeSessionHandler(c echo.Context) error
 	RevokeAllOtherSessionsHandler(c echo.Context) error
+	QuickRevokeHandler(c echo.Context) error
+	ListDeviceBlacklistHandler(c echo.Context) error
+	AddDeviceBlacklistHandler(c echo.Context) error
+	RemoveDeviceBlacklistHandler(c echo.Context) error
 }
 
 // Middleware define a interface para middlewares HTTP

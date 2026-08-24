@@ -257,3 +257,43 @@ func (d *metricsDecorator) RevokeAllOtherSessions(ctx context.Context, token, cu
 	d.metrics.RecordUpstreamRequest(d.serviceName, "DELETE", "/users/me/sessions", statusCode, duration)
 	return err
 }
+
+// QuickRevoke implementa o método QuickRevoke com coleta de métricas
+func (d *metricsDecorator) QuickRevoke(ctx context.Context, token string, blacklist bool, tenantId, correlationID string) (map[string]interface{}, error) {
+	start := time.Now()
+	response, err := d.inner.QuickRevoke(ctx, token, blacklist, tenantId, correlationID)
+	duration := time.Since(start)
+	statusCode := d.getStatusCodeFromError(err)
+	d.metrics.RecordUpstreamRequest(d.serviceName, "GET", "/auth/device/quick-revoke", statusCode, duration)
+	return response, err
+}
+
+// ListDeviceBlacklist implementa o método ListDeviceBlacklist com coleta de métricas
+func (d *metricsDecorator) ListDeviceBlacklist(ctx context.Context, token, tenantId, correlationID string) ([]inboundDto.DeviceBlacklistDTO, error) {
+	start := time.Now()
+	response, err := d.inner.ListDeviceBlacklist(ctx, token, tenantId, correlationID)
+	duration := time.Since(start)
+	statusCode := d.getStatusCodeFromError(err)
+	d.metrics.RecordUpstreamRequest(d.serviceName, "GET", "/users/me/devices/blacklist", statusCode, duration)
+	return response, err
+}
+
+// AddDeviceToBlacklist implementa o método AddDeviceToBlacklist com coleta de métricas
+func (d *metricsDecorator) AddDeviceToBlacklist(ctx context.Context, req inboundDto.AddDeviceBlacklistRequestDTO, token, tenantId, correlationID string) error {
+	start := time.Now()
+	err := d.inner.AddDeviceToBlacklist(ctx, req, token, tenantId, correlationID)
+	duration := time.Since(start)
+	statusCode := d.getStatusCodeFromError(err)
+	d.metrics.RecordUpstreamRequest(d.serviceName, "POST", "/users/me/devices/blacklist", statusCode, duration)
+	return err
+}
+
+// RemoveDeviceFromBlacklist implementa o método RemoveDeviceFromBlacklist com coleta de métricas
+func (d *metricsDecorator) RemoveDeviceFromBlacklist(ctx context.Context, deviceId, token, tenantId, correlationID string) error {
+	start := time.Now()
+	err := d.inner.RemoveDeviceFromBlacklist(ctx, deviceId, token, tenantId, correlationID)
+	duration := time.Since(start)
+	statusCode := d.getStatusCodeFromError(err)
+	d.metrics.RecordUpstreamRequest(d.serviceName, "DELETE", "/users/me/devices/blacklist/:id", statusCode, duration)
+	return err
+}

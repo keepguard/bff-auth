@@ -1,6 +1,7 @@
 package http
 
 import (
+	"fmt"
 	"net/http"
 	"strings"
 
@@ -864,26 +865,222 @@ func (h *AuthHandlers) RevokeAllOtherSessionsHandler(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
-// handleError trata erros de forma padronizada
-func handleError(c echo.Context, err error, correlationID string) error {
-	// Trata erros do ms-auth (HTTPError)
-	if httpErr, ok := err.(*appdto.HTTPError); ok {
-		return c.JSON(httpErr.StatusCode, pkg.ErrorResponse{
-			Error:   httpErr.ErrorCode,
-			Message: httpErr.Message,
+// QuickRevokeHandler revoga dispositivo através do link de e-mail (com opção de blacklist)
+func (h *AuthHandlers) QuickRevokeHandler(c echo.Context) error {
+	correlationID := c.Request().Header.Get("X-Correlation-ID")
+	if correlationID == "" {
+		correlationID = "rev_" + c.Request().Header.Get("CF-Ray")
+	}
+
+	tenantId := c.Request().Header.Get("X-Tenant-Id")
+	if tenantId == "" {
+		tenantId = "keepguard-default"
+	}
+
+	token := c.QueryParam("token")
+	if token == "" {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "MISSING_PARAM",
+			Message: "Parâmetro 'token' é obrigatório",
 			TraceID: correlationID,
 		})
 	}
 
-	// Trata erros da aplicação (AppError)
-	if appErr, ok := err.(*pkg.AppError); ok {
-		return c.JSON(appErr.StatusCode, appErr.WithTraceID(correlationID).ToResponse())
+	blacklistParam := c.QueryParam("blacklist")
+	blacklist := blacklistParam != "false"
+
+	res, err := h.authClient.QuickRevoke(c.Request().Context(), token, blacklist, tenantId, correlationID)
+	if err != nil {
+		return handleError(c, err, correlationID)
 	}
 
-	// Erro genérico
-	return c.JSON(http.StatusInternalServerError, pkg.ErrorResponse{
-		Error:   "INTERNAL_ERROR",
-		Message: "Erro interno do servidor",
+	if strings.Contains(c.Request().Header.Get("Accept"), "text/html") {
+		msg, _ := res["message"].(string)
+		if msg == "" {
+			msg = "Sessão revogada com sucesso."
+		}
+		html := fmt.Sprintf(`<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KeepGuard - Dispositivo Revogado</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a; color: #f8fafc; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .card { background: #1e293b; padding: 2.5rem; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); max-width: 480px; text-align: center; border: 1px solid #334155; }
+        .icon { font-size: 3.5rem; margin-bottom: 1rem; color: #ef4444; }
+        h1 { font-size: 1.5rem; margin-bottom: 0.75rem; color: #ffffff; }
+        p { color: #94a3b8; line-height: 1.5; font-size: 0.95rem; margin-bottom: 1.5rem; }
+        .badge { display: inline-block; padding: 0.35rem 0.75rem; background: #334155; color: #38bdf8; border-radius: 9999px; font-size: 0.85rem; font-weight: 600; margin-bottom: 1.5rem; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="icon">&#128737;</div>
+        <h1>Acesso Revogado com Sucesso</h1>
+        <div class="badge">Dispositivo Bloqueado</div>
+        <p>%s O acesso desta sessão foi encerrado e este dispositivo foi adicionado à sua lista de bloqueios.</p>
+        <p style="font-size:0.85rem; color:#64748b;">Sua conta permanece protegida.</p>
+    </div>
+</body>
+</html>`, msg)
+		return c.HTML(http.StatusOK, html)
+	}
+
+	return c.JSON(http.StatusOK, res)
+}
+
+// ListDeviceBlacklistHandler lista dispositivos bloqueados na blacklist
+func (h *AuthHandlers) ListDeviceBlacklistHandler(c echo.Context) error {
+	correlationID, err := GetCorrelationID(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "MISSING_HEADER",
+			Message: err.Error(),
+			TraceID: "",
+		})
+	}
+
+	tenantId, _, err := GetTenantAndClientId(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "MISSING_HEADER",
+			Message: err.Error(),
+			TraceID: correlationID,
+		})
+	}
+
+	token := strings.TrimPrefix(c.Request().Header.Get("Authorization"), "Bearer ")
+
+	blacklist, err := h.authClient.ListDeviceBlacklist(c.Request().Context(), token, tenantId, correlationID)
+	if err != nil {
+		return handleError(c, err, correlationID)
+	}
+
+	return c.JSON(http.StatusOK, blacklist)
+}
+
+// AddDeviceBlacklistHandler adiciona um dispositivo à blacklist
+func (h *AuthHandlers) AddDeviceBlacklistHandler(c echo.Context) error {
+	correlationID, err := GetCorrelationID(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "MISSING_HEADER",
+			Message: err.Error(),
+			TraceID: "",
+		})
+	}
+
+	tenantId, _, err := GetTenantAndClientId(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "MISSING_HEADER",
+			Message: err.Error(),
+			TraceID: correlationID,
+		})
+	}
+
+	token := strings.TrimPrefix(c.Request().Header.Get("Authorization"), "Bearer ")
+
+	var req dto.AddDeviceBlacklistRequestDTO
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "INVALID_REQUEST",
+			Message: "Requisição inválida",
+			TraceID: correlationID,
+		})
+	}
+
+	if err := h.authClient.AddDeviceToBlacklist(c.Request().Context(), req, token, tenantId, correlationID); err != nil {
+		return handleError(c, err, correlationID)
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
+// RemoveDeviceBlacklistHandler remove um dispositivo da blacklist
+func (h *AuthHandlers) RemoveDeviceBlacklistHandler(c echo.Context) error {
+	correlationID, err := GetCorrelationID(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "MISSING_HEADER",
+			Message: err.Error(),
+			TraceID: "",
+		})
+	}
+
+	tenantId, _, err := GetTenantAndClientId(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "MISSING_HEADER",
+			Message: err.Error(),
+			TraceID: correlationID,
+		})
+	}
+
+	token := strings.TrimPrefix(c.Request().Header.Get("Authorization"), "Bearer ")
+	deviceId := c.Param("deviceId")
+
+	if err := h.authClient.RemoveDeviceFromBlacklist(c.Request().Context(), deviceId, token, tenantId, correlationID); err != nil {
+		return handleError(c, err, correlationID)
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
+// handleError trata erros de forma padronizada
+func handleError(c echo.Context, err error, correlationID string) error {
+	statusCode := http.StatusInternalServerError
+	errorCode := "INTERNAL_ERROR"
+	msg := "Erro interno do servidor"
+
+	if httpErr, ok := err.(*appdto.HTTPError); ok {
+		statusCode = httpErr.StatusCode
+		errorCode = httpErr.ErrorCode
+		if httpErr.Message != "" {
+			msg = httpErr.Message
+		} else {
+			msg = "Erro no serviço de autenticação"
+		}
+	} else if appErr, ok := err.(*pkg.AppError); ok {
+		statusCode = appErr.StatusCode
+		errorCode = string(appErr.Code)
+		if appErr.Message != "" {
+			msg = appErr.Message
+		}
+	}
+
+	if strings.Contains(c.Request().Header.Get("Accept"), "text/html") {
+		html := fmt.Sprintf(`<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>KeepGuard - Erro</title>
+    <style>
+        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a; color: #f8fafc; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
+        .card { background: #1e293b; padding: 2.5rem; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); max-width: 480px; text-align: center; border: 1px solid #334155; }
+        .icon { font-size: 3.5rem; margin-bottom: 1rem; color: #f59e0b; }
+        h1 { font-size: 1.5rem; margin-bottom: 0.75rem; color: #ffffff; }
+        p { color: #94a3b8; line-height: 1.5; font-size: 0.95rem; margin-bottom: 1.5rem; }
+        .badge { display: inline-block; padding: 0.35rem 0.75rem; background: #334155; color: #f87171; border-radius: 9999px; font-size: 0.85rem; font-weight: 600; margin-bottom: 1.5rem; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <div class="icon">&#9888;</div>
+        <h1>Não foi possível processar</h1>
+        <div class="badge">%s</div>
+        <p>%s</p>
+    </div>
+</body>
+</html>`, errorCode, msg)
+		return c.HTML(statusCode, html)
+	}
+
+	return c.JSON(statusCode, pkg.ErrorResponse{
+		Error:   errorCode,
+		Message: msg,
 		TraceID: correlationID,
 	})
 }

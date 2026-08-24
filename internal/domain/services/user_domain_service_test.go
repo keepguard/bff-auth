@@ -197,13 +197,13 @@ func TestUserDomainService_ValidateUsername(t *testing.T) {
 		},
 		{
 			name:     "username with invalid characters",
-			username: func() valueobjects.Username { u, _ := valueobjects.NewUsername("test@user"); return u }(),
+			username: func() valueobjects.Username { return valueobjects.NewUsernameUnsafe("test@user") }(),
 			wantErr:  true,
 			errMsg:   "username can only contain letters, numbers, underscore and hyphen",
 		},
 		{
 			name:     "username starting with underscore",
-			username: func() valueobjects.Username { u, _ := valueobjects.NewUsername("_testuser"); return u }(),
+			username: func() valueobjects.Username { return valueobjects.NewUsernameUnsafe("_testuser") }(),
 			wantErr:  true,
 			errMsg:   "username cannot start with underscore or hyphen",
 		},
@@ -256,17 +256,19 @@ func TestUserDomainService_CanUserRemoveRole(t *testing.T) {
 	user := entities.NewUser(userID, username, email)
 	user.Activate()
 
-	role, _ := valueobjects.NewRole("user")
-	user.AddRole(role)
+	role1, _ := valueobjects.NewRole("user")
+	role2, _ := valueobjects.NewRole("manager")
+	user.AddRole(role1)
+	user.AddRole(role2)
 
-	err := service.CanUserRemoveRole(*user, role)
+	err := service.CanUserRemoveRole(*user, role1)
 	assert.NoError(t, err)
 
 	// Remover o role
-	user.RemoveRole(role)
+	user.RemoveRole(role1)
 
 	// Tentar remover o mesmo role novamente
-	err = service.CanUserRemoveRole(*user, role)
+	err = service.CanUserRemoveRole(*user, role1)
 	assert.Error(t, err)
 	assert.Contains(t, err.Error(), "user does not have this role")
 }

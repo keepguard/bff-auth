@@ -51,10 +51,10 @@ func TestCacheDecorator_Login_NoCaching(t *testing.T) {
 	mockInner.On("Login", ctx, req, tenantId, correlationID).Return(expectedResponse, nil).Twice()
 
 	// Act - Primeira chamada
-	result1, err1 := decorator.Login(ctx, req, tenantId, correlationID)
+	result1, err1 := decorator.Login(ctx, req, tenantId, correlationID, "keepguard-default-client", "", "", "", "", "")
 
 	// Act - Segunda chamada
-	result2, err2 := decorator.Login(ctx, req, tenantId, correlationID)
+	result2, err2 := decorator.Login(ctx, req, tenantId, correlationID, "keepguard-default-client", "", "", "", "", "")
 
 	// Assert
 	assert.NoError(t, err1)

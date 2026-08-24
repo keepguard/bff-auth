@@ -324,3 +324,23 @@ func (d *smartCacheDecorator) RevokeSession(ctx context.Context, deviceIdToRevok
 func (d *smartCacheDecorator) RevokeAllOtherSessions(ctx context.Context, token, currentDeviceId, tenantId, correlationID string) error {
 	return d.inner.RevokeAllOtherSessions(ctx, token, currentDeviceId, tenantId, correlationID)
 }
+
+// QuickRevoke implementa o método QuickRevoke (sem cache)
+func (d *smartCacheDecorator) QuickRevoke(ctx context.Context, token string, blacklist bool, tenantId, correlationID string) (map[string]interface{}, error) {
+	return d.inner.QuickRevoke(ctx, token, blacklist, tenantId, correlationID)
+}
+
+// ListDeviceBlacklist implementa o método ListDeviceBlacklist (sem cache)
+func (d *smartCacheDecorator) ListDeviceBlacklist(ctx context.Context, token, tenantId, correlationID string) ([]inboundDto.DeviceBlacklistDTO, error) {
+	return d.inner.ListDeviceBlacklist(ctx, token, tenantId, correlationID)
+}
+
+// AddDeviceToBlacklist implementa o método AddDeviceToBlacklist (sem cache)
+func (d *smartCacheDecorator) AddDeviceToBlacklist(ctx context.Context, req inboundDto.AddDeviceBlacklistRequestDTO, token, tenantId, correlationID string) error {
+	return d.inner.AddDeviceToBlacklist(ctx, req, token, tenantId, correlationID)
+}
+
+// RemoveDeviceFromBlacklist implementa o método RemoveDeviceFromBlacklist (sem cache)
+func (d *smartCacheDecorator) RemoveDeviceFromBlacklist(ctx context.Context, deviceId, token, tenantId, correlationID string) error {
+	return d.inner.RemoveDeviceFromBlacklist(ctx, deviceId, token, tenantId, correlationID)
+}

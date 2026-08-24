@@ -51,7 +51,7 @@ func TestLoggingDecorator_Login_Success(t *testing.T) {
 	mockInner.On("Login", ctx, req, tenantId, correlationID).Return(expectedResponse, nil)
 
 	// Act
-	result, err := decorator.Login(ctx, req, tenantId, correlationID)
+	result, err := decorator.Login(ctx, req, tenantId, correlationID, "keepguard-default-client", "", "", "", "", "")
 
 	// Assert
 	assert.NoError(t, err)
@@ -86,7 +86,7 @@ func TestLoggingDecorator_Login_Error(t *testing.T) {
 	mockInner.On("Login", ctx, req, tenantId, correlationID).Return(inboundDto.AuthResponseDTO{}, expectedError)
 
 	// Act
-	result, err := decorator.Login(ctx, req, tenantId, correlationID)
+	result, err := decorator.Login(ctx, req, tenantId, correlationID, "keepguard-default-client", "", "", "", "", "")
 
 	// Assert
 	assert.Error(t, err)

@@ -19,6 +19,12 @@ const (
 	// TemplateTypeRecuperacaoSenha representa template de recuperação de senha
 	TemplateTypeRecuperacaoSenha TemplateType = "RECUPERACAO_SENHA"
 
+	// TemplateTypeSenhaAlteradaSucesso representa template de notificação de senha alterada com sucesso
+	TemplateTypeSenhaAlteradaSucesso TemplateType = "SENHA_ALTERADA_SUCESSO"
+
+	// TemplateTypeNovoDispositivoAutenticado representa template de alerta de novo dispositivo autenticado
+	TemplateTypeNovoDispositivoAutenticado TemplateType = "NOVO_DISPOSITIVO_AUTENTICADO"
+
 	// TemplateTypeNotificacaoGeral representa template de notificação geral
 	TemplateTypeNotificacaoGeral TemplateType = "NOTIFICACAO_GERAL"
 
@@ -39,7 +45,8 @@ func (t TemplateType) IsValid() bool {
 	switch t {
 	case TemplateTypeAutenticacaoEmailToken, TemplateTypeAutenticacaoSMSToken,
 		TemplateTypeAutenticacaoWhatsAppToken, TemplateTypeCadastroSucesso,
-		TemplateTypeRecuperacaoSenha, TemplateTypeNotificacaoGeral,
+		TemplateTypeRecuperacaoSenha, TemplateTypeSenhaAlteradaSucesso,
+		TemplateTypeNovoDispositivoAutenticado, TemplateTypeNotificacaoGeral,
 		TemplateTypeAlertaSeguranca, TemplateTypeConfirmacaoAcao:
 		return true
 	default:
