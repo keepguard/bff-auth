@@ -157,11 +157,17 @@ func (m *middlewareImpl) CORSMiddleware() echo.MiddlewareFunc {
 			"X-Correlation-ID",
 			"X-Client-Id",
 			"X-Client-ID",
+			"X-Device-Id",
+			"X-Device-Name",
+			"X-Device-Type",
 			"Idempotency-Key",
 		},
 		ExposeHeaders: []string{
 			echo.HeaderXRequestID,
 			"X-User-ID",
+			"X-Correlation-ID",
+			"X-Tenant-Id",
+			"X-Device-Id",
 		},
 		MaxAge: 86400, // 24 horas
 	})
