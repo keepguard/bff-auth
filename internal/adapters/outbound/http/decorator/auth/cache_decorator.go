@@ -174,8 +174,8 @@ func (d *cacheDecorator) generateCacheKey(operation string, params ...interface{
 }
 
 // Login - NÃO CACHEIA (autenticação sempre deve ser validada)
-func (d *cacheDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId string) (inboundDto.AuthResponseDTO, error) {
-	return d.inner.Login(ctx, req, tenantId, correlationID, clientId)
+func (d *cacheDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId, deviceId, deviceName, deviceType, ipAddress, userAgent string) (inboundDto.AuthResponseDTO, error) {
+	return d.inner.Login(ctx, req, tenantId, correlationID, clientId, deviceId, deviceName, deviceType, ipAddress, userAgent)
 }
 
 // RefreshToken - NÃO CACHEIA (tokens sempre devem ser validados)
@@ -228,4 +228,29 @@ func (d *cacheDecorator) ResetPassword(ctx context.Context, req outboundDto.Rese
 // GenerateResetToken implementa o método GenerateResetToken (sem cache)
 func (d *cacheDecorator) GenerateResetToken(ctx context.Context, req map[string]interface{}, tenantId, correlationID string) (outboundDto.GenerateResetTokenMSResponseDTO, error) {
 	return d.inner.GenerateResetToken(ctx, req, tenantId, correlationID)
+}
+
+// SendDeviceChallenge implementa o método SendDeviceChallenge (sem cache)
+func (d *cacheDecorator) SendDeviceChallenge(ctx context.Context, req inboundDto.DeviceChallengeSendRequestDTO, tenantId, correlationID string) (map[string]interface{}, error) {
+	return d.inner.SendDeviceChallenge(ctx, req, tenantId, correlationID)
+}
+
+// VerifyDeviceChallenge implementa o método VerifyDeviceChallenge (sem cache)
+func (d *cacheDecorator) VerifyDeviceChallenge(ctx context.Context, req inboundDto.DeviceChallengeVerifyRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
+	return d.inner.VerifyDeviceChallenge(ctx, req, tenantId, correlationID)
+}
+
+// ListUserSessions implementa o método ListUserSessions (sem cache)
+func (d *cacheDecorator) ListUserSessions(ctx context.Context, token, deviceId, tenantId, correlationID string) ([]inboundDto.DeviceSessionDTO, error) {
+	return d.inner.ListUserSessions(ctx, token, deviceId, tenantId, correlationID)
+}
+
+// RevokeSession implementa o método RevokeSession (sem cache)
+func (d *cacheDecorator) RevokeSession(ctx context.Context, deviceIdToRevoke, token, tenantId, correlationID string) error {
+	return d.inner.RevokeSession(ctx, deviceIdToRevoke, token, tenantId, correlationID)
+}
+
+// RevokeAllOtherSessions implementa o método RevokeAllOtherSessions (sem cache)
+func (d *cacheDecorator) RevokeAllOtherSessions(ctx context.Context, token, currentDeviceId, tenantId, correlationID string) error {
+	return d.inner.RevokeAllOtherSessions(ctx, token, currentDeviceId, tenantId, correlationID)
 }

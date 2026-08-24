@@ -141,12 +141,12 @@ func (d *retryDecorator) retry(ctx context.Context, operation func() error) erro
 }
 
 // Login implementa o método Login com retry
-func (d *retryDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId string) (inboundDto.AuthResponseDTO, error) {
+func (d *retryDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId, deviceId, deviceName, deviceType, ipAddress, userAgent string) (inboundDto.AuthResponseDTO, error) {
 	var result inboundDto.AuthResponseDTO
 	var err error
 
 	retryErr := d.retry(ctx, func() error {
-		result, err = d.inner.Login(ctx, req, tenantId, correlationID, clientId)
+		result, err = d.inner.Login(ctx, req, tenantId, correlationID, clientId, deviceId, deviceName, deviceType, ipAddress, userAgent)
 		return err
 	})
 
@@ -203,4 +203,51 @@ func (d *retryDecorator) GenerateResetToken(ctx context.Context, req map[string]
 		return innerErr
 	})
 	return response, err
+}
+
+// SendDeviceChallenge implementa o método SendDeviceChallenge com retry
+func (d *retryDecorator) SendDeviceChallenge(ctx context.Context, req inboundDto.DeviceChallengeSendRequestDTO, tenantId, correlationID string) (map[string]interface{}, error) {
+	var response map[string]interface{}
+	err := d.retry(ctx, func() error {
+		var innerErr error
+		response, innerErr = d.inner.SendDeviceChallenge(ctx, req, tenantId, correlationID)
+		return innerErr
+	})
+	return response, err
+}
+
+// VerifyDeviceChallenge implementa o método VerifyDeviceChallenge com retry
+func (d *retryDecorator) VerifyDeviceChallenge(ctx context.Context, req inboundDto.DeviceChallengeVerifyRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
+	var response inboundDto.AuthResponseDTO
+	err := d.retry(ctx, func() error {
+		var innerErr error
+		response, innerErr = d.inner.VerifyDeviceChallenge(ctx, req, tenantId, correlationID)
+		return innerErr
+	})
+	return response, err
+}
+
+// ListUserSessions implementa o método ListUserSessions com retry
+func (d *retryDecorator) ListUserSessions(ctx context.Context, token, deviceId, tenantId, correlationID string) ([]inboundDto.DeviceSessionDTO, error) {
+	var response []inboundDto.DeviceSessionDTO
+	err := d.retry(ctx, func() error {
+		var innerErr error
+		response, innerErr = d.inner.ListUserSessions(ctx, token, deviceId, tenantId, correlationID)
+		return innerErr
+	})
+	return response, err
+}
+
+// RevokeSession implementa o método RevokeSession com retry
+func (d *retryDecorator) RevokeSession(ctx context.Context, deviceIdToRevoke, token, tenantId, correlationID string) error {
+	return d.retry(ctx, func() error {
+		return d.inner.RevokeSession(ctx, deviceIdToRevoke, token, tenantId, correlationID)
+	})
+}
+
+// RevokeAllOtherSessions implementa o método RevokeAllOtherSessions com retry
+func (d *retryDecorator) RevokeAllOtherSessions(ctx context.Context, token, currentDeviceId, tenantId, correlationID string) error {
+	return d.retry(ctx, func() error {
+		return d.inner.RevokeAllOtherSessions(ctx, token, currentDeviceId, tenantId, correlationID)
+	})
 }

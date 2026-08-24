@@ -31,7 +31,7 @@ log_debug() { echo -e "${PURPLE}[DEBUG]${NC} $1"; }
 # Configurações
 SERVICE_NAME="bff-auth"
 CONFIG_FILE="$(pwd)/application.yml"
-DOCKER_COMPOSE_FILE="../../../docker/infra/api/docker-compose.yml"
+DOCKER_COMPOSE_FILE="../../../docker/docker-compose.yml"
 DOCKERFILE="$(pwd)/deploy/Dockerfile"
 BACKUP_DIR=".deploy-backup"
 

@@ -81,6 +81,14 @@ func (s *serverImpl) SetupRoutes(handlers Handler) {
 	authGroup.POST("/change-password", handlers.ChangePasswordHandler)
 	authGroup.POST("/reset-password", handlers.ResetPasswordHandler)
 	authGroup.POST("/forgot-password", handlers.SendResetPasswordMessageHandler)
+	authGroup.POST("/device/challenge/send", handlers.SendDeviceChallengeHandler)
+	authGroup.POST("/device/challenge/verify", handlers.VerifyDeviceChallengeHandler)
+
+	// User Sessions routes
+	userGroup := s.echo.Group("/api/v1/users/me")
+	userGroup.GET("/sessions", handlers.ListUserSessionsHandler)
+	userGroup.DELETE("/sessions/:deviceId", handlers.RevokeSessionHandler)
+	userGroup.DELETE("/sessions", handlers.RevokeAllOtherSessionsHandler)
 
 	s.logger.Info("Rotas configuradas com sucesso",
 		zap.String("port", s.config.Server.Port),

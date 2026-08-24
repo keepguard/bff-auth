@@ -6,6 +6,7 @@ import (
 	"testing"
 	"time"
 
+	dto "github.com/keepguard/bff-auth/internal/application/dto"
 	"github.com/sony/gobreaker"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -349,4 +350,55 @@ func TestCircuitBreakerManager_StateChange_RecordsMetrics(t *testing.T) {
 	// Assert
 	// O circuit breaker deve estar fechado inicialmente
 	assert.Equal(t, gobreaker.StateClosed, manager.GetState("test-service"))
+}
+
+func TestDefaultIsSuccessful(t *testing.T) {
+	testCases := []struct {
+		name     string
+		err      error
+		expected bool
+	}{
+		{
+			name:     "Nil error is successful",
+			err:      nil,
+			expected: true,
+		},
+		{
+			name:     "HTTPError 400 Bad Request is considered success (business validation error)",
+			err:      &dto.HTTPError{StatusCode: 400, Message: "bad request"},
+			expected: true,
+		},
+		{
+			name:     "HTTPError 401 Unauthorized is considered success (invalid credentials)",
+			err:      &dto.HTTPError{StatusCode: 401, Message: "unauthorized"},
+			expected: true,
+		},
+		{
+			name:     "HTTPError 404 Not Found is considered success",
+			err:      &dto.HTTPError{StatusCode: 404, Message: "not found"},
+			expected: true,
+		},
+		{
+			name:     "HTTPError 500 Internal Server Error is considered failure",
+			err:      &dto.HTTPError{StatusCode: 500, Message: "internal error"},
+			expected: false,
+		},
+		{
+			name:     "HTTPError 503 Service Unavailable is considered failure",
+			err:      &dto.HTTPError{StatusCode: 503, Message: "service unavailable"},
+			expected: false,
+		},
+		{
+			name:     "Generic error is considered failure",
+			err:      errors.New("connection refused"),
+			expected: false,
+		},
+	}
+
+	for _, tc := range testCases {
+		t.Run(tc.name, func(t *testing.T) {
+			result := DefaultIsSuccessful(tc.err)
+			assert.Equal(t, tc.expected, result)
+		})
+	}
 }

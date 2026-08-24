@@ -232,10 +232,10 @@ func NewSmartCacheDecorator(
 }
 
 // Login - NÃO CACHEIA mas ARMAZENA metadados do token
-func (d *smartCacheDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId string) (inboundDto.AuthResponseDTO, error) {
-	response, err := d.inner.Login(ctx, req, tenantId, correlationID, clientId)
+func (d *smartCacheDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId, deviceId, deviceName, deviceType, ipAddress, userAgent string) (inboundDto.AuthResponseDTO, error) {
+	response, err := d.inner.Login(ctx, req, tenantId, correlationID, clientId, deviceId, deviceName, deviceType, ipAddress, userAgent)
 
-	if err == nil {
+	if err == nil && response.Token != "" {
 		// Armazena metadados do token para uso futuro no cache
 		d.cache.storeTokenMetadata(response.Token, response.ExpiresIn, tenantId)
 	}
@@ -294,4 +294,33 @@ func (d *smartCacheDecorator) ResetPassword(ctx context.Context, req outboundDto
 // GenerateResetToken implementa o método GenerateResetToken (sem cache)
 func (d *smartCacheDecorator) GenerateResetToken(ctx context.Context, req map[string]interface{}, tenantId, correlationID string) (outboundDto.GenerateResetTokenMSResponseDTO, error) {
 	return d.inner.GenerateResetToken(ctx, req, tenantId, correlationID)
+}
+
+// SendDeviceChallenge implementa o método SendDeviceChallenge (sem cache)
+func (d *smartCacheDecorator) SendDeviceChallenge(ctx context.Context, req inboundDto.DeviceChallengeSendRequestDTO, tenantId, correlationID string) (map[string]interface{}, error) {
+	return d.inner.SendDeviceChallenge(ctx, req, tenantId, correlationID)
+}
+
+// VerifyDeviceChallenge implementa o método VerifyDeviceChallenge (armazena token no cache se emitido)
+func (d *smartCacheDecorator) VerifyDeviceChallenge(ctx context.Context, req inboundDto.DeviceChallengeVerifyRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
+	response, err := d.inner.VerifyDeviceChallenge(ctx, req, tenantId, correlationID)
+	if err == nil && response.Token != "" {
+		d.cache.storeTokenMetadata(response.Token, response.ExpiresIn, tenantId)
+	}
+	return response, err
+}
+
+// ListUserSessions implementa o método ListUserSessions (sem cache)
+func (d *smartCacheDecorator) ListUserSessions(ctx context.Context, token, deviceId, tenantId, correlationID string) ([]inboundDto.DeviceSessionDTO, error) {
+	return d.inner.ListUserSessions(ctx, token, deviceId, tenantId, correlationID)
+}
+
+// RevokeSession implementa o método RevokeSession (sem cache)
+func (d *smartCacheDecorator) RevokeSession(ctx context.Context, deviceIdToRevoke, token, tenantId, correlationID string) error {
+	return d.inner.RevokeSession(ctx, deviceIdToRevoke, token, tenantId, correlationID)
+}
+
+// RevokeAllOtherSessions implementa o método RevokeAllOtherSessions (sem cache)
+func (d *smartCacheDecorator) RevokeAllOtherSessions(ctx context.Context, token, currentDeviceId, tenantId, correlationID string) error {
+	return d.inner.RevokeAllOtherSessions(ctx, token, currentDeviceId, tenantId, correlationID)
 }

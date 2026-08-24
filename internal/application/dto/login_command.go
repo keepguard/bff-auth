@@ -7,9 +7,14 @@ import "context"
 type LoginCommand struct {
 	Username      string
 	Password      string
-	TenantId  string
+	TenantId      string
 	CorrelationID string
 	ClientId      string
+	DeviceId      string
+	DeviceName    string
+	DeviceType    string
+	IPAddress     string
+	UserAgent     string
 	Context       context.Context
 }
 
@@ -18,9 +23,26 @@ func NewLoginCommand(username, password, tenantId, correlationID, clientId strin
 	return LoginCommand{
 		Username:      username,
 		Password:      password,
-		TenantId:  tenantId,
+		TenantId:      tenantId,
 		CorrelationID: correlationID,
 		ClientId:      clientId,
+		Context:       ctx,
+	}
+}
+
+// NewLoginCommandWithDevice cria uma nova instância do LoginCommand com metadados de dispositivo
+func NewLoginCommandWithDevice(username, password, tenantId, correlationID, clientId, deviceId, deviceName, deviceType, ipAddress, userAgent string, ctx context.Context) LoginCommand {
+	return LoginCommand{
+		Username:      username,
+		Password:      password,
+		TenantId:      tenantId,
+		CorrelationID: correlationID,
+		ClientId:      clientId,
+		DeviceId:      deviceId,
+		DeviceName:    deviceName,
+		DeviceType:    deviceType,
+		IPAddress:     ipAddress,
+		UserAgent:     userAgent,
 		Context:       ctx,
 	}
 }

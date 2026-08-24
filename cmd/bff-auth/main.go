@@ -86,29 +86,28 @@ func main() {
 	// Configura Circuit Breaker para ms-auth
 	authCBConfig := resilience.CircuitBreakerConfig{
 		Name:        "ms-auth",
-		MaxRequests: 3,                // Máximo 3 requests em half-open
-		Interval:    10 * time.Second, // Janela de tempo para contar falhas (reduzido)
-		Timeout:     30 * time.Second, // Tempo para tentar novamente (sincronizado com timeout HTTP)
+		MaxRequests: 3,                // Máximo 3 requests em half-open para testar recuperação
+		Interval:    30 * time.Second, // Janela de amostragem
+		Timeout:     10 * time.Second, // Tempo em OPEN antes de tentar HALF-OPEN
 		ReadyToTrip: func(counts gobreaker.Counts) bool {
-			// Abre o circuit se 50% das requests falharam em 2+ tentativas (mais agressivo)
+			// Abre se pelo menos 5 requisições foram feitas e >= 60% falharam (com 5xx / timeout)
 			failureRatio := float64(counts.TotalFailures) / float64(counts.Requests)
-			return counts.Requests >= 2 && failureRatio >= 0.5
+			return counts.Requests >= 5 && failureRatio >= 0.6
 		},
 	}
 
 	// Cria Circuit Breaker para ms-auth
 	cbManager.GetOrCreate("ms-auth", authCBConfig)
 
-	// Configura Circuit Breaker para ms-company (CRÍTICO!)
+	// Configura Circuit Breaker para ms-company
 	companyCBConfig := resilience.CircuitBreakerConfig{
 		Name:        "ms-company",
 		MaxRequests: 3,
-		Interval:    10 * time.Second,
-		Timeout:     30 * time.Second, // Tempo para tentar novamente (sincronizado com timeout HTTP)
+		Interval:    30 * time.Second,
+		Timeout:     10 * time.Second,
 		ReadyToTrip: func(counts gobreaker.Counts) bool {
-			// Abre o circuit se 50% das requests falharam em 2+ tentativas
 			failureRatio := float64(counts.TotalFailures) / float64(counts.Requests)
-			return counts.Requests >= 2 && failureRatio >= 0.5
+			return counts.Requests >= 5 && failureRatio >= 0.6
 		},
 	}
 	cbManager.GetOrCreate("ms-company", companyCBConfig)
@@ -309,6 +308,7 @@ func main() {
 		validateTokenUseCase,
 		changePasswordUseCase,
 		resetPasswordUseCase,
+		authClient,
 		appLogger,
 	)
 

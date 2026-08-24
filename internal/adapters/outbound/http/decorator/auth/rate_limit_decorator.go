@@ -127,11 +127,11 @@ func (d *rateLimitDecorator) checkRateLimit() error {
 }
 
 // Login implementa o método Login com rate limiting
-func (d *rateLimitDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId string) (inboundDto.AuthResponseDTO, error) {
+func (d *rateLimitDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId, deviceId, deviceName, deviceType, ipAddress, userAgent string) (inboundDto.AuthResponseDTO, error) {
 	if err := d.checkRateLimit(); err != nil {
 		return inboundDto.AuthResponseDTO{}, err
 	}
-	return d.inner.Login(ctx, req, tenantId, correlationID, clientId)
+	return d.inner.Login(ctx, req, tenantId, correlationID, clientId, deviceId, deviceName, deviceType, ipAddress, userAgent)
 }
 
 // RefreshToken implementa o método RefreshToken com rate limiting
@@ -180,4 +180,44 @@ func (d *rateLimitDecorator) GenerateResetToken(ctx context.Context, req map[str
 		return outboundDto.GenerateResetTokenMSResponseDTO{}, err
 	}
 	return d.inner.GenerateResetToken(ctx, req, tenantId, correlationID)
+}
+
+// SendDeviceChallenge implementa o método SendDeviceChallenge com rate limiting
+func (d *rateLimitDecorator) SendDeviceChallenge(ctx context.Context, req inboundDto.DeviceChallengeSendRequestDTO, tenantId, correlationID string) (map[string]interface{}, error) {
+	if err := d.checkRateLimit(); err != nil {
+		return nil, err
+	}
+	return d.inner.SendDeviceChallenge(ctx, req, tenantId, correlationID)
+}
+
+// VerifyDeviceChallenge implementa o método VerifyDeviceChallenge com rate limiting
+func (d *rateLimitDecorator) VerifyDeviceChallenge(ctx context.Context, req inboundDto.DeviceChallengeVerifyRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
+	if err := d.checkRateLimit(); err != nil {
+		return inboundDto.AuthResponseDTO{}, err
+	}
+	return d.inner.VerifyDeviceChallenge(ctx, req, tenantId, correlationID)
+}
+
+// ListUserSessions implementa o método ListUserSessions com rate limiting
+func (d *rateLimitDecorator) ListUserSessions(ctx context.Context, token, deviceId, tenantId, correlationID string) ([]inboundDto.DeviceSessionDTO, error) {
+	if err := d.checkRateLimit(); err != nil {
+		return nil, err
+	}
+	return d.inner.ListUserSessions(ctx, token, deviceId, tenantId, correlationID)
+}
+
+// RevokeSession implementa o método RevokeSession com rate limiting
+func (d *rateLimitDecorator) RevokeSession(ctx context.Context, deviceIdToRevoke, token, tenantId, correlationID string) error {
+	if err := d.checkRateLimit(); err != nil {
+		return err
+	}
+	return d.inner.RevokeSession(ctx, deviceIdToRevoke, token, tenantId, correlationID)
+}
+
+// RevokeAllOtherSessions implementa o método RevokeAllOtherSessions com rate limiting
+func (d *rateLimitDecorator) RevokeAllOtherSessions(ctx context.Context, token, currentDeviceId, tenantId, correlationID string) error {
+	if err := d.checkRateLimit(); err != nil {
+		return err
+	}
+	return d.inner.RevokeAllOtherSessions(ctx, token, currentDeviceId, tenantId, correlationID)
 }

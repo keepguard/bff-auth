@@ -32,7 +32,7 @@ func NewLoggingDecorator(
 }
 
 // Login implementa o método Login com logging estruturado
-func (d *loggingDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId string) (inboundDto.AuthResponseDTO, error) {
+func (d *loggingDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId, deviceId, deviceName, deviceType, ipAddress, userAgent string) (inboundDto.AuthResponseDTO, error) {
 	start := time.Now()
 
 	d.logger.Info("Iniciando requisição",
@@ -41,9 +41,10 @@ func (d *loggingDecorator) Login(ctx context.Context, req inboundDto.AuthRequest
 		zap.String("correlationID", correlationID),
 		zap.String("tenantId", tenantId),
 		zap.String("username", req.Username),
+		zap.String("deviceId", deviceId),
 	)
 
-	response, err := d.inner.Login(ctx, req, tenantId, correlationID, clientId)
+	response, err := d.inner.Login(ctx, req, tenantId, correlationID, clientId, deviceId, deviceName, deviceType, ipAddress, userAgent)
 	duration := time.Since(start)
 
 	if err != nil {
@@ -306,6 +307,142 @@ func (d *loggingDecorator) GenerateResetToken(ctx context.Context, req map[strin
 	)
 
 	return response, nil
+}
+
+// SendDeviceChallenge implementa o método SendDeviceChallenge com logging estruturado
+func (d *loggingDecorator) SendDeviceChallenge(ctx context.Context, req inboundDto.DeviceChallengeSendRequestDTO, tenantId, correlationID string) (map[string]interface{}, error) {
+	start := time.Now()
+	d.logger.Info("Iniciando envio de desafio de dispositivo",
+		zap.String("service", d.serviceName),
+		zap.String("operation", "SendDeviceChallenge"),
+		zap.String("correlationID", correlationID),
+		zap.String("tenantId", tenantId),
+		zap.String("channel", req.Channel),
+	)
+
+	response, err := d.inner.SendDeviceChallenge(ctx, req, tenantId, correlationID)
+	duration := time.Since(start)
+
+	if err != nil {
+		d.logger.Error("Erro ao enviar desafio de dispositivo",
+			zap.String("service", d.serviceName),
+			zap.String("operation", "SendDeviceChallenge"),
+			zap.String("correlationID", correlationID),
+			zap.Duration("duration", duration),
+			zap.Error(err),
+		)
+		return nil, err
+	}
+
+	return response, nil
+}
+
+// VerifyDeviceChallenge implementa o método VerifyDeviceChallenge com logging estruturado
+func (d *loggingDecorator) VerifyDeviceChallenge(ctx context.Context, req inboundDto.DeviceChallengeVerifyRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
+	start := time.Now()
+	d.logger.Info("Iniciando verificação de desafio de dispositivo",
+		zap.String("service", d.serviceName),
+		zap.String("operation", "VerifyDeviceChallenge"),
+		zap.String("correlationID", correlationID),
+		zap.String("tenantId", tenantId),
+	)
+
+	response, err := d.inner.VerifyDeviceChallenge(ctx, req, tenantId, correlationID)
+	duration := time.Since(start)
+
+	if err != nil {
+		d.logger.Error("Erro ao verificar desafio de dispositivo",
+			zap.String("service", d.serviceName),
+			zap.String("operation", "VerifyDeviceChallenge"),
+			zap.String("correlationID", correlationID),
+			zap.Duration("duration", duration),
+			zap.Error(err),
+		)
+		return response, err
+	}
+
+	return response, nil
+}
+
+// ListUserSessions implementa o método ListUserSessions com logging estruturado
+func (d *loggingDecorator) ListUserSessions(ctx context.Context, token, deviceId, tenantId, correlationID string) ([]inboundDto.DeviceSessionDTO, error) {
+	start := time.Now()
+	d.logger.Info("Iniciando listagem de sessões do usuário",
+		zap.String("service", d.serviceName),
+		zap.String("operation", "ListUserSessions"),
+		zap.String("correlationID", correlationID),
+		zap.String("tenantId", tenantId),
+	)
+
+	response, err := d.inner.ListUserSessions(ctx, token, deviceId, tenantId, correlationID)
+	duration := time.Since(start)
+
+	if err != nil {
+		d.logger.Error("Erro ao listar sessões do usuário",
+			zap.String("service", d.serviceName),
+			zap.String("operation", "ListUserSessions"),
+			zap.String("correlationID", correlationID),
+			zap.Duration("duration", duration),
+			zap.Error(err),
+		)
+		return nil, err
+	}
+
+	return response, nil
+}
+
+// RevokeSession implementa o método RevokeSession com logging estruturado
+func (d *loggingDecorator) RevokeSession(ctx context.Context, deviceIdToRevoke, token, tenantId, correlationID string) error {
+	start := time.Now()
+	d.logger.Info("Iniciando revogação de sessão",
+		zap.String("service", d.serviceName),
+		zap.String("operation", "RevokeSession"),
+		zap.String("correlationID", correlationID),
+		zap.String("deviceIdToRevoke", deviceIdToRevoke),
+	)
+
+	err := d.inner.RevokeSession(ctx, deviceIdToRevoke, token, tenantId, correlationID)
+	duration := time.Since(start)
+
+	if err != nil {
+		d.logger.Error("Erro ao revogar sessão",
+			zap.String("service", d.serviceName),
+			zap.String("operation", "RevokeSession"),
+			zap.String("correlationID", correlationID),
+			zap.Duration("duration", duration),
+			zap.Error(err),
+		)
+		return err
+	}
+
+	return nil
+}
+
+// RevokeAllOtherSessions implementa o método RevokeAllOtherSessions com logging estruturado
+func (d *loggingDecorator) RevokeAllOtherSessions(ctx context.Context, token, currentDeviceId, tenantId, correlationID string) error {
+	start := time.Now()
+	d.logger.Info("Iniciando revogação de todas as outras sessões",
+		zap.String("service", d.serviceName),
+		zap.String("operation", "RevokeAllOtherSessions"),
+		zap.String("correlationID", correlationID),
+		zap.String("currentDeviceId", currentDeviceId),
+	)
+
+	err := d.inner.RevokeAllOtherSessions(ctx, token, currentDeviceId, tenantId, correlationID)
+	duration := time.Since(start)
+
+	if err != nil {
+		d.logger.Error("Erro ao revogar outras sessões",
+			zap.String("service", d.serviceName),
+			zap.String("operation", "RevokeAllOtherSessions"),
+			zap.String("correlationID", correlationID),
+			zap.Duration("duration", duration),
+			zap.Error(err),
+		)
+		return err
+	}
+
+	return nil
 }
 
 // getStringFromMap extrai uma string de um map[string]interface{}

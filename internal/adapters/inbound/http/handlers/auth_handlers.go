@@ -7,6 +7,7 @@ import (
 	"github.com/keepguard/bff-auth/internal/adapters/inbound/http/dto"
 	"github.com/keepguard/bff-auth/internal/application/auth"
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
+	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
 	"github.com/keepguard/bff-auth/internal/infrastructure/logger"
 	"github.com/keepguard/bff-auth/internal/pkg"
 	"github.com/labstack/echo/v4"
@@ -21,6 +22,7 @@ type AuthHandlers struct {
 	validateTokenUseCase  auth.ValidateTokenUseCase
 	changePasswordUseCase auth.ChangePasswordUseCase
 	resetPasswordUseCase  auth.ResetPasswordUseCase
+	authClient            authclient.AuthClient
 	logger                *zap.Logger
 }
 
@@ -32,6 +34,7 @@ func NewAuthHandlers(
 	validateTokenUseCase auth.ValidateTokenUseCase,
 	changePasswordUseCase auth.ChangePasswordUseCase,
 	resetPasswordUseCase auth.ResetPasswordUseCase,
+	authClient authclient.AuthClient,
 	logger *zap.Logger,
 ) *AuthHandlers {
 	return &AuthHandlers{
@@ -41,6 +44,7 @@ func NewAuthHandlers(
 		validateTokenUseCase:  validateTokenUseCase,
 		changePasswordUseCase: changePasswordUseCase,
 		resetPasswordUseCase:  resetPasswordUseCase,
+		authClient:            authClient,
 		logger:                logger,
 	}
 }
@@ -53,10 +57,9 @@ func NewAuthHandlersWithLogger(
 	validateTokenUseCase auth.ValidateTokenUseCase,
 	changePasswordUseCase auth.ChangePasswordUseCase,
 	resetPasswordUseCase auth.ResetPasswordUseCase,
+	authClient authclient.AuthClient,
 	log logger.Logger,
 ) *AuthHandlers {
-	// Converter logger.Logger para *zap.Logger se necessário
-	// Por enquanto, vamos criar um logger zap básico
 	zapLogger, _ := zap.NewDevelopment()
 	return &AuthHandlers{
 		loginUseCase:          loginUseCase,
@@ -65,6 +68,7 @@ func NewAuthHandlersWithLogger(
 		validateTokenUseCase:  validateTokenUseCase,
 		changePasswordUseCase: changePasswordUseCase,
 		resetPasswordUseCase:  resetPasswordUseCase,
+		authClient:            authClient,
 		logger:                zapLogger,
 	}
 }
@@ -117,13 +121,25 @@ func (h *AuthHandlers) LoginHandler(c echo.Context) error {
 		})
 	}
 
-	// Criar comando de domínio encapsulado
-	command := appdto.NewLoginCommand(
+	// Captura headers opcionais de dispositivo
+	deviceId := c.Request().Header.Get("X-Device-Id")
+	deviceName := c.Request().Header.Get("X-Device-Name")
+	deviceType := c.Request().Header.Get("X-Device-Type")
+	ipAddress := c.RealIP()
+	userAgent := c.Request().UserAgent()
+
+	// Criar comando de domínio encapsulado com device
+	command := appdto.NewLoginCommandWithDevice(
 		req.Username,
 		req.Password,
 		tenantId,
 		correlationID,
 		clientId,
+		deviceId,
+		deviceName,
+		deviceType,
+		ipAddress,
+		userAgent,
 		c.Request().Context(),
 	)
 
@@ -681,6 +697,171 @@ func (h *AuthHandlers) ResetPasswordHandler(c echo.Context) error {
 	)
 
 	return c.JSON(http.StatusOK, map[string]string{"message": "Senha resetada com sucesso"})
+}
+
+// SendDeviceChallengeHandler dispara OTP para canal selecionado no dispositivo
+func (h *AuthHandlers) SendDeviceChallengeHandler(c echo.Context) error {
+	correlationID, err := GetCorrelationID(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "MISSING_HEADER",
+			Message: err.Error(),
+			TraceID: "",
+		})
+	}
+
+	tenantId, _, err := GetTenantAndClientId(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "MISSING_HEADER",
+			Message: err.Error(),
+			TraceID: correlationID,
+		})
+	}
+
+	var req dto.DeviceChallengeSendRequestDTO
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "INVALID_REQUEST",
+			Message: "Requisição inválida",
+			TraceID: correlationID,
+		})
+	}
+
+	res, err := h.authClient.SendDeviceChallenge(c.Request().Context(), req, tenantId, correlationID)
+	if err != nil {
+		return handleError(c, err, correlationID)
+	}
+
+	return c.JSON(http.StatusOK, res)
+}
+
+// VerifyDeviceChallengeHandler valida OTP de dispositivo e emite JWT
+func (h *AuthHandlers) VerifyDeviceChallengeHandler(c echo.Context) error {
+	correlationID, err := GetCorrelationID(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "MISSING_HEADER",
+			Message: err.Error(),
+			TraceID: "",
+		})
+	}
+
+	tenantId, _, err := GetTenantAndClientId(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "MISSING_HEADER",
+			Message: err.Error(),
+			TraceID: correlationID,
+		})
+	}
+
+	var req dto.DeviceChallengeVerifyRequestDTO
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "INVALID_REQUEST",
+			Message: "Requisição inválida",
+			TraceID: correlationID,
+		})
+	}
+
+	res, err := h.authClient.VerifyDeviceChallenge(c.Request().Context(), req, tenantId, correlationID)
+	if err != nil {
+		return handleError(c, err, correlationID)
+	}
+
+	return c.JSON(http.StatusOK, res)
+}
+
+// ListUserSessionsHandler lista sessões do usuário autenticado
+func (h *AuthHandlers) ListUserSessionsHandler(c echo.Context) error {
+	correlationID, err := GetCorrelationID(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "MISSING_HEADER",
+			Message: err.Error(),
+			TraceID: "",
+		})
+	}
+
+	tenantId, _, err := GetTenantAndClientId(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "MISSING_HEADER",
+			Message: err.Error(),
+			TraceID: correlationID,
+		})
+	}
+
+	token := strings.TrimPrefix(c.Request().Header.Get("Authorization"), "Bearer ")
+	deviceId := c.Request().Header.Get("X-Device-Id")
+
+	sessions, err := h.authClient.ListUserSessions(c.Request().Context(), token, deviceId, tenantId, correlationID)
+	if err != nil {
+		return handleError(c, err, correlationID)
+	}
+
+	return c.JSON(http.StatusOK, sessions)
+}
+
+// RevokeSessionHandler revoga sessão de dispositivo específico
+func (h *AuthHandlers) RevokeSessionHandler(c echo.Context) error {
+	correlationID, err := GetCorrelationID(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "MISSING_HEADER",
+			Message: err.Error(),
+			TraceID: "",
+		})
+	}
+
+	tenantId, _, err := GetTenantAndClientId(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "MISSING_HEADER",
+			Message: err.Error(),
+			TraceID: correlationID,
+		})
+	}
+
+	token := strings.TrimPrefix(c.Request().Header.Get("Authorization"), "Bearer ")
+	deviceIdToRevoke := c.Param("deviceId")
+
+	if err := h.authClient.RevokeSession(c.Request().Context(), deviceIdToRevoke, token, tenantId, correlationID); err != nil {
+		return handleError(c, err, correlationID)
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
+// RevokeAllOtherSessionsHandler revoga todas as outras sessões exceto atual
+func (h *AuthHandlers) RevokeAllOtherSessionsHandler(c echo.Context) error {
+	correlationID, err := GetCorrelationID(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "MISSING_HEADER",
+			Message: err.Error(),
+			TraceID: "",
+		})
+	}
+
+	tenantId, _, err := GetTenantAndClientId(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "MISSING_HEADER",
+			Message: err.Error(),
+			TraceID: correlationID,
+		})
+	}
+
+	token := strings.TrimPrefix(c.Request().Header.Get("Authorization"), "Bearer ")
+	currentDeviceId := c.Request().Header.Get("X-Device-Id")
+
+	if err := h.authClient.RevokeAllOtherSessions(c.Request().Context(), token, currentDeviceId, tenantId, correlationID); err != nil {
+		return handleError(c, err, correlationID)
+	}
+
+	return c.NoContent(http.StatusNoContent)
 }
 
 // handleError trata erros de forma padronizada

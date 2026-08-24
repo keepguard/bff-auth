@@ -17,6 +17,11 @@ type Handler interface {
 	ChangePasswordHandler(c echo.Context) error
 	ResetPasswordHandler(c echo.Context) error
 	SendResetPasswordMessageHandler(c echo.Context) error
+	SendDeviceChallengeHandler(c echo.Context) error
+	VerifyDeviceChallengeHandler(c echo.Context) error
+	ListUserSessionsHandler(c echo.Context) error
+	RevokeSessionHandler(c echo.Context) error
+	RevokeAllOtherSessionsHandler(c echo.Context) error
 }
 
 // Middleware define a interface para middlewares HTTP

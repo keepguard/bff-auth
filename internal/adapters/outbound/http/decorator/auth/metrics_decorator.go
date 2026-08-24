@@ -48,10 +48,10 @@ func (d *metricsDecorator) getStatusCodeFromError(err error) int {
 }
 
 // Login implementa o método Login com coleta de métricas
-func (d *metricsDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId string) (inboundDto.AuthResponseDTO, error) {
+func (d *metricsDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId, deviceId, deviceName, deviceType, ipAddress, userAgent string) (inboundDto.AuthResponseDTO, error) {
 	start := time.Now()
 
-	response, err := d.inner.Login(ctx, req, tenantId, correlationID, clientId)
+	response, err := d.inner.Login(ctx, req, tenantId, correlationID, clientId, deviceId, deviceName, deviceType, ipAddress, userAgent)
 
 	duration := time.Since(start)
 	statusCode := d.getStatusCodeFromError(err)
@@ -206,4 +206,54 @@ func (d *metricsDecorator) GenerateResetToken(ctx context.Context, req map[strin
 	}
 
 	return response, err
+}
+
+// SendDeviceChallenge implementa o método SendDeviceChallenge com coleta de métricas
+func (d *metricsDecorator) SendDeviceChallenge(ctx context.Context, req inboundDto.DeviceChallengeSendRequestDTO, tenantId, correlationID string) (map[string]interface{}, error) {
+	start := time.Now()
+	response, err := d.inner.SendDeviceChallenge(ctx, req, tenantId, correlationID)
+	duration := time.Since(start)
+	statusCode := d.getStatusCodeFromError(err)
+	d.metrics.RecordUpstreamRequest(d.serviceName, "POST", "/auth/device/challenge/send", statusCode, duration)
+	return response, err
+}
+
+// VerifyDeviceChallenge implementa o método VerifyDeviceChallenge com coleta de métricas
+func (d *metricsDecorator) VerifyDeviceChallenge(ctx context.Context, req inboundDto.DeviceChallengeVerifyRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
+	start := time.Now()
+	response, err := d.inner.VerifyDeviceChallenge(ctx, req, tenantId, correlationID)
+	duration := time.Since(start)
+	statusCode := d.getStatusCodeFromError(err)
+	d.metrics.RecordUpstreamRequest(d.serviceName, "POST", "/auth/device/challenge/verify", statusCode, duration)
+	return response, err
+}
+
+// ListUserSessions implementa o método ListUserSessions com coleta de métricas
+func (d *metricsDecorator) ListUserSessions(ctx context.Context, token, deviceId, tenantId, correlationID string) ([]inboundDto.DeviceSessionDTO, error) {
+	start := time.Now()
+	response, err := d.inner.ListUserSessions(ctx, token, deviceId, tenantId, correlationID)
+	duration := time.Since(start)
+	statusCode := d.getStatusCodeFromError(err)
+	d.metrics.RecordUpstreamRequest(d.serviceName, "GET", "/users/me/sessions", statusCode, duration)
+	return response, err
+}
+
+// RevokeSession implementa o método RevokeSession com coleta de métricas
+func (d *metricsDecorator) RevokeSession(ctx context.Context, deviceIdToRevoke, token, tenantId, correlationID string) error {
+	start := time.Now()
+	err := d.inner.RevokeSession(ctx, deviceIdToRevoke, token, tenantId, correlationID)
+	duration := time.Since(start)
+	statusCode := d.getStatusCodeFromError(err)
+	d.metrics.RecordUpstreamRequest(d.serviceName, "DELETE", "/users/me/sessions/:id", statusCode, duration)
+	return err
+}
+
+// RevokeAllOtherSessions implementa o método RevokeAllOtherSessions com coleta de métricas
+func (d *metricsDecorator) RevokeAllOtherSessions(ctx context.Context, token, currentDeviceId, tenantId, correlationID string) error {
+	start := time.Now()
+	err := d.inner.RevokeAllOtherSessions(ctx, token, currentDeviceId, tenantId, correlationID)
+	duration := time.Since(start)
+	statusCode := d.getStatusCodeFromError(err)
+	d.metrics.RecordUpstreamRequest(d.serviceName, "DELETE", "/users/me/sessions", statusCode, duration)
+	return err
 }

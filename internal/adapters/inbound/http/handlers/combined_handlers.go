@@ -49,3 +49,23 @@ func (h *CombinedHandlers) ResetPasswordHandler(c echo.Context) error {
 func (h *CombinedHandlers) SendResetPasswordMessageHandler(c echo.Context) error {
 	return h.MessageHandlers.SendResetPasswordMessageHandler(c)
 }
+
+func (h *CombinedHandlers) SendDeviceChallengeHandler(c echo.Context) error {
+	return h.AuthHandlers.SendDeviceChallengeHandler(c)
+}
+
+func (h *CombinedHandlers) VerifyDeviceChallengeHandler(c echo.Context) error {
+	return h.AuthHandlers.VerifyDeviceChallengeHandler(c)
+}
+
+func (h *CombinedHandlers) ListUserSessionsHandler(c echo.Context) error {
+	return h.AuthHandlers.ListUserSessionsHandler(c)
+}
+
+func (h *CombinedHandlers) RevokeSessionHandler(c echo.Context) error {
+	return h.AuthHandlers.RevokeSessionHandler(c)
+}
+
+func (h *CombinedHandlers) RevokeAllOtherSessionsHandler(c echo.Context) error {
+	return h.AuthHandlers.RevokeAllOtherSessionsHandler(c)
+}

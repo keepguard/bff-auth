@@ -155,6 +155,8 @@ func (m *middlewareImpl) CORSMiddleware() echo.MiddlewareFunc {
 			"X-User-ID",
 			"X-Tenant-Id",
 			"X-Correlation-ID",
+			"X-Client-Id",
+			"X-Client-ID",
 			"Idempotency-Key",
 		},
 		ExposeHeaders: []string{

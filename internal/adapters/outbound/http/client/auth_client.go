@@ -68,17 +68,34 @@ func getErrorCodeFromProperties(properties map[string]interface{}) string {
 }
 
 // Login realiza login no ms-auth
-func (c *AuthClient) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId string) (inboundDto.AuthResponseDTO, error) {
+func (c *AuthClient) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId, deviceId, deviceName, deviceType, ipAddress, userAgent string) (inboundDto.AuthResponseDTO, error) {
 	var response inboundDto.AuthResponseDTO
 
-	resp, err := c.client.R().
+	reqBuilder := c.client.R().
 		SetContext(ctx).
 		SetBody(req).
 		SetResult(&response).
 		SetHeader("X-Correlation-ID", correlationID).
 		SetHeader("X-Tenant-Id", tenantId).
-		SetHeader("X-Client-ID", clientId).
-		Post(c.baseURL + "/api/v1/auth/login")
+		SetHeader("X-Client-ID", clientId)
+
+	if deviceId != "" {
+		reqBuilder.SetHeader("X-Device-Id", deviceId)
+	}
+	if deviceName != "" {
+		reqBuilder.SetHeader("X-Device-Name", deviceName)
+	}
+	if deviceType != "" {
+		reqBuilder.SetHeader("X-Device-Type", deviceType)
+	}
+	if ipAddress != "" {
+		reqBuilder.SetHeader("X-Forwarded-For", ipAddress)
+	}
+	if userAgent != "" {
+		reqBuilder.SetHeader("User-Agent", userAgent)
+	}
+
+	resp, err := reqBuilder.Post(c.baseURL + "/api/v1/auth/login")
 
 	if err != nil {
 		return inboundDto.AuthResponseDTO{}, fmt.Errorf("erro ao fazer requisição de login: %w", err)
@@ -90,6 +107,117 @@ func (c *AuthClient) Login(ctx context.Context, req inboundDto.AuthRequestDTO, t
 	}
 
 	return response, nil
+}
+
+// SendDeviceChallenge envia código de desafio para novo dispositivo
+func (c *AuthClient) SendDeviceChallenge(ctx context.Context, req inboundDto.DeviceChallengeSendRequestDTO, tenantId, correlationID string) (map[string]interface{}, error) {
+	var response map[string]interface{}
+
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetBody(req).
+		SetResult(&response).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Tenant-Id", tenantId).
+		Post(c.baseURL + "/api/v1/auth/device/challenge/send")
+
+	if err != nil {
+		return nil, fmt.Errorf("erro ao solicitar envio de código de dispositivo: %w", err)
+	}
+
+	if httpErr := c.handleHTTPError(resp, "device_challenge_send"); httpErr != nil {
+		return nil, httpErr
+	}
+
+	return response, nil
+}
+
+// VerifyDeviceChallenge valida código de desafio e emite JWT
+func (c *AuthClient) VerifyDeviceChallenge(ctx context.Context, req inboundDto.DeviceChallengeVerifyRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
+	var response inboundDto.AuthResponseDTO
+
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetBody(req).
+		SetResult(&response).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Tenant-Id", tenantId).
+		Post(c.baseURL + "/api/v1/auth/device/challenge/verify")
+
+	if err != nil {
+		return inboundDto.AuthResponseDTO{}, fmt.Errorf("erro ao validar código de dispositivo: %w", err)
+	}
+
+	if httpErr := c.handleHTTPError(resp, "device_challenge_verify"); httpErr != nil {
+		return inboundDto.AuthResponseDTO{}, httpErr
+	}
+
+	return response, nil
+}
+
+// ListUserSessions lista sessões ativas do usuário
+func (c *AuthClient) ListUserSessions(ctx context.Context, token, deviceId, tenantId, correlationID string) ([]inboundDto.DeviceSessionDTO, error) {
+	var response []inboundDto.DeviceSessionDTO
+
+	reqBuilder := c.client.R().
+		SetContext(ctx).
+		SetResult(&response).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Tenant-Id", tenantId).
+		SetAuthToken(token)
+
+	if deviceId != "" {
+		reqBuilder.SetHeader("X-Device-Id", deviceId)
+	}
+
+	resp, err := reqBuilder.Get(c.baseURL + "/api/v1/users/me/sessions")
+
+	if err != nil {
+		return nil, fmt.Errorf("erro ao listar sessões de usuário: %w", err)
+	}
+
+	if httpErr := c.handleHTTPError(resp, "list_user_sessions"); httpErr != nil {
+		return nil, httpErr
+	}
+
+	return response, nil
+}
+
+// RevokeSession revoga sessão de dispositivo específico
+func (c *AuthClient) RevokeSession(ctx context.Context, deviceIdToRevoke, token, tenantId, correlationID string) error {
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Tenant-Id", tenantId).
+		SetAuthToken(token).
+		Delete(fmt.Sprintf("%s/api/v1/users/me/sessions/%s", c.baseURL, deviceIdToRevoke))
+
+	if err != nil {
+		return fmt.Errorf("erro ao revogar sessão de dispositivo: %w", err)
+	}
+
+	return c.handleHTTPError(resp, "revoke_session")
+}
+
+// RevokeAllOtherSessions revoga todas as outras sessões exceto atual
+func (c *AuthClient) RevokeAllOtherSessions(ctx context.Context, token, currentDeviceId, tenantId, correlationID string) error {
+	reqBuilder := c.client.R().
+		SetContext(ctx).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Tenant-Id", tenantId).
+		SetAuthToken(token)
+
+	if currentDeviceId != "" {
+		reqBuilder.SetHeader("X-Device-Id", currentDeviceId)
+	}
+
+	resp, err := reqBuilder.Delete(c.baseURL + "/api/v1/users/me/sessions")
+
+	if err != nil {
+		return fmt.Errorf("erro ao revogar outras sessões: %w", err)
+	}
+
+	return c.handleHTTPError(resp, "revoke_all_other_sessions")
 }
 
 // RefreshToken renova o token no ms-auth

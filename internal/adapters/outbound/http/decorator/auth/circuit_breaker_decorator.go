@@ -30,9 +30,9 @@ func NewCircuitBreakerDecorator(
 }
 
 // Login implementa o método Login com circuit breaker
-func (d *circuitBreakerDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId string) (inboundDto.AuthResponseDTO, error) {
+func (d *circuitBreakerDecorator) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId, deviceId, deviceName, deviceType, ipAddress, userAgent string) (inboundDto.AuthResponseDTO, error) {
 	result, err := d.circuitBreaker.Execute(ctx, d.serviceName, func() (interface{}, error) {
-		return d.inner.Login(ctx, req, tenantId, correlationID, clientId)
+		return d.inner.Login(ctx, req, tenantId, correlationID, clientId, deviceId, deviceName, deviceType, ipAddress, userAgent)
 	})
 
 	if err != nil {
@@ -102,4 +102,59 @@ func (d *circuitBreakerDecorator) GenerateResetToken(ctx context.Context, req ma
 	}
 
 	return result.(outboundDto.GenerateResetTokenMSResponseDTO), nil
+}
+
+// SendDeviceChallenge implementa o método SendDeviceChallenge com circuit breaker
+func (d *circuitBreakerDecorator) SendDeviceChallenge(ctx context.Context, req inboundDto.DeviceChallengeSendRequestDTO, tenantId, correlationID string) (map[string]interface{}, error) {
+	result, err := d.circuitBreaker.Execute(ctx, d.serviceName, func() (interface{}, error) {
+		return d.inner.SendDeviceChallenge(ctx, req, tenantId, correlationID)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result.(map[string]interface{}), nil
+}
+
+// VerifyDeviceChallenge implementa o método VerifyDeviceChallenge com circuit breaker
+func (d *circuitBreakerDecorator) VerifyDeviceChallenge(ctx context.Context, req inboundDto.DeviceChallengeVerifyRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
+	result, err := d.circuitBreaker.Execute(ctx, d.serviceName, func() (interface{}, error) {
+		return d.inner.VerifyDeviceChallenge(ctx, req, tenantId, correlationID)
+	})
+
+	if err != nil {
+		return inboundDto.AuthResponseDTO{}, err
+	}
+
+	return result.(inboundDto.AuthResponseDTO), nil
+}
+
+// ListUserSessions implementa o método ListUserSessions com circuit breaker
+func (d *circuitBreakerDecorator) ListUserSessions(ctx context.Context, token, deviceId, tenantId, correlationID string) ([]inboundDto.DeviceSessionDTO, error) {
+	result, err := d.circuitBreaker.Execute(ctx, d.serviceName, func() (interface{}, error) {
+		return d.inner.ListUserSessions(ctx, token, deviceId, tenantId, correlationID)
+	})
+
+	if err != nil {
+		return nil, err
+	}
+
+	return result.([]inboundDto.DeviceSessionDTO), nil
+}
+
+// RevokeSession implementa o método RevokeSession com circuit breaker
+func (d *circuitBreakerDecorator) RevokeSession(ctx context.Context, deviceIdToRevoke, token, tenantId, correlationID string) error {
+	_, err := d.circuitBreaker.Execute(ctx, d.serviceName, func() (interface{}, error) {
+		return nil, d.inner.RevokeSession(ctx, deviceIdToRevoke, token, tenantId, correlationID)
+	})
+	return err
+}
+
+// RevokeAllOtherSessions implementa o método RevokeAllOtherSessions com circuit breaker
+func (d *circuitBreakerDecorator) RevokeAllOtherSessions(ctx context.Context, token, currentDeviceId, tenantId, correlationID string) error {
+	_, err := d.circuitBreaker.Execute(ctx, d.serviceName, func() (interface{}, error) {
+		return nil, d.inner.RevokeAllOtherSessions(ctx, token, currentDeviceId, tenantId, correlationID)
+	})
+	return err
 }
