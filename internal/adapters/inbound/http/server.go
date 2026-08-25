@@ -36,7 +36,8 @@ func NewServer(
 	e.HidePort = true
 
 	// Middlewares
-	middlewareInstance := middlewarePkg.NewMiddlewareWithLogger(logger)
+	zapLogger, _ := zap.NewDevelopment()
+	middlewareInstance := middlewarePkg.NewMiddlewareWithMetrics(zapLogger, metrics)
 	validator := validation.NewValidator()
 
 	e.Use(middlewareInstance.RequestIDMiddleware())

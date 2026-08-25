@@ -14,7 +14,8 @@ import (
 
 // middlewareImpl representa os middlewares HTTP
 type middlewareImpl struct {
-	logger *zap.Logger
+	logger  *zap.Logger
+	metrics *metrics.Metrics
 }
 
 // NewMiddleware cria um novo middleware
@@ -24,10 +25,16 @@ func NewMiddleware(logger *zap.Logger) Middleware {
 	}
 }
 
+// NewMiddlewareWithMetrics cria um novo middleware com suporte a métricas
+func NewMiddlewareWithMetrics(logger *zap.Logger, metrics *metrics.Metrics) Middleware {
+	return &middlewareImpl{
+		logger:  logger,
+		metrics: metrics,
+	}
+}
+
 // NewMiddlewareWithLogger cria um novo middleware usando a interface logger.Logger
 func NewMiddlewareWithLogger(log logger.Logger) Middleware {
-	// Converter logger.Logger para *zap.Logger se necessário
-	// Por enquanto, vamos criar um logger zap básico
 	zapLogger, _ := zap.NewDevelopment()
 	return &middlewareImpl{
 		logger: zapLogger,
@@ -202,8 +209,13 @@ func (m *middlewareImpl) MetricsMiddleware() echo.MiddlewareFunc {
 			duration := time.Since(start)
 			status := c.Response().Status
 
-			// Aqui você pode registrar métricas usando seu sistema de métricas
-			// Por exemplo: metrics.RecordHTTPRequest(c.Request().Method, c.Path(), status, duration)
+			if m.metrics != nil {
+				path := c.Path()
+				if path == "" {
+					path = c.Request().URL.Path
+				}
+				m.metrics.RecordHTTPRequest(c.Request().Method, path, status, duration)
+			}
 
 			m.logger.Info("HTTP request completed",
 				zap.String("method", c.Request().Method),
