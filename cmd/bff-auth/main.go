@@ -332,7 +332,7 @@ func main() {
 	if err != nil {
 		zapLogger.Warn("Aviso ao conectar no Redis", zap.Error(err))
 	}
-	rateLimiterMiddleware := middlewarePkg.NewRateLimiterMiddleware(redisClient, cfg.RateLimit, zapLogger)
+	rateLimiterMiddleware := middlewarePkg.NewRateLimiterMiddleware(redisClient, cfg.RateLimit, zapLogger, metrics)
 
 	// Inicializa servidor HTTP com Rate Limiting
 	server := httpserver.NewServer(cfg, appLogger, metrics, rateLimiterMiddleware)

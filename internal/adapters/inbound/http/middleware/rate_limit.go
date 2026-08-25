@@ -7,6 +7,7 @@ import (
 	"time"
 
 	"github.com/keepguard/bff-auth/internal/infrastructure/config"
+	metricsPkg "github.com/keepguard/bff-auth/internal/infrastructure/metrics"
 	"github.com/keepguard/bff-auth/internal/pkg"
 	"github.com/labstack/echo/v4"
 	"github.com/redis/go-redis/v9"
@@ -18,14 +19,16 @@ type RateLimiterMiddleware struct {
 	redisClient *redis.Client
 	config      config.RateLimitConfig
 	logger      *zap.Logger
+	metrics     *metricsPkg.Metrics
 }
 
 // NewRateLimiterMiddleware cria uma nova instância do middleware de rate limit
-func NewRateLimiterMiddleware(redisClient *redis.Client, cfg config.RateLimitConfig, logger *zap.Logger) *RateLimiterMiddleware {
+func NewRateLimiterMiddleware(redisClient *redis.Client, cfg config.RateLimitConfig, logger *zap.Logger, metrics *metricsPkg.Metrics) *RateLimiterMiddleware {
 	return &RateLimiterMiddleware{
 		redisClient: redisClient,
 		config:      cfg,
 		logger:      logger,
+		metrics:     metrics,
 	}
 }
 
@@ -50,8 +53,10 @@ func (r *RateLimiterMiddleware) Limit(action string, rule config.RateLimitRule) 
 
 			// Monta a chave com base no tipo de identificador da regra
 			keyIdentifier := clientIP
+			identifierType := "ip"
 			if userID := GetUserID(c); userID != "" {
 				keyIdentifier = userID
+				identifierType = "user"
 			}
 
 			redisKey := fmt.Sprintf("rl:bff-auth:%s:%s", action, keyIdentifier)
@@ -93,6 +98,11 @@ func (r *RateLimiterMiddleware) Limit(action string, rule config.RateLimitRule) 
 				}
 
 				c.Response().Header().Set("Retry-After", fmt.Sprintf("%d", retrySeconds))
+
+				// Registra métrica dedicada de bloqueio
+				if r.metrics != nil {
+					r.metrics.RecordRateLimitBlocked(action, identifierType)
+				}
 
 				r.logger.Warn("🚨 [BFF-Auth Rate Limit Excedido]",
 					zap.String("action", action),
