@@ -17,10 +17,11 @@ import (
 
 // serverImpl representa o servidor HTTP
 type serverImpl struct {
-	echo    *echo.Echo
-	config  *config.Config
-	logger  logger.Logger
-	metrics *metrics.Metrics
+	echo        *echo.Echo
+	config      *config.Config
+	logger      logger.Logger
+	metrics     *metrics.Metrics
+	rateLimiter *middlewarePkg.RateLimiterMiddleware
 }
 
 // NewServer cria um novo servidor HTTP
@@ -28,6 +29,7 @@ func NewServer(
 	config *config.Config,
 	logger logger.Logger,
 	metrics *metrics.Metrics,
+	rateLimiter *middlewarePkg.RateLimiterMiddleware,
 ) Server {
 	e := echo.New()
 	e.HideBanner = true
@@ -47,10 +49,11 @@ func NewServer(
 	e.Use(middlewareInstance.TimeoutMiddleware(30 * time.Second))
 
 	return &serverImpl{
-		echo:    e,
-		config:  config,
-		logger:  logger,
-		metrics: metrics,
+		echo:        e,
+		config:      config,
+		logger:      logger,
+		metrics:     metrics,
+		rateLimiter: rateLimiter,
 	}
 }
 
@@ -64,7 +67,7 @@ func (s *serverImpl) Stop(ctx context.Context) error {
 	return s.echo.Shutdown(ctx)
 }
 
-// SetupRoutes configura as rotas da API
+// SetupRoutes configura as rotas da API com proteção de Rate Limit
 func (s *serverImpl) SetupRoutes(handlers Handler) {
 	// Health check
 	s.echo.GET("/health", s.HealthHandler)
@@ -72,19 +75,22 @@ func (s *serverImpl) SetupRoutes(handlers Handler) {
 	// Swagger
 	s.echo.GET("/swagger/*", echoSwagger.WrapHandler)
 
+	rl := s.rateLimiter
+	rules := s.config.RateLimit.Rules
+
 	// Auth routes
 	authGroup := s.echo.Group("/api/v1/auth")
-	authGroup.POST("/login", handlers.LoginHandler)
-	authGroup.POST("/refresh", handlers.RefreshHandler)
-	authGroup.POST("/logout", handlers.LogoutHandler)
-	authGroup.POST("/validate", handlers.ValidateTokenHandler)
-	authGroup.POST("/change-password", handlers.ChangePasswordHandler)
-	authGroup.POST("/reset-password", handlers.ResetPasswordHandler)
-	authGroup.POST("/forgot-password", handlers.SendResetPasswordMessageHandler)
-	authGroup.POST("/device/challenge/send", handlers.SendDeviceChallengeHandler)
-	authGroup.POST("/device/challenge/verify", handlers.VerifyDeviceChallengeHandler)
-	authGroup.POST("/device/quick-revoke", handlers.QuickRevokeHandler)
-	authGroup.GET("/device/quick-revoke", handlers.QuickRevokeHandler)
+	authGroup.POST("/login", handlers.LoginHandler, rl.Limit("login", rules.Login))
+	authGroup.POST("/refresh", handlers.RefreshHandler, rl.Limit("refresh", rules.Refresh))
+	authGroup.POST("/logout", handlers.LogoutHandler, rl.Limit("logout", rules.Logout))
+	authGroup.POST("/validate", handlers.ValidateTokenHandler, rl.Limit("validate", rules.Validate))
+	authGroup.POST("/change-password", handlers.ChangePasswordHandler, rl.Limit("change_password", rules.ChangePassword))
+	authGroup.POST("/reset-password", handlers.ResetPasswordHandler, rl.Limit("reset_password", rules.ResetPassword))
+	authGroup.POST("/forgot-password", handlers.SendResetPasswordMessageHandler, rl.Limit("forgot_password", rules.ForgotPassword))
+	authGroup.POST("/device/challenge/send", handlers.SendDeviceChallengeHandler, rl.Limit("device_challenge_send", rules.DeviceChallengeSend))
+	authGroup.POST("/device/challenge/verify", handlers.VerifyDeviceChallengeHandler, rl.Limit("device_challenge_verify", rules.DeviceChallengeVerify))
+	authGroup.POST("/device/quick-revoke", handlers.QuickRevokeHandler, rl.Limit("device_quick_revoke", rules.DeviceQuickRevoke))
+	authGroup.GET("/device/quick-revoke", handlers.QuickRevokeHandler, rl.Limit("device_quick_revoke", rules.DeviceQuickRevoke))
 
 	// User Sessions & Device Blacklist routes
 	userGroup := s.echo.Group("/api/v1/users/me")
@@ -92,10 +98,10 @@ func (s *serverImpl) SetupRoutes(handlers Handler) {
 	userGroup.DELETE("/sessions/:deviceId", handlers.RevokeSessionHandler)
 	userGroup.DELETE("/sessions", handlers.RevokeAllOtherSessionsHandler)
 	userGroup.GET("/devices/blacklist", handlers.ListDeviceBlacklistHandler)
-	userGroup.POST("/devices/blacklist", handlers.AddDeviceBlacklistHandler)
+	userGroup.POST("/devices/blacklist", handlers.AddDeviceBlacklistHandler, rl.Limit("device_blacklist", rules.DeviceBlacklist))
 	userGroup.DELETE("/devices/blacklist/:deviceId", handlers.RemoveDeviceBlacklistHandler)
 
-	s.logger.Info("Rotas configuradas com sucesso",
+	s.logger.Info("Rotas configuradas com sucesso com proteção de Rate Limit",
 		zap.String("port", s.config.Server.Port),
 	)
 }

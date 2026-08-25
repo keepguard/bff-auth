@@ -19,6 +19,7 @@ import (
 	_ "github.com/keepguard/bff-auth/docs" // Importa docs para inicializar Swagger
 	httpserver "github.com/keepguard/bff-auth/internal/adapters/inbound/http"
 	handlersPkg "github.com/keepguard/bff-auth/internal/adapters/inbound/http/handlers"
+	middlewarePkg "github.com/keepguard/bff-auth/internal/adapters/inbound/http/middleware"
 	httpclient "github.com/keepguard/bff-auth/internal/adapters/outbound/http/client"
 	authdecorator "github.com/keepguard/bff-auth/internal/adapters/outbound/http/decorator/auth"
 	communicationdecorator "github.com/keepguard/bff-auth/internal/adapters/outbound/http/decorator/communication"
@@ -28,6 +29,7 @@ import (
 	rabbitmqPublisher "github.com/keepguard/bff-auth/internal/adapters/outbound/messaging/rabbitmq"
 	"github.com/keepguard/bff-auth/internal/application/auth"
 	"github.com/keepguard/bff-auth/internal/application/message"
+	"github.com/keepguard/bff-auth/internal/infrastructure/cache"
 	"github.com/keepguard/bff-auth/internal/infrastructure/config"
 	"github.com/keepguard/bff-auth/internal/infrastructure/logger"
 	"github.com/keepguard/bff-auth/internal/infrastructure/metrics"
@@ -320,8 +322,20 @@ func main() {
 	// Combina os handlers
 	combinedHandlers := handlersPkg.NewCombinedHandlers(authHandlers, messageHandlers)
 
-	// Inicializa servidor HTTP
-	server := httpserver.NewServer(cfg, appLogger, metrics)
+	// Inicializa Cliente Redis e Middleware de Rate Limit
+	redisClient, err := cache.NewRedisClient(cache.RedisConfig{
+		Host:     cfg.Redis.Host,
+		Port:     cfg.Redis.Port,
+		Password: cfg.Redis.Password,
+		DB:       cfg.Redis.DB,
+	}, zapLogger)
+	if err != nil {
+		zapLogger.Warn("Aviso ao conectar no Redis", zap.Error(err))
+	}
+	rateLimiterMiddleware := middlewarePkg.NewRateLimiterMiddleware(redisClient, cfg.RateLimit, zapLogger)
+
+	// Inicializa servidor HTTP com Rate Limiting
+	server := httpserver.NewServer(cfg, appLogger, metrics, rateLimiterMiddleware)
 	server.SetupRoutes(combinedHandlers)
 
 	// =============================================================================

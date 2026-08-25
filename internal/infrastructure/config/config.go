@@ -9,13 +9,51 @@ import (
 
 // Config representa a configuração da aplicação
 type Config struct {
-	Server   ServerConfig   `mapstructure:"server"`
-	Services ServicesConfig `mapstructure:"services"`
-	RabbitMQ RabbitMQConfig `mapstructure:"rabbitmq"`
-	JWT      JWTConfig      `mapstructure:"jwt"`
-	Metrics  MetricsConfig  `mapstructure:"metrics"`
-	Log      LogConfig      `mapstructure:"log"`
-	Env      string         `mapstructure:"env"`
+	Server    ServerConfig    `mapstructure:"server"`
+	Services  ServicesConfig  `mapstructure:"services"`
+	RabbitMQ  RabbitMQConfig  `mapstructure:"rabbitmq"`
+	JWT       JWTConfig       `mapstructure:"jwt"`
+	Metrics   MetricsConfig   `mapstructure:"metrics"`
+	Log       LogConfig       `mapstructure:"log"`
+	Redis     RedisConfig     `mapstructure:"redis"`
+	RateLimit RateLimitConfig `mapstructure:"rate_limit"`
+	Env       string          `mapstructure:"env"`
+}
+
+// RedisConfig configurações de conexão com Redis
+type RedisConfig struct {
+	Host     string `mapstructure:"host"`
+	Port     int    `mapstructure:"port"`
+	Password string `mapstructure:"password"`
+	DB       int    `mapstructure:"db"`
+}
+
+// RateLimitConfig configurações gerais de Rate Limit
+type RateLimitConfig struct {
+	Enabled bool                  `mapstructure:"enabled"`
+	Rules   RateLimitRulesConfig  `mapstructure:"rules"`
+}
+
+// RateLimitRulesConfig mapeamento das regras específicas
+type RateLimitRulesConfig struct {
+	Login                 RateLimitRule `mapstructure:"login"`
+	ForgotPassword        RateLimitRule `mapstructure:"forgot_password"`
+	DeviceChallengeSend   RateLimitRule `mapstructure:"device_challenge_send"`
+	DeviceChallengeVerify RateLimitRule `mapstructure:"device_challenge_verify"`
+	ResetPassword         RateLimitRule `mapstructure:"reset_password"`
+	ChangePassword        RateLimitRule `mapstructure:"change_password"`
+	Refresh               RateLimitRule `mapstructure:"refresh"`
+	Validate              RateLimitRule `mapstructure:"validate"`
+	Logout                RateLimitRule `mapstructure:"logout"`
+	DeviceQuickRevoke     RateLimitRule `mapstructure:"device_quick_revoke"`
+	DeviceBlacklist       RateLimitRule `mapstructure:"device_blacklist"`
+	Default               RateLimitRule `mapstructure:"default"`
+}
+
+// RateLimitRule define o limite e a janela de tempo
+type RateLimitRule struct {
+	Limit  int           `mapstructure:"limit"`
+	Window time.Duration `mapstructure:"window"`
 }
 
 // ServerConfig configurações do servidor HTTP

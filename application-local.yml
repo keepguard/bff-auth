@@ -45,6 +45,52 @@ jwt:
   jwks_url: ""
   signing_key: ""
 
+redis:
+  host: ${REDIS_HOST:localhost}
+  port: 6379
+  password: ${REDIS_PASSWORD:}
+  db: 0
+
+rate_limit:
+  enabled: true
+  rules:
+    login:
+      limit: 100
+      window: 60s
+    forgot_password:
+      limit: 100
+      window: 60s
+    device_challenge_send:
+      limit: 100
+      window: 60s
+    device_challenge_verify:
+      limit: 100
+      window: 60s
+    reset_password:
+      limit: 100
+      window: 60s
+    change_password:
+      limit: 100
+      window: 60s
+    refresh:
+      limit: 200
+      window: 60s
+    validate:
+      limit: 500
+      window: 60s
+    logout:
+      limit: 100
+      window: 60s
+    device_quick_revoke:
+      limit: 100
+      window: 60s
+    device_blacklist:
+      limit: 100
+      window: 60s
+    default:
+      limit: 500
+      window: 60s
+
 metrics:
   enabled: true
   scrape_path: "/metrics"
@@ -53,6 +99,5 @@ metrics:
 log:
   level: "debug"
   format: "json"
-
 
 env: "local"
