@@ -216,13 +216,13 @@ func (d *cacheDecorator) ValidateToken(ctx context.Context, token, tenantId, cor
 }
 
 // ChangePassword - NÃO CACHEIA (operação de escrita)
-func (d *cacheDecorator) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, tenantId, correlationID string) error {
-	return d.inner.ChangePassword(ctx, req, tenantId, correlationID)
+func (d *cacheDecorator) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent string) error {
+	return d.inner.ChangePassword(ctx, req, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent)
 }
 
 // ResetPassword - NÃO CACHEIA (operação de escrita)
-func (d *cacheDecorator) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, tenantId, correlationID string) error {
-	return d.inner.ResetPassword(ctx, req, tenantId, correlationID)
+func (d *cacheDecorator) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent string) error {
+	return d.inner.ResetPassword(ctx, req, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent)
 }
 
 // GenerateResetToken implementa o método GenerateResetToken (sem cache)

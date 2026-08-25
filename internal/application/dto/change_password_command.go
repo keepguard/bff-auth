@@ -9,20 +9,34 @@ type ChangePasswordCommand struct {
 	CurrentPassword    string
 	NewPassword        string
 	ConfirmNewPassword string
-	TenantId       string
+	TenantId           string
 	CorrelationID      string
+	DeviceId           string
+	DeviceName         string
+	DeviceType         string
+	IpAddress          string
+	UserAgent          string
 	Context            context.Context
 }
 
 // NewChangePasswordCommand cria uma nova instância do ChangePasswordCommand
-func NewChangePasswordCommand(token, currentPassword, newPassword, confirmNewPassword, tenantId, correlationID string, ctx context.Context) ChangePasswordCommand {
+func NewChangePasswordCommand(
+	token, currentPassword, newPassword, confirmNewPassword, tenantId, correlationID,
+	deviceId, deviceName, deviceType, ipAddress, userAgent string,
+	ctx context.Context,
+) ChangePasswordCommand {
 	return ChangePasswordCommand{
 		Token:              token,
 		CurrentPassword:    currentPassword,
 		NewPassword:        newPassword,
 		ConfirmNewPassword: confirmNewPassword,
-		TenantId:       tenantId,
+		TenantId:           tenantId,
 		CorrelationID:      correlationID,
+		DeviceId:           deviceId,
+		DeviceName:         deviceName,
+		DeviceType:         deviceType,
+		IpAddress:          ipAddress,
+		UserAgent:          userAgent,
 		Context:            ctx,
 	}
 }

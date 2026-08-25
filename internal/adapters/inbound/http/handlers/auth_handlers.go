@@ -564,6 +564,15 @@ func (h *AuthHandlers) ChangePasswordHandler(c echo.Context) error {
 		})
 	}
 
+	deviceId := c.Request().Header.Get("X-Device-Id")
+	deviceName := c.Request().Header.Get("X-Device-Name")
+	deviceType := c.Request().Header.Get("X-Device-Type")
+	ipAddress := c.Request().Header.Get("X-Forwarded-For")
+	if ipAddress == "" {
+		ipAddress = c.RealIP()
+	}
+	userAgent := c.Request().Header.Get("User-Agent")
+
 	// Criar comando de domínio encapsulado
 	command := appdto.NewChangePasswordCommand(
 		token,
@@ -572,6 +581,11 @@ func (h *AuthHandlers) ChangePasswordHandler(c echo.Context) error {
 		req.ConfirmNewPassword,
 		tenantId,
 		correlationID,
+		deviceId,
+		deviceName,
+		deviceType,
+		ipAddress,
+		userAgent,
 		c.Request().Context(),
 	)
 
@@ -656,6 +670,15 @@ func (h *AuthHandlers) ResetPasswordHandler(c echo.Context) error {
 		})
 	}
 
+	deviceId := c.Request().Header.Get("X-Device-Id")
+	deviceName := c.Request().Header.Get("X-Device-Name")
+	deviceType := c.Request().Header.Get("X-Device-Type")
+	ipAddress := c.Request().Header.Get("X-Forwarded-For")
+	if ipAddress == "" {
+		ipAddress = c.RealIP()
+	}
+	userAgent := c.Request().Header.Get("User-Agent")
+
 	// Criar comando de domínio encapsulado
 	command := appdto.NewResetPasswordCommand(
 		req.Email,
@@ -664,6 +687,11 @@ func (h *AuthHandlers) ResetPasswordHandler(c echo.Context) error {
 		req.ConfirmNewPassword,
 		tenantId,
 		correlationID,
+		deviceId,
+		deviceName,
+		deviceType,
+		ipAddress,
+		userAgent,
 		c.Request().Context(),
 	)
 

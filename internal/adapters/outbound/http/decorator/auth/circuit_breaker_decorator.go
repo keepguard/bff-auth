@@ -74,18 +74,18 @@ func (d *circuitBreakerDecorator) ValidateToken(ctx context.Context, token, tena
 }
 
 // ChangePassword implementa o método ChangePassword com circuit breaker
-func (d *circuitBreakerDecorator) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, tenantId, correlationID string) error {
+func (d *circuitBreakerDecorator) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent string) error {
 	_, err := d.circuitBreaker.Execute(ctx, d.serviceName, func() (interface{}, error) {
-		return nil, d.inner.ChangePassword(ctx, req, tenantId, correlationID)
+		return nil, d.inner.ChangePassword(ctx, req, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent)
 	})
 
 	return err
 }
 
 // ResetPassword implementa o método ResetPassword com circuit breaker
-func (d *circuitBreakerDecorator) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, tenantId, correlationID string) error {
+func (d *circuitBreakerDecorator) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent string) error {
 	_, err := d.circuitBreaker.Execute(ctx, d.serviceName, func() (interface{}, error) {
-		return nil, d.inner.ResetPassword(ctx, req, tenantId, correlationID)
+		return nil, d.inner.ResetPassword(ctx, req, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent)
 	})
 
 	return err

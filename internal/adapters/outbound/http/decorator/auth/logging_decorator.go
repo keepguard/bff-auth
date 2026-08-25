@@ -184,7 +184,7 @@ func (d *loggingDecorator) ValidateToken(ctx context.Context, token, tenantId, c
 }
 
 // ChangePassword implementa o método ChangePassword com logging estruturado
-func (d *loggingDecorator) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, tenantId, correlationID string) error {
+func (d *loggingDecorator) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent string) error {
 	start := time.Now()
 
 	d.logger.Info("Iniciando requisição",
@@ -195,7 +195,7 @@ func (d *loggingDecorator) ChangePassword(ctx context.Context, req outboundDto.C
 		zap.String("codeUser", req.CodeUser),
 	)
 
-	err := d.inner.ChangePassword(ctx, req, tenantId, correlationID)
+	err := d.inner.ChangePassword(ctx, req, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent)
 	duration := time.Since(start)
 
 	if err != nil {
@@ -224,7 +224,7 @@ func (d *loggingDecorator) ChangePassword(ctx context.Context, req outboundDto.C
 }
 
 // ResetPassword implementa o método ResetPassword com logging estruturado
-func (d *loggingDecorator) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, tenantId, correlationID string) error {
+func (d *loggingDecorator) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent string) error {
 	start := time.Now()
 
 	// Converte request para JSON para logging (sem senha)
@@ -242,7 +242,7 @@ func (d *loggingDecorator) ResetPassword(ctx context.Context, req outboundDto.Re
 		zap.String("request", string(reqJSON)),
 	)
 
-	err := d.inner.ResetPassword(ctx, req, tenantId, correlationID)
+	err := d.inner.ResetPassword(ctx, req, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent)
 	duration := time.Since(start)
 
 	if err != nil {

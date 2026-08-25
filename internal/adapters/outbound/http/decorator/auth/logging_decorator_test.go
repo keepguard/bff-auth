@@ -148,10 +148,10 @@ func TestLoggingDecorator_ChangePassword_Success(t *testing.T) {
 	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
-	mockInner.On("ChangePassword", ctx, req, tenantId, correlationID).Return(nil)
+	mockInner.On("ChangePassword", ctx, req, tenantId, correlationID, "", "", "", "", "").Return(nil)
 
 	// Act
-	err := decorator.ChangePassword(ctx, req, tenantId, correlationID)
+	err := decorator.ChangePassword(ctx, req, tenantId, correlationID, "", "", "", "", "")
 
 	// Assert
 	assert.NoError(t, err)
@@ -182,10 +182,10 @@ func TestLoggingDecorator_ResetPassword_Success(t *testing.T) {
 	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
-	mockInner.On("ResetPassword", ctx, req, tenantId, correlationID).Return(nil)
+	mockInner.On("ResetPassword", ctx, req, tenantId, correlationID, "", "", "", "", "").Return(nil)
 
 	// Act
-	err := decorator.ResetPassword(ctx, req, tenantId, correlationID)
+	err := decorator.ResetPassword(ctx, req, tenantId, correlationID, "", "", "", "", "")
 
 	// Assert
 	assert.NoError(t, err)

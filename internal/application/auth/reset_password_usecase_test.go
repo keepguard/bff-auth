@@ -64,6 +64,11 @@ func TestResetPasswordUseCase_Execute_Success(t *testing.T) {
 		confirmNewPassword,
 		tenantId,
 		correlationID,
+		"",
+		"",
+		"",
+		"",
+		"",
 		ctx,
 	)
 
@@ -88,10 +93,7 @@ func TestResetPasswordUseCase_Execute_Success(t *testing.T) {
 	// Configurar mocks
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
 	mockUserClient.On("GetByEmail", ctx, email, tenantId, correlationID).Return(expectedUser, nil)
-	mockAuthClient.On("ResetPassword", ctx, expectedReq, tenantId, correlationID).Return(nil)
-	mockMessagePublisher.On("PublishMessage", ctx, mock.MatchedBy(func(msg messaging.MessageDTO) bool {
-		return msg.Recipient == email && msg.TemplateType == "SENHA_ALTERADA_SUCESSO"
-	})).Return(nil)
+	mockAuthClient.On("ResetPassword", ctx, expectedReq, tenantId, correlationID, "", "", "", "", "").Return(nil)
 
 	// Act
 	err := useCase.Execute(command)
@@ -101,7 +103,7 @@ func TestResetPasswordUseCase_Execute_Success(t *testing.T) {
 	mockCompanyClient.AssertExpectations(t)
 	mockUserClient.AssertExpectations(t)
 	mockAuthClient.AssertExpectations(t)
-	mockMessagePublisher.AssertExpectations(t)
+	mockMessagePublisher.AssertNotCalled(t, "PublishMessage", mock.Anything, mock.Anything)
 }
 
 func TestResetPasswordUseCase_Execute_UserNotFound(t *testing.T) {
@@ -128,6 +130,11 @@ func TestResetPasswordUseCase_Execute_UserNotFound(t *testing.T) {
 		confirmNewPassword,
 		tenantId,
 		correlationID,
+		"",
+		"",
+		"",
+		"",
+		"",
 		ctx,
 	)
 
@@ -177,6 +184,11 @@ func TestResetPasswordUseCase_Execute_UserNotActive(t *testing.T) {
 		confirmNewPassword,
 		tenantId,
 		correlationID,
+		"",
+		"",
+		"",
+		"",
+		"",
 		ctx,
 	)
 
@@ -232,6 +244,11 @@ func TestResetPasswordUseCase_Execute_InvalidResetToken(t *testing.T) {
 		confirmNewPassword,
 		tenantId,
 		correlationID,
+		"",
+		"",
+		"",
+		"",
+		"",
 		ctx,
 	)
 
@@ -262,7 +279,7 @@ func TestResetPasswordUseCase_Execute_InvalidResetToken(t *testing.T) {
 	// Configurar mocks
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
 	mockUserClient.On("GetByEmail", ctx, email, tenantId, correlationID).Return(expectedUser, nil)
-	mockAuthClient.On("ResetPassword", ctx, expectedReq, tenantId, correlationID).Return(authError)
+	mockAuthClient.On("ResetPassword", ctx, expectedReq, tenantId, correlationID, "", "", "", "", "").Return(authError)
 
 	// Act
 	err := useCase.Execute(command)
@@ -299,6 +316,11 @@ func TestResetPasswordUseCase_Execute_CompanyNotFound(t *testing.T) {
 		confirmNewPassword,
 		tenantId,
 		correlationID,
+		"",
+		"",
+		"",
+		"",
+		"",
 		ctx,
 	)
 
@@ -344,6 +366,11 @@ func TestResetPasswordUseCase_Execute_PasswordMismatch(t *testing.T) {
 		confirmNewPassword,
 		tenantId,
 		correlationID,
+		"",
+		"",
+		"",
+		"",
+		"",
 		ctx,
 	)
 
@@ -385,6 +412,11 @@ func TestResetPasswordUseCase_Execute_ContextCancelled(t *testing.T) {
 		confirmNewPassword,
 		tenantId,
 		correlationID,
+		"",
+		"",
+		"",
+		"",
+		"",
 		ctx,
 	)
 
@@ -409,7 +441,7 @@ func TestResetPasswordUseCase_Execute_ContextCancelled(t *testing.T) {
 	// Configurar mocks
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
 	mockUserClient.On("GetByEmail", ctx, email, tenantId, correlationID).Return(expectedUser, nil)
-	mockAuthClient.On("ResetPassword", ctx, expectedReq, tenantId, correlationID).Return(context.Canceled)
+	mockAuthClient.On("ResetPassword", ctx, expectedReq, tenantId, correlationID, "", "", "", "", "").Return(context.Canceled)
 
 	// Act
 	err := useCase.Execute(command)
@@ -446,6 +478,11 @@ func TestResetPasswordUseCase_Execute_AuthServiceError(t *testing.T) {
 		confirmNewPassword,
 		tenantId,
 		correlationID,
+		"",
+		"",
+		"",
+		"",
+		"",
 		ctx,
 	)
 
@@ -472,7 +509,7 @@ func TestResetPasswordUseCase_Execute_AuthServiceError(t *testing.T) {
 	// Configurar mocks
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
 	mockUserClient.On("GetByEmail", ctx, email, tenantId, correlationID).Return(expectedUser, nil)
-	mockAuthClient.On("ResetPassword", ctx, expectedReq, tenantId, correlationID).Return(authError)
+	mockAuthClient.On("ResetPassword", ctx, expectedReq, tenantId, correlationID, "", "", "", "", "").Return(authError)
 
 	// Act
 	err := useCase.Execute(command)

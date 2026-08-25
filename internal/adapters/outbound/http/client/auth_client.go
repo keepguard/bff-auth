@@ -295,13 +295,30 @@ func (c *AuthClient) ValidateToken(ctx context.Context, token, tenantId, correla
 }
 
 // ChangePassword altera a senha do usuário no ms-auth
-func (c *AuthClient) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, tenantId, correlationID string) error {
-	resp, err := c.client.R().
+func (c *AuthClient) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent string) error {
+	reqBuilder := c.client.R().
 		SetContext(ctx).
 		SetBody(req).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Tenant-Id", tenantId).
-		Post(c.baseURL + "/api/v1/auth/change-password")
+		SetHeader("X-Tenant-Id", tenantId)
+
+	if deviceId != "" {
+		reqBuilder.SetHeader("X-Device-Id", deviceId)
+	}
+	if deviceName != "" {
+		reqBuilder.SetHeader("X-Device-Name", deviceName)
+	}
+	if deviceType != "" {
+		reqBuilder.SetHeader("X-Device-Type", deviceType)
+	}
+	if ipAddress != "" {
+		reqBuilder.SetHeader("X-Forwarded-For", ipAddress)
+	}
+	if userAgent != "" {
+		reqBuilder.SetHeader("User-Agent", userAgent)
+	}
+
+	resp, err := reqBuilder.Post(c.baseURL + "/api/v1/auth/change-password")
 
 	if err != nil {
 		return fmt.Errorf("erro ao fazer requisição de alteração de senha: %w", err)
@@ -316,13 +333,30 @@ func (c *AuthClient) ChangePassword(ctx context.Context, req outboundDto.ChangeP
 }
 
 // ResetPassword reseta a senha do usuário no ms-auth
-func (c *AuthClient) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, tenantId, correlationID string) error {
-	resp, err := c.client.R().
+func (c *AuthClient) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent string) error {
+	reqBuilder := c.client.R().
 		SetContext(ctx).
 		SetBody(req).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Tenant-Id", tenantId).
-		Post(c.baseURL + "/api/v1/auth/reset-password")
+		SetHeader("X-Tenant-Id", tenantId)
+
+	if deviceId != "" {
+		reqBuilder.SetHeader("X-Device-Id", deviceId)
+	}
+	if deviceName != "" {
+		reqBuilder.SetHeader("X-Device-Name", deviceName)
+	}
+	if deviceType != "" {
+		reqBuilder.SetHeader("X-Device-Type", deviceType)
+	}
+	if ipAddress != "" {
+		reqBuilder.SetHeader("X-Forwarded-For", ipAddress)
+	}
+	if userAgent != "" {
+		reqBuilder.SetHeader("User-Agent", userAgent)
+	}
+
+	resp, err := reqBuilder.Post(c.baseURL + "/api/v1/auth/reset-password")
 
 	if err != nil {
 		return fmt.Errorf("erro ao fazer requisição de reset de senha: %w", err)
@@ -346,7 +380,7 @@ func (c *AuthClient) GenerateResetToken(ctx context.Context, req map[string]inte
 		SetResult(&response).
 		SetHeader("X-Correlation-ID", correlationID).
 		SetHeader("X-Tenant-Id", tenantId).
-		Post(c.baseURL + "/api/v1/auth/reset-token")
+		Post(c.baseURL + "/api/v1/auth/generate-reset-token")
 
 	if err != nil {
 		return outboundDto.GenerateResetTokenMSResponseDTO{}, fmt.Errorf("erro ao fazer requisição de gerar reset token: %w", err)

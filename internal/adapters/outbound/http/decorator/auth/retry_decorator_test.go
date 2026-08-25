@@ -248,13 +248,13 @@ func TestRetryDecorator_ChangePassword_SuccessAfterRetry(t *testing.T) {
 		Message:    "Request timeout",
 		ErrorCode:  "TIMEOUT",
 	}
-	mockInner.On("ChangePassword", ctx, req, tenantId, correlationID).Return(timeoutError).Once()
+	mockInner.On("ChangePassword", ctx, req, tenantId, correlationID, "", "", "", "", "").Return(timeoutError).Once()
 
 	// Segunda tentativa: sucesso
-	mockInner.On("ChangePassword", ctx, req, tenantId, correlationID).Return(nil).Once()
+	mockInner.On("ChangePassword", ctx, req, tenantId, correlationID, "", "", "", "", "").Return(nil).Once()
 
 	// Act
-	err := decorator.ChangePassword(ctx, req, tenantId, correlationID)
+	err := decorator.ChangePassword(ctx, req, tenantId, correlationID, "", "", "", "", "")
 
 	// Assert
 	assert.NoError(t, err)

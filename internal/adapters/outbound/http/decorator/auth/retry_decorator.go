@@ -181,16 +181,16 @@ func (d *retryDecorator) ValidateToken(ctx context.Context, token, tenantId, cor
 }
 
 // ChangePassword implementa o método ChangePassword com retry
-func (d *retryDecorator) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, tenantId, correlationID string) error {
+func (d *retryDecorator) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent string) error {
 	return d.retry(ctx, func() error {
-		return d.inner.ChangePassword(ctx, req, tenantId, correlationID)
+		return d.inner.ChangePassword(ctx, req, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent)
 	})
 }
 
 // ResetPassword implementa o método ResetPassword com retry
-func (d *retryDecorator) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, tenantId, correlationID string) error {
+func (d *retryDecorator) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent string) error {
 	return d.retry(ctx, func() error {
-		return d.inner.ResetPassword(ctx, req, tenantId, correlationID)
+		return d.inner.ResetPassword(ctx, req, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent)
 	})
 }
 

@@ -179,10 +179,10 @@ func TestRateLimitDecorator_ChangePassword_WithinLimit(t *testing.T) {
 	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
-	mockInner.On("ChangePassword", ctx, req, tenantId, correlationID).Return(nil).Once()
+	mockInner.On("ChangePassword", ctx, req, tenantId, correlationID, "", "", "", "", "").Return(nil).Once()
 
 	// Act
-	err := decorator.ChangePassword(ctx, req, tenantId, correlationID)
+	err := decorator.ChangePassword(ctx, req, tenantId, correlationID, "", "", "", "", "")
 
 	// Assert
 	assert.NoError(t, err)
@@ -206,10 +206,10 @@ func TestRateLimitDecorator_ResetPassword_WithinLimit(t *testing.T) {
 	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
 
-	mockInner.On("ResetPassword", ctx, req, tenantId, correlationID).Return(nil).Once()
+	mockInner.On("ResetPassword", ctx, req, tenantId, correlationID, "", "", "", "", "").Return(nil).Once()
 
 	// Act
-	err := decorator.ResetPassword(ctx, req, tenantId, correlationID)
+	err := decorator.ResetPassword(ctx, req, tenantId, correlationID, "", "", "", "", "")
 
 	// Assert
 	assert.NoError(t, err)

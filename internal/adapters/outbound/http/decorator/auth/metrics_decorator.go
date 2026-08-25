@@ -140,10 +140,10 @@ func (d *metricsDecorator) ValidateToken(ctx context.Context, token, tenantId, c
 }
 
 // ChangePassword implementa o método ChangePassword com coleta de métricas
-func (d *metricsDecorator) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, tenantId, correlationID string) error {
+func (d *metricsDecorator) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent string) error {
 	start := time.Now()
 
-	err := d.inner.ChangePassword(ctx, req, tenantId, correlationID)
+	err := d.inner.ChangePassword(ctx, req, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent)
 
 	duration := time.Since(start)
 	statusCode := d.getStatusCodeFromError(err)
@@ -163,10 +163,10 @@ func (d *metricsDecorator) ChangePassword(ctx context.Context, req outboundDto.C
 }
 
 // ResetPassword implementa o método ResetPassword com coleta de métricas
-func (d *metricsDecorator) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, tenantId, correlationID string) error {
+func (d *metricsDecorator) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent string) error {
 	start := time.Now()
 
-	err := d.inner.ResetPassword(ctx, req, tenantId, correlationID)
+	err := d.inner.ResetPassword(ctx, req, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent)
 
 	duration := time.Since(start)
 	statusCode := d.getStatusCodeFromError(err)

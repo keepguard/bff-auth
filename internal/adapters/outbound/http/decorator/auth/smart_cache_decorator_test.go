@@ -313,11 +313,11 @@ func TestSmartCacheDecorator_ChangePassword_NoCaching(t *testing.T) {
 	correlationID := "test-correlation-id"
 
 	// Operações de escrita não devem ser cacheadas
-	mockInner.On("ChangePassword", ctx, req, tenantId, correlationID).Return(nil).Twice()
+	mockInner.On("ChangePassword", ctx, req, tenantId, correlationID, "", "", "", "", "").Return(nil).Twice()
 
 	// Act
-	err1 := decorator.ChangePassword(ctx, req, tenantId, correlationID)
-	err2 := decorator.ChangePassword(ctx, req, tenantId, correlationID)
+	err1 := decorator.ChangePassword(ctx, req, tenantId, correlationID, "", "", "", "", "")
+	err2 := decorator.ChangePassword(ctx, req, tenantId, correlationID, "", "", "", "", "")
 
 	// Assert
 	assert.NoError(t, err1)

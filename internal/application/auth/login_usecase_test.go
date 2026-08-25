@@ -37,13 +37,13 @@ func (m *MockAuthClient) ValidateToken(ctx context.Context, token, tenantId, cor
 	return args.Error(0)
 }
 
-func (m *MockAuthClient) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, tenantId, correlationID string) error {
-	args := m.Called(ctx, req, tenantId, correlationID)
+func (m *MockAuthClient) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent string) error {
+	args := m.Called(ctx, req, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent)
 	return args.Error(0)
 }
 
-func (m *MockAuthClient) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, tenantId, correlationID string) error {
-	args := m.Called(ctx, req, tenantId, correlationID)
+func (m *MockAuthClient) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent string) error {
+	args := m.Called(ctx, req, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent)
 	return args.Error(0)
 }
 

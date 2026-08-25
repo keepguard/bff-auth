@@ -35,6 +35,11 @@ func TestChangePasswordUseCase_Execute_Success(t *testing.T) {
 		confirmNewPassword,
 		tenantId,
 		correlationID,
+		"",
+		"",
+		"",
+		"",
+		"",
 		ctx,
 	)
 
@@ -47,7 +52,7 @@ func TestChangePasswordUseCase_Execute_Success(t *testing.T) {
 
 	// Configurar mocks
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
-	mockAuthClient.On("ChangePassword", ctx, expectedReq, tenantId, correlationID).Return(nil)
+	mockAuthClient.On("ChangePassword", ctx, expectedReq, tenantId, correlationID, "", "", "", "", "").Return(nil)
 
 	// Act
 	err := useCase.Execute(command)
@@ -80,6 +85,11 @@ func TestChangePasswordUseCase_Execute_InvalidToken(t *testing.T) {
 		confirmNewPassword,
 		tenantId,
 		correlationID,
+		"",
+		"",
+		"",
+		"",
+		"",
 		ctx,
 	)
 
@@ -118,6 +128,11 @@ func TestChangePasswordUseCase_Execute_AuthServiceError(t *testing.T) {
 		confirmNewPassword,
 		tenantId,
 		correlationID,
+		"",
+		"",
+		"",
+		"",
+		"",
 		ctx,
 	)
 
@@ -136,7 +151,7 @@ func TestChangePasswordUseCase_Execute_AuthServiceError(t *testing.T) {
 
 	// Configurar mocks
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
-	mockAuthClient.On("ChangePassword", ctx, expectedReq, tenantId, correlationID).Return(authError)
+	mockAuthClient.On("ChangePassword", ctx, expectedReq, tenantId, correlationID, "", "", "", "", "").Return(authError)
 
 	// Act
 	err := useCase.Execute(command)
@@ -170,6 +185,11 @@ func TestChangePasswordUseCase_Execute_CompanyNotFound(t *testing.T) {
 		confirmNewPassword,
 		tenantId,
 		correlationID,
+		"",
+		"",
+		"",
+		"",
+		"",
 		ctx,
 	)
 
@@ -217,6 +237,11 @@ func TestChangePasswordUseCase_Execute_ContextCancelled(t *testing.T) {
 		confirmNewPassword,
 		tenantId,
 		correlationID,
+		"",
+		"",
+		"",
+		"",
+		"",
 		ctx,
 	)
 
@@ -229,7 +254,7 @@ func TestChangePasswordUseCase_Execute_ContextCancelled(t *testing.T) {
 
 	// Configurar mocks
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
-	mockAuthClient.On("ChangePassword", ctx, expectedReq, tenantId, correlationID).Return(context.Canceled)
+	mockAuthClient.On("ChangePassword", ctx, expectedReq, tenantId, correlationID, "", "", "", "", "").Return(context.Canceled)
 
 	// Act
 	err := useCase.Execute(command)
@@ -261,6 +286,11 @@ func TestChangePasswordUseCase_Execute_PasswordMismatch(t *testing.T) {
 		confirmNewPassword,
 		tenantId,
 		correlationID,
+		"",
+		"",
+		"",
+		"",
+		"",
 		ctx,
 	)
 

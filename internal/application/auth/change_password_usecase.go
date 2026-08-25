@@ -47,7 +47,17 @@ func (uc *changePasswordUseCaseImpl) Execute(command appdto.ChangePasswordComman
 	}
 
 	// Chama o cliente de autenticação para alterar a senha
-	err = uc.authClient.ChangePassword(command.Context, req, command.TenantId, command.CorrelationID)
+	err = uc.authClient.ChangePassword(
+		command.Context,
+		req,
+		command.TenantId,
+		command.CorrelationID,
+		command.DeviceId,
+		command.DeviceName,
+		command.DeviceType,
+		command.IpAddress,
+		command.UserAgent,
+	)
 	if err != nil {
 		return err
 	}

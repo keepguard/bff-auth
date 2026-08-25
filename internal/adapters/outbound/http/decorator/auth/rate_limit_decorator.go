@@ -159,19 +159,19 @@ func (d *rateLimitDecorator) ValidateToken(ctx context.Context, token, tenantId,
 }
 
 // ChangePassword implementa o método ChangePassword com rate limiting
-func (d *rateLimitDecorator) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, tenantId, correlationID string) error {
+func (d *rateLimitDecorator) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent string) error {
 	if err := d.checkRateLimit(); err != nil {
 		return err
 	}
-	return d.inner.ChangePassword(ctx, req, tenantId, correlationID)
+	return d.inner.ChangePassword(ctx, req, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent)
 }
 
 // ResetPassword implementa o método ResetPassword com rate limiting
-func (d *rateLimitDecorator) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, tenantId, correlationID string) error {
+func (d *rateLimitDecorator) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent string) error {
 	if err := d.checkRateLimit(); err != nil {
 		return err
 	}
-	return d.inner.ResetPassword(ctx, req, tenantId, correlationID)
+	return d.inner.ResetPassword(ctx, req, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent)
 }
 
 // GenerateResetToken implementa o método GenerateResetToken com rate limiting
