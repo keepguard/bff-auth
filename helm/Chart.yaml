@@ -1,0 +1,6 @@
+apiVersion: v2
+name: bff-auth
+description: Helm Chart para o BFF-Auth do KeepGuard
+type: application
+version: 1.0.17
+appVersion: "1.0.17"
