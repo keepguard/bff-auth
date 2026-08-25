@@ -1062,6 +1062,14 @@ func handleError(c echo.Context, err error, correlationID string) error {
 	errorCode := "INTERNAL_ERROR"
 	msg := "Erro interno do servidor"
 
+	if err != nil && (strings.Contains(err.Error(), "circuit breaker is open") || strings.Contains(err.Error(), "circuit breaker is half-open")) {
+		return c.JSON(http.StatusServiceUnavailable, pkg.ErrorResponse{
+			Error:   "SERVICE_TEMPORARILY_UNAVAILABLE",
+			Message: "O serviço está temporariamente indisponível. Por favor, tente novamente em instantes.",
+			TraceID: correlationID,
+		})
+	}
+
 	if httpErr, ok := err.(*appdto.HTTPError); ok {
 		statusCode = httpErr.StatusCode
 		errorCode = httpErr.ErrorCode

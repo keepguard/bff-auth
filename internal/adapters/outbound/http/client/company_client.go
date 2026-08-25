@@ -57,10 +57,21 @@ func (c *companyClient) GetByTenantId(ctx context.Context, tenantId, correlation
 	}
 
 	if resp.StatusCode() != http.StatusOK {
+		var errorMsg string
+		var msError appdto.MSAuthErrorResponse
+		if jsonErr := json.Unmarshal(resp.Body(), &msError); jsonErr == nil && (msError.Detail != "" || msError.Title != "") {
+			errorMsg = msError.Detail
+			if errorMsg == "" {
+				errorMsg = msError.Title
+			}
+		} else {
+			errorMsg = "company service retornou erro"
+		}
+
 		return client.CompanySimpleResponseDTO{}, &appdto.HTTPError{
 			StatusCode: resp.StatusCode(),
-			Message:    "company service retornou erro",
-			ErrorCode:  "HTTP_ERROR",
+			Message:    errorMsg,
+			ErrorCode:  "COMPANY_NOT_FOUND",
 			Details:    map[string]interface{}{"body": string(resp.Body())},
 		}
 	}

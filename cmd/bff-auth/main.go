@@ -89,12 +89,12 @@ func main() {
 	authCBConfig := resilience.CircuitBreakerConfig{
 		Name:        "ms-auth",
 		MaxRequests: 3,                // Máximo 3 requests em half-open para testar recuperação
-		Interval:    30 * time.Second, // Janela de amostragem
+		Interval:    60 * time.Second, // Janela de amostragem
 		Timeout:     10 * time.Second, // Tempo em OPEN antes de tentar HALF-OPEN
 		ReadyToTrip: func(counts gobreaker.Counts) bool {
-			// Abre se pelo menos 5 requisições foram feitas e >= 60% falharam (com 5xx / timeout)
+			// Abre se pelo menos 10 requisições foram feitas e >= 70% falharam com 5xx/infra
 			failureRatio := float64(counts.TotalFailures) / float64(counts.Requests)
-			return counts.Requests >= 5 && failureRatio >= 0.6
+			return counts.Requests >= 10 && failureRatio >= 0.7
 		},
 	}
 
@@ -105,11 +105,11 @@ func main() {
 	companyCBConfig := resilience.CircuitBreakerConfig{
 		Name:        "ms-company",
 		MaxRequests: 3,
-		Interval:    30 * time.Second,
+		Interval:    60 * time.Second,
 		Timeout:     10 * time.Second,
 		ReadyToTrip: func(counts gobreaker.Counts) bool {
 			failureRatio := float64(counts.TotalFailures) / float64(counts.Requests)
-			return counts.Requests >= 5 && failureRatio >= 0.6
+			return counts.Requests >= 10 && failureRatio >= 0.7
 		},
 	}
 	cbManager.GetOrCreate("ms-company", companyCBConfig)

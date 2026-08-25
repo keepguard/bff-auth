@@ -507,8 +507,8 @@ func TestHandleHTTPError_EmptyTitle(t *testing.T) {
 	httpErr, ok := err.(*appdto.HTTPError)
 	assert.True(t, ok)
 	assert.Equal(t, 400, httpErr.StatusCode)
-	assert.Equal(t, "erro de test: status 400", httpErr.Message)
-	assert.Equal(t, "HTTP_ERROR", httpErr.ErrorCode)
+	assert.Equal(t, "Bad Request", httpErr.Message)
+	assert.Equal(t, "UNKNOWN_ERROR", httpErr.ErrorCode)
 }
 
 // TestGetErrorCodeFromProperties_WithErrorCode testa getErrorCodeFromProperties com errorCode

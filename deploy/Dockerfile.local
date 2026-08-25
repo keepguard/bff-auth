@@ -1,0 +1,24 @@
+FROM gcr.io/distroless/base-debian12
+
+WORKDIR /app
+
+# Copia o binário principal
+COPY .bin/bff-auth /app/bff-auth
+
+# Copia o utilitário de healthcheck
+COPY .bin/healthcheck /app/healthcheck
+
+# Copia arquivos de configuração
+COPY application*.yml /app/
+
+# Usuário não-root para segurança
+USER 65532:65532
+
+# Porta da aplicação
+EXPOSE 8381
+
+# Configura URL padrão do healthcheck
+ENV HEALTHCHECK_URL=http://localhost:8381/health
+
+# Comando de entrada
+ENTRYPOINT ["/app/bff-auth"]
