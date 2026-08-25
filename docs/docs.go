@@ -56,7 +56,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.ChangePasswordRequestDTO"
+                            "$ref": "#/definitions/dto.ChangePasswordRequestDTO"
                         }
                     }
                 ],
@@ -73,19 +73,85 @@ const docTemplate = `{
                     "400": {
                         "description": "Erro de validação (headers ausentes, dados inválidos ou senha atual incorreta)",
                         "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                            "$ref": "#/definitions/pkg.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Token de autorização inválido ou ausente",
                         "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                            "$ref": "#/definitions/pkg.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Erro interno do servidor",
                         "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                            "$ref": "#/definitions/pkg.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/auth/forgot-password": {
+            "post": {
+                "description": "Envia uma mensagem com token de recuperação de senha para o email do usuário. Não requer autenticação. Requer headers obrigatórios X-Correlation-ID e X-Tenant-Id.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "auth"
+                ],
+                "summary": "Send forgot password message",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "ID de correlação para rastreamento da requisição",
+                        "name": "X-Correlation-ID",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "ID da aplicação cliente (UUID)",
+                        "name": "X-Tenant-Id",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Email do usuário",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/dto.SendResetPasswordMessageRequestDTO"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Mensagem enviada com sucesso",
+                        "schema": {
+                            "$ref": "#/definitions/dto.SendResetPasswordMessageResponseDTO"
+                        }
+                    },
+                    "400": {
+                        "description": "Erro de validação (headers ausentes, email inválido ou usuário não ativo)",
+                        "schema": {
+                            "$ref": "#/definitions/pkg.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Usuário não encontrado",
+                        "schema": {
+                            "$ref": "#/definitions/pkg.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Erro interno do servidor",
+                        "schema": {
+                            "$ref": "#/definitions/pkg.ErrorResponse"
                         }
                     }
                 }
@@ -125,7 +191,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.AuthRequestDTO"
+                            "$ref": "#/definitions/dto.AuthRequestDTO"
                         }
                     }
                 ],
@@ -133,25 +199,37 @@ const docTemplate = `{
                     "200": {
                         "description": "Login realizado com sucesso",
                         "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.AuthResponseDTO"
+                            "$ref": "#/definitions/dto.AuthResponseDTO"
                         }
                     },
                     "400": {
                         "description": "Erro de validação (headers ausentes ou dados inválidos)",
                         "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                            "$ref": "#/definitions/pkg.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Credenciais inválidas",
                         "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                            "$ref": "#/definitions/pkg.ErrorResponse"
+                        }
+                    },
+                    "429": {
+                        "description": "Muitas tentativas (Rate limit excedido)",
+                        "schema": {
+                            "$ref": "#/definitions/pkg.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Erro interno do servidor",
                         "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                            "$ref": "#/definitions/pkg.ErrorResponse"
+                        }
+                    },
+                    "503": {
+                        "description": "Serviço temporariamente indisponível (Circuit breaker)",
+                        "schema": {
+                            "$ref": "#/definitions/pkg.ErrorResponse"
                         }
                     }
                 }
@@ -206,19 +284,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Erro de validação (headers ausentes)",
                         "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                            "$ref": "#/definitions/pkg.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Token de autorização inválido ou ausente",
                         "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                            "$ref": "#/definitions/pkg.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Erro interno do servidor",
                         "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                            "$ref": "#/definitions/pkg.ErrorResponse"
                         }
                     }
                 }
@@ -258,7 +336,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.RefreshTokenRequestDTO"
+                            "$ref": "#/definitions/dto.RefreshTokenRequestDTO"
                         }
                     }
                 ],
@@ -266,25 +344,25 @@ const docTemplate = `{
                     "200": {
                         "description": "Token renovado com sucesso",
                         "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.RefreshTokenResponseDTO"
+                            "$ref": "#/definitions/dto.RefreshTokenResponseDTO"
                         }
                     },
                     "400": {
                         "description": "Erro de validação (headers ausentes ou dados inválidos)",
                         "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                            "$ref": "#/definitions/pkg.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Refresh token inválido ou expirado",
                         "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                            "$ref": "#/definitions/pkg.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Erro interno do servidor",
                         "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                            "$ref": "#/definitions/pkg.ErrorResponse"
                         }
                     }
                 }
@@ -324,7 +402,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.ResetPasswordRequestDTO"
+                            "$ref": "#/definitions/dto.ResetPasswordRequestDTO"
                         }
                     }
                 ],
@@ -341,19 +419,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Erro de validação (headers ausentes, dados inválidos, token inválido ou usuário não ativo)",
                         "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                            "$ref": "#/definitions/pkg.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Usuário não encontrado",
                         "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                            "$ref": "#/definitions/pkg.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Erro interno do servidor",
                         "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                            "$ref": "#/definitions/pkg.ErrorResponse"
                         }
                     }
                 }
@@ -393,7 +471,7 @@ const docTemplate = `{
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.ValidateTokenRequestDTO"
+                            "$ref": "#/definitions/dto.ValidateTokenRequestDTO"
                         }
                     }
                 ],
@@ -410,19 +488,19 @@ const docTemplate = `{
                     "400": {
                         "description": "Erro de validação (headers ausentes ou dados inválidos)",
                         "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                            "$ref": "#/definitions/pkg.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Token inválido ou expirado",
                         "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                            "$ref": "#/definitions/pkg.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Erro interno do servidor",
                         "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
+                            "$ref": "#/definitions/pkg.ErrorResponse"
                         }
                     }
                 }
@@ -450,76 +528,10 @@ const docTemplate = `{
                     }
                 }
             }
-        },
-        "/message/reset-password/send": {
-            "post": {
-                "description": "Envia uma mensagem de reset de senha para o email do usuário. Não requer autenticação. Requer headers obrigatórios X-Correlation-ID e X-Tenant-Id.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "messages"
-                ],
-                "summary": "Send reset password message",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "ID de correlação para rastreamento da requisição",
-                        "name": "X-Correlation-ID",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "type": "string",
-                        "description": "ID da aplicação cliente (UUID)",
-                        "name": "X-Tenant-Id",
-                        "in": "header",
-                        "required": true
-                    },
-                    {
-                        "description": "Email do usuário",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.SendResetPasswordMessageRequestDTO"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Mensagem enviada com sucesso",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.SendResetPasswordMessageResponseDTO"
-                        }
-                    },
-                    "400": {
-                        "description": "Erro de validação (headers ausentes, email inválido ou usuário não ativo)",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Usuário não encontrado",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Erro interno do servidor",
-                        "schema": {
-                            "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse"
-                        }
-                    }
-                }
-            }
         }
     },
     "definitions": {
-        "github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.AuthRequestDTO": {
+        "dto.AuthRequestDTO": {
             "type": "object",
             "required": [
                 "password",
@@ -534,18 +546,47 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.AuthResponseDTO": {
+        "dto.AuthResponseDTO": {
             "type": "object",
             "properties": {
+                "availableChannels": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/dto.AvailableMfaChannelDTO"
+                    }
+                },
+                "challengeSessionId": {
+                    "type": "string"
+                },
                 "expiresIn": {
                     "type": "integer"
+                },
+                "isTrusted": {
+                    "type": "boolean"
+                },
+                "status": {
+                    "type": "string"
                 },
                 "token": {
                     "type": "string"
                 }
             }
         },
-        "github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.ChangePasswordRequestDTO": {
+        "dto.AvailableMfaChannelDTO": {
+            "type": "object",
+            "properties": {
+                "channel": {
+                    "type": "string"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "targetMasked": {
+                    "type": "string"
+                }
+            }
+        },
+        "dto.ChangePasswordRequestDTO": {
             "type": "object",
             "required": [
                 "confirmNewPassword",
@@ -567,7 +608,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.RefreshTokenRequestDTO": {
+        "dto.RefreshTokenRequestDTO": {
             "type": "object",
             "required": [
                 "token"
@@ -579,7 +620,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.RefreshTokenResponseDTO": {
+        "dto.RefreshTokenResponseDTO": {
             "type": "object",
             "properties": {
                 "expiresIn": {
@@ -590,7 +631,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.ResetPasswordRequestDTO": {
+        "dto.ResetPasswordRequestDTO": {
             "type": "object",
             "required": [
                 "confirmNewPassword",
@@ -616,7 +657,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.SendResetPasswordMessageRequestDTO": {
+        "dto.SendResetPasswordMessageRequestDTO": {
             "type": "object",
             "required": [
                 "email"
@@ -627,7 +668,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.SendResetPasswordMessageResponseDTO": {
+        "dto.SendResetPasswordMessageResponseDTO": {
             "type": "object",
             "properties": {
                 "message": {
@@ -638,7 +679,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.ValidateTokenRequestDTO": {
+        "dto.ValidateTokenRequestDTO": {
             "type": "object",
             "required": [
                 "token"
@@ -650,7 +691,7 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_keepguard_bff-auth_internal_pkg.ErrorDetail": {
+        "pkg.ErrorDetail": {
             "type": "object",
             "properties": {
                 "code": {
@@ -664,13 +705,13 @@ const docTemplate = `{
                 }
             }
         },
-        "github_com_keepguard_bff-auth_internal_pkg.ErrorResponse": {
+        "pkg.ErrorResponse": {
             "type": "object",
             "properties": {
                 "details": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorDetail"
+                        "$ref": "#/definitions/pkg.ErrorDetail"
                     }
                 },
                 "error": {

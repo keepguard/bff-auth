@@ -86,6 +86,8 @@ func NewAuthHandlersWithLogger(
 // @Success 200 {object} dto.AuthResponseDTO "Login realizado com sucesso"
 // @Failure 400 {object} pkg.ErrorResponse "Erro de validação (headers ausentes ou dados inválidos)"
 // @Failure 401 {object} pkg.ErrorResponse "Credenciais inválidas"
+// @Failure 429 {object} pkg.ErrorResponse "Muitas tentativas (Rate limit excedido)"
+// @Failure 503 {object} pkg.ErrorResponse "Serviço temporariamente indisponível (Circuit breaker)"
 // @Failure 500 {object} pkg.ErrorResponse "Erro interno do servidor"
 // @Router /auth/login [post]
 func (h *AuthHandlers) LoginHandler(c echo.Context) error {

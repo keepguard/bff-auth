@@ -1,6 +1,6 @@
 basePath: /
 definitions:
-  github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.AuthRequestDTO:
+  dto.AuthRequestDTO:
     properties:
       password:
         type: string
@@ -10,14 +10,33 @@ definitions:
     - password
     - username
     type: object
-  github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.AuthResponseDTO:
+  dto.AuthResponseDTO:
     properties:
+      availableChannels:
+        items:
+          $ref: '#/definitions/dto.AvailableMfaChannelDTO'
+        type: array
+      challengeSessionId:
+        type: string
       expiresIn:
         type: integer
+      isTrusted:
+        type: boolean
+      status:
+        type: string
       token:
         type: string
     type: object
-  github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.ChangePasswordRequestDTO:
+  dto.AvailableMfaChannelDTO:
+    properties:
+      channel:
+        type: string
+      description:
+        type: string
+      targetMasked:
+        type: string
+    type: object
+  dto.ChangePasswordRequestDTO:
     properties:
       confirmNewPassword:
         minLength: 6
@@ -33,7 +52,7 @@ definitions:
     - currentPassword
     - newPassword
     type: object
-  github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.RefreshTokenRequestDTO:
+  dto.RefreshTokenRequestDTO:
     properties:
       token:
         minLength: 1
@@ -41,14 +60,14 @@ definitions:
     required:
     - token
     type: object
-  github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.RefreshTokenResponseDTO:
+  dto.RefreshTokenResponseDTO:
     properties:
       expiresIn:
         type: integer
       token:
         type: string
     type: object
-  github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.ResetPasswordRequestDTO:
+  dto.ResetPasswordRequestDTO:
     properties:
       confirmNewPassword:
         minLength: 6
@@ -67,21 +86,21 @@ definitions:
     - newPassword
     - resetToken
     type: object
-  github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.SendResetPasswordMessageRequestDTO:
+  dto.SendResetPasswordMessageRequestDTO:
     properties:
       email:
         type: string
     required:
     - email
     type: object
-  github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.SendResetPasswordMessageResponseDTO:
+  dto.SendResetPasswordMessageResponseDTO:
     properties:
       message:
         type: string
       success:
         type: boolean
     type: object
-  github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.ValidateTokenRequestDTO:
+  dto.ValidateTokenRequestDTO:
     properties:
       token:
         minLength: 1
@@ -89,7 +108,7 @@ definitions:
     required:
     - token
     type: object
-  github_com_keepguard_bff-auth_internal_pkg.ErrorDetail:
+  pkg.ErrorDetail:
     properties:
       code:
         type: string
@@ -98,11 +117,11 @@ definitions:
       message:
         type: string
     type: object
-  github_com_keepguard_bff-auth_internal_pkg.ErrorResponse:
+  pkg.ErrorResponse:
     properties:
       details:
         items:
-          $ref: '#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorDetail'
+          $ref: '#/definitions/pkg.ErrorDetail'
         type: array
       error:
         type: string
@@ -146,7 +165,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.ChangePasswordRequestDTO'
+          $ref: '#/definitions/dto.ChangePasswordRequestDTO'
       produces:
       - application/json
       responses:
@@ -160,16 +179,63 @@ paths:
           description: Erro de validação (headers ausentes, dados inválidos ou senha
             atual incorreta)
           schema:
-            $ref: '#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse'
+            $ref: '#/definitions/pkg.ErrorResponse'
         "401":
           description: Token de autorização inválido ou ausente
           schema:
-            $ref: '#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse'
+            $ref: '#/definitions/pkg.ErrorResponse'
         "500":
           description: Erro interno do servidor
           schema:
-            $ref: '#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse'
+            $ref: '#/definitions/pkg.ErrorResponse'
       summary: Change password
+      tags:
+      - auth
+  /auth/forgot-password:
+    post:
+      consumes:
+      - application/json
+      description: Envia uma mensagem com token de recuperação de senha para o email
+        do usuário. Não requer autenticação. Requer headers obrigatórios X-Correlation-ID
+        e X-Tenant-Id.
+      parameters:
+      - description: ID de correlação para rastreamento da requisição
+        in: header
+        name: X-Correlation-ID
+        required: true
+        type: string
+      - description: ID da aplicação cliente (UUID)
+        in: header
+        name: X-Tenant-Id
+        required: true
+        type: string
+      - description: Email do usuário
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/dto.SendResetPasswordMessageRequestDTO'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Mensagem enviada com sucesso
+          schema:
+            $ref: '#/definitions/dto.SendResetPasswordMessageResponseDTO'
+        "400":
+          description: Erro de validação (headers ausentes, email inválido ou usuário
+            não ativo)
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponse'
+        "404":
+          description: Usuário não encontrado
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponse'
+        "500":
+          description: Erro interno do servidor
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponse'
+      summary: Send forgot password message
       tags:
       - auth
   /auth/login:
@@ -194,26 +260,34 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.AuthRequestDTO'
+          $ref: '#/definitions/dto.AuthRequestDTO'
       produces:
       - application/json
       responses:
         "200":
           description: Login realizado com sucesso
           schema:
-            $ref: '#/definitions/github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.AuthResponseDTO'
+            $ref: '#/definitions/dto.AuthResponseDTO'
         "400":
           description: Erro de validação (headers ausentes ou dados inválidos)
           schema:
-            $ref: '#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse'
+            $ref: '#/definitions/pkg.ErrorResponse'
         "401":
           description: Credenciais inválidas
           schema:
-            $ref: '#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse'
+            $ref: '#/definitions/pkg.ErrorResponse'
+        "429":
+          description: Muitas tentativas (Rate limit excedido)
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponse'
         "500":
           description: Erro interno do servidor
           schema:
-            $ref: '#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse'
+            $ref: '#/definitions/pkg.ErrorResponse'
+        "503":
+          description: Serviço temporariamente indisponível (Circuit breaker)
+          schema:
+            $ref: '#/definitions/pkg.ErrorResponse'
       summary: Login
       tags:
       - auth
@@ -251,15 +325,15 @@ paths:
         "400":
           description: Erro de validação (headers ausentes)
           schema:
-            $ref: '#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse'
+            $ref: '#/definitions/pkg.ErrorResponse'
         "401":
           description: Token de autorização inválido ou ausente
           schema:
-            $ref: '#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse'
+            $ref: '#/definitions/pkg.ErrorResponse'
         "500":
           description: Erro interno do servidor
           schema:
-            $ref: '#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse'
+            $ref: '#/definitions/pkg.ErrorResponse'
       summary: Logout
       tags:
       - auth
@@ -285,26 +359,26 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.RefreshTokenRequestDTO'
+          $ref: '#/definitions/dto.RefreshTokenRequestDTO'
       produces:
       - application/json
       responses:
         "200":
           description: Token renovado com sucesso
           schema:
-            $ref: '#/definitions/github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.RefreshTokenResponseDTO'
+            $ref: '#/definitions/dto.RefreshTokenResponseDTO'
         "400":
           description: Erro de validação (headers ausentes ou dados inválidos)
           schema:
-            $ref: '#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse'
+            $ref: '#/definitions/pkg.ErrorResponse'
         "401":
           description: Refresh token inválido ou expirado
           schema:
-            $ref: '#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse'
+            $ref: '#/definitions/pkg.ErrorResponse'
         "500":
           description: Erro interno do servidor
           schema:
-            $ref: '#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse'
+            $ref: '#/definitions/pkg.ErrorResponse'
       summary: Refresh token
       tags:
       - auth
@@ -330,7 +404,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.ResetPasswordRequestDTO'
+          $ref: '#/definitions/dto.ResetPasswordRequestDTO'
       produces:
       - application/json
       responses:
@@ -344,15 +418,15 @@ paths:
           description: Erro de validação (headers ausentes, dados inválidos, token
             inválido ou usuário não ativo)
           schema:
-            $ref: '#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse'
+            $ref: '#/definitions/pkg.ErrorResponse'
         "404":
           description: Usuário não encontrado
           schema:
-            $ref: '#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse'
+            $ref: '#/definitions/pkg.ErrorResponse'
         "500":
           description: Erro interno do servidor
           schema:
-            $ref: '#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse'
+            $ref: '#/definitions/pkg.ErrorResponse'
       summary: Reset password
       tags:
       - auth
@@ -378,7 +452,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.ValidateTokenRequestDTO'
+          $ref: '#/definitions/dto.ValidateTokenRequestDTO'
       produces:
       - application/json
       responses:
@@ -391,15 +465,15 @@ paths:
         "400":
           description: Erro de validação (headers ausentes ou dados inválidos)
           schema:
-            $ref: '#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse'
+            $ref: '#/definitions/pkg.ErrorResponse'
         "401":
           description: Token inválido ou expirado
           schema:
-            $ref: '#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse'
+            $ref: '#/definitions/pkg.ErrorResponse'
         "500":
           description: Erro interno do servidor
           schema:
-            $ref: '#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse'
+            $ref: '#/definitions/pkg.ErrorResponse'
       summary: Validate token
       tags:
       - auth
@@ -418,52 +492,6 @@ paths:
       summary: Health check
       tags:
       - health
-  /message/reset-password/send:
-    post:
-      consumes:
-      - application/json
-      description: Envia uma mensagem de reset de senha para o email do usuário. Não
-        requer autenticação. Requer headers obrigatórios X-Correlation-ID e X-Tenant-Id.
-      parameters:
-      - description: ID de correlação para rastreamento da requisição
-        in: header
-        name: X-Correlation-ID
-        required: true
-        type: string
-      - description: ID da aplicação cliente (UUID)
-        in: header
-        name: X-Tenant-Id
-        required: true
-        type: string
-      - description: Email do usuário
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.SendResetPasswordMessageRequestDTO'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Mensagem enviada com sucesso
-          schema:
-            $ref: '#/definitions/github_com_keepguard_bff-auth_internal_adapters_inbound_http_dto.SendResetPasswordMessageResponseDTO'
-        "400":
-          description: Erro de validação (headers ausentes, email inválido ou usuário
-            não ativo)
-          schema:
-            $ref: '#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse'
-        "404":
-          description: Usuário não encontrado
-          schema:
-            $ref: '#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse'
-        "500":
-          description: Erro interno do servidor
-          schema:
-            $ref: '#/definitions/github_com_keepguard_bff-auth_internal_pkg.ErrorResponse'
-      summary: Send reset password message
-      tags:
-      - messages
 securityDefinitions:
   Bearer:
     in: header
