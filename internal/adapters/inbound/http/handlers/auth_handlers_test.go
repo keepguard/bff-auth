@@ -103,6 +103,21 @@ func (m *MockAuthClient) RemoveDeviceFromBlacklist(ctx context.Context, deviceId
 	return args.Error(0)
 }
 
+func (m *MockAuthClient) SearchAdminDeviceBlacklist(ctx context.Context, queryParams map[string]string, token, tenantId, correlationID string) (dto.PaginatedDeviceBlacklistResponseDTO, error) {
+	args := m.Called(ctx, queryParams, token, tenantId, correlationID)
+	return args.Get(0).(dto.PaginatedDeviceBlacklistResponseDTO), args.Error(1)
+}
+
+func (m *MockAuthClient) AdminAddDeviceToBlacklist(ctx context.Context, req dto.AdminAddDeviceBlacklistRequestDTO, token, tenantId, correlationID string) error {
+	args := m.Called(ctx, req, token, tenantId, correlationID)
+	return args.Error(0)
+}
+
+func (m *MockAuthClient) AdminRemoveDeviceFromBlacklist(ctx context.Context, deviceId, userId, token, tenantId, correlationID string) error {
+	args := m.Called(ctx, deviceId, userId, token, tenantId, correlationID)
+	return args.Error(0)
+}
+
 // MockUseCases são mocks para os casos de uso
 type MockLoginUseCase struct {
 	mock.Mock

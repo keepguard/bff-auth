@@ -1058,6 +1058,125 @@ func (h *AuthHandlers) RemoveDeviceBlacklistHandler(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
+// SearchAdminDeviceBlacklistHandler consulta blacklist com filtros paginados (Admin)
+func (h *AuthHandlers) SearchAdminDeviceBlacklistHandler(c echo.Context) error {
+	correlationID, err := GetCorrelationID(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "MISSING_HEADER",
+			Message: err.Error(),
+			TraceID: "",
+		})
+	}
+
+	tenantId, _, err := GetTenantAndClientId(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "MISSING_HEADER",
+			Message: err.Error(),
+			TraceID: correlationID,
+		})
+	}
+
+	token := strings.TrimPrefix(c.Request().Header.Get("Authorization"), "Bearer ")
+
+	queryParams := map[string]string{
+		"userId":     c.QueryParam("userId"),
+		"deviceId":   c.QueryParam("deviceId"),
+		"deviceName": c.QueryParam("deviceName"),
+		"ipAddress":  c.QueryParam("ipAddress"),
+		"startDate":  c.QueryParam("startDate"),
+		"endDate":    c.QueryParam("endDate"),
+		"page":       c.QueryParam("page"),
+		"size":       c.QueryParam("size"),
+		"sort":       c.QueryParam("sort"),
+	}
+
+	blacklist, err := h.authClient.SearchAdminDeviceBlacklist(c.Request().Context(), queryParams, token, tenantId, correlationID)
+	if err != nil {
+		return handleError(c, err, correlationID)
+	}
+
+	return c.JSON(http.StatusOK, blacklist)
+}
+
+// AdminAddDeviceBlacklistHandler adiciona dispositivo à blacklist (Admin)
+func (h *AuthHandlers) AdminAddDeviceBlacklistHandler(c echo.Context) error {
+	correlationID, err := GetCorrelationID(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "MISSING_HEADER",
+			Message: err.Error(),
+			TraceID: "",
+		})
+	}
+
+	tenantId, _, err := GetTenantAndClientId(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "MISSING_HEADER",
+			Message: err.Error(),
+			TraceID: correlationID,
+		})
+	}
+
+	token := strings.TrimPrefix(c.Request().Header.Get("Authorization"), "Bearer ")
+
+	var req dto.AdminAddDeviceBlacklistRequestDTO
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "INVALID_REQUEST",
+			Message: "Requisição inválida",
+			TraceID: correlationID,
+		})
+	}
+
+	if err := h.authClient.AdminAddDeviceToBlacklist(c.Request().Context(), req, token, tenantId, correlationID); err != nil {
+		return handleError(c, err, correlationID)
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
+// AdminRemoveDeviceBlacklistHandler remove dispositivo da blacklist (Admin)
+func (h *AuthHandlers) AdminRemoveDeviceBlacklistHandler(c echo.Context) error {
+	correlationID, err := GetCorrelationID(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "MISSING_HEADER",
+			Message: err.Error(),
+			TraceID: "",
+		})
+	}
+
+	tenantId, _, err := GetTenantAndClientId(c)
+	if err != nil {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "MISSING_HEADER",
+			Message: err.Error(),
+			TraceID: correlationID,
+		})
+	}
+
+	token := strings.TrimPrefix(c.Request().Header.Get("Authorization"), "Bearer ")
+	deviceId := c.Param("deviceId")
+	userId := c.QueryParam("userId")
+
+	if userId == "" {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:   "MISSING_PARAM",
+			Message: "Parâmetro 'userId' é obrigatório",
+			TraceID: correlationID,
+		})
+	}
+
+	if err := h.authClient.AdminRemoveDeviceFromBlacklist(c.Request().Context(), deviceId, userId, token, tenantId, correlationID); err != nil {
+		return handleError(c, err, correlationID)
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
 // handleError trata erros de forma padronizada
 func handleError(c echo.Context, err error, correlationID string) error {
 	statusCode := http.StatusInternalServerError

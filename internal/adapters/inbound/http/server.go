@@ -102,6 +102,12 @@ func (s *serverImpl) SetupRoutes(handlers Handler) {
 	userGroup.POST("/devices/blacklist", handlers.AddDeviceBlacklistHandler, rl.Limit("device_blacklist", rules.DeviceBlacklist))
 	userGroup.DELETE("/devices/blacklist/:deviceId", handlers.RemoveDeviceBlacklistHandler)
 
+	// Admin Device Blacklist routes (ROLE_ADMIN, ROLE_MANAGER)
+	adminGroup := s.echo.Group("/api/v1/admin/devices/blacklist")
+	adminGroup.GET("", handlers.SearchAdminDeviceBlacklistHandler)
+	adminGroup.POST("", handlers.AdminAddDeviceBlacklistHandler, rl.Limit("admin_device_blacklist", rules.DeviceBlacklist))
+	adminGroup.DELETE("/:deviceId", handlers.AdminRemoveDeviceBlacklistHandler)
+
 	s.logger.Info("Rotas configuradas com sucesso com proteção de Rate Limit",
 		zap.String("port", s.config.Server.Port),
 	)

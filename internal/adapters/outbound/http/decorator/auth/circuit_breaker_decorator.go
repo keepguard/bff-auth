@@ -196,3 +196,30 @@ func (d *circuitBreakerDecorator) RemoveDeviceFromBlacklist(ctx context.Context,
 	})
 	return err
 }
+
+// SearchAdminDeviceBlacklist implementa o método SearchAdminDeviceBlacklist com circuit breaker
+func (d *circuitBreakerDecorator) SearchAdminDeviceBlacklist(ctx context.Context, queryParams map[string]string, token, tenantId, correlationID string) (inboundDto.PaginatedDeviceBlacklistResponseDTO, error) {
+	result, err := d.circuitBreaker.Execute(ctx, d.serviceName, func() (interface{}, error) {
+		return d.inner.SearchAdminDeviceBlacklist(ctx, queryParams, token, tenantId, correlationID)
+	})
+	if err != nil {
+		return inboundDto.PaginatedDeviceBlacklistResponseDTO{}, err
+	}
+	return result.(inboundDto.PaginatedDeviceBlacklistResponseDTO), nil
+}
+
+// AdminAddDeviceToBlacklist implementa o método AdminAddDeviceToBlacklist com circuit breaker
+func (d *circuitBreakerDecorator) AdminAddDeviceToBlacklist(ctx context.Context, req inboundDto.AdminAddDeviceBlacklistRequestDTO, token, tenantId, correlationID string) error {
+	_, err := d.circuitBreaker.Execute(ctx, d.serviceName, func() (interface{}, error) {
+		return nil, d.inner.AdminAddDeviceToBlacklist(ctx, req, token, tenantId, correlationID)
+	})
+	return err
+}
+
+// AdminRemoveDeviceFromBlacklist implementa o método AdminRemoveDeviceFromBlacklist com circuit breaker
+func (d *circuitBreakerDecorator) AdminRemoveDeviceFromBlacklist(ctx context.Context, deviceId, userId, token, tenantId, correlationID string) error {
+	_, err := d.circuitBreaker.Execute(ctx, d.serviceName, func() (interface{}, error) {
+		return nil, d.inner.AdminRemoveDeviceFromBlacklist(ctx, deviceId, userId, token, tenantId, correlationID)
+	})
+	return err
+}

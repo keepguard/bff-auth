@@ -97,6 +97,21 @@ func (m *MockAuthClient) RemoveDeviceFromBlacklist(ctx context.Context, deviceId
 	return args.Error(0)
 }
 
+func (m *MockAuthClient) SearchAdminDeviceBlacklist(ctx context.Context, queryParams map[string]string, token, tenantId, correlationID string) (inboundDto.PaginatedDeviceBlacklistResponseDTO, error) {
+	args := m.Called(ctx, queryParams, token, tenantId, correlationID)
+	return args.Get(0).(inboundDto.PaginatedDeviceBlacklistResponseDTO), args.Error(1)
+}
+
+func (m *MockAuthClient) AdminAddDeviceToBlacklist(ctx context.Context, req inboundDto.AdminAddDeviceBlacklistRequestDTO, token, tenantId, correlationID string) error {
+	args := m.Called(ctx, req, token, tenantId, correlationID)
+	return args.Error(0)
+}
+
+func (m *MockAuthClient) AdminRemoveDeviceFromBlacklist(ctx context.Context, deviceId, userId, token, tenantId, correlationID string) error {
+	args := m.Called(ctx, deviceId, userId, token, tenantId, correlationID)
+	return args.Error(0)
+}
+
 // MockMetricsRecorder é um mock para MetricsRecorder
 type MockMetricsRecorder struct {
 	mock.Mock

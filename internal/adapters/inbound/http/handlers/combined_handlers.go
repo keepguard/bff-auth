@@ -85,3 +85,15 @@ func (h *CombinedHandlers) AddDeviceBlacklistHandler(c echo.Context) error {
 func (h *CombinedHandlers) RemoveDeviceBlacklistHandler(c echo.Context) error {
 	return h.AuthHandlers.RemoveDeviceBlacklistHandler(c)
 }
+
+func (h *CombinedHandlers) SearchAdminDeviceBlacklistHandler(c echo.Context) error {
+	return h.AuthHandlers.SearchAdminDeviceBlacklistHandler(c)
+}
+
+func (h *CombinedHandlers) AdminAddDeviceBlacklistHandler(c echo.Context) error {
+	return h.AuthHandlers.AdminAddDeviceBlacklistHandler(c)
+}
+
+func (h *CombinedHandlers) AdminRemoveDeviceBlacklistHandler(c echo.Context) error {
+	return h.AuthHandlers.AdminRemoveDeviceBlacklistHandler(c)
+}

@@ -344,3 +344,15 @@ func (d *smartCacheDecorator) AddDeviceToBlacklist(ctx context.Context, req inbo
 func (d *smartCacheDecorator) RemoveDeviceFromBlacklist(ctx context.Context, deviceId, token, tenantId, correlationID string) error {
 	return d.inner.RemoveDeviceFromBlacklist(ctx, deviceId, token, tenantId, correlationID)
 }
+
+func (d *smartCacheDecorator) SearchAdminDeviceBlacklist(ctx context.Context, queryParams map[string]string, token, tenantId, correlationID string) (inboundDto.PaginatedDeviceBlacklistResponseDTO, error) {
+	return d.inner.SearchAdminDeviceBlacklist(ctx, queryParams, token, tenantId, correlationID)
+}
+
+func (d *smartCacheDecorator) AdminAddDeviceToBlacklist(ctx context.Context, req inboundDto.AdminAddDeviceBlacklistRequestDTO, token, tenantId, correlationID string) error {
+	return d.inner.AdminAddDeviceToBlacklist(ctx, req, token, tenantId, correlationID)
+}
+
+func (d *smartCacheDecorator) AdminRemoveDeviceFromBlacklist(ctx context.Context, deviceId, userId, token, tenantId, correlationID string) error {
+	return d.inner.AdminRemoveDeviceFromBlacklist(ctx, deviceId, userId, token, tenantId, correlationID)
+}

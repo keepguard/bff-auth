@@ -472,3 +472,66 @@ func (c *AuthClient) RemoveDeviceFromBlacklist(ctx context.Context, deviceId, to
 
 	return c.handleHTTPError(resp, "remove_device_blacklist")
 }
+
+// SearchAdminDeviceBlacklist busca e filtra a blacklist de dispositivos como Admin
+func (c *AuthClient) SearchAdminDeviceBlacklist(ctx context.Context, queryParams map[string]string, token, tenantId, correlationID string) (inboundDto.PaginatedDeviceBlacklistResponseDTO, error) {
+	var response inboundDto.PaginatedDeviceBlacklistResponseDTO
+
+	req := c.client.R().
+		SetContext(ctx).
+		SetResult(&response).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Tenant-Id", tenantId).
+		SetAuthToken(token)
+
+	for k, v := range queryParams {
+		if v != "" {
+			req.SetQueryParam(k, v)
+		}
+	}
+
+	resp, err := req.Get(c.baseURL + "/api/v1/admin/devices/blacklist")
+	if err != nil {
+		return response, fmt.Errorf("erro ao consultar blacklist de dispositivos: %w", err)
+	}
+
+	if httpErr := c.handleHTTPError(resp, "search_admin_device_blacklist"); httpErr != nil {
+		return response, httpErr
+	}
+
+	return response, nil
+}
+
+// AdminAddDeviceToBlacklist adiciona dispositivo à blacklist como Admin
+func (c *AuthClient) AdminAddDeviceToBlacklist(ctx context.Context, req inboundDto.AdminAddDeviceBlacklistRequestDTO, token, tenantId, correlationID string) error {
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetBody(req).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Tenant-Id", tenantId).
+		SetAuthToken(token).
+		Post(c.baseURL + "/api/v1/admin/devices/blacklist")
+
+	if err != nil {
+		return fmt.Errorf("erro ao adicionar dispositivo à blacklist administrativamente: %w", err)
+	}
+
+	return c.handleHTTPError(resp, "admin_add_device_blacklist")
+}
+
+// AdminRemoveDeviceFromBlacklist remove dispositivo da blacklist como Admin
+func (c *AuthClient) AdminRemoveDeviceFromBlacklist(ctx context.Context, deviceId, userId, token, tenantId, correlationID string) error {
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Tenant-Id", tenantId).
+		SetQueryParam("userId", userId).
+		SetAuthToken(token).
+		Delete(fmt.Sprintf("%s/api/v1/admin/devices/blacklist/%s", c.baseURL, deviceId))
+
+	if err != nil {
+		return fmt.Errorf("erro ao remover dispositivo da blacklist administrativamente: %w", err)
+	}
+
+	return c.handleHTTPError(resp, "admin_remove_device_blacklist")
+}

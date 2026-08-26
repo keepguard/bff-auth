@@ -66,3 +66,40 @@ type AddDeviceBlacklistRequestDTO struct {
 	DeviceName string `json:"deviceName,omitempty"`
 	Reason     string `json:"reason,omitempty"`
 }
+
+// AdminAddDeviceBlacklistRequestDTO representa a requisição administrativa para bloquear dispositivo
+type AdminAddDeviceBlacklistRequestDTO struct {
+	UserID     string `json:"userId" validate:"required"`
+	DeviceID   string `json:"deviceId" validate:"required"`
+	DeviceName string `json:"deviceName,omitempty"`
+	Reason     string `json:"reason,omitempty"`
+	ExpiresAt  string `json:"expiresAt,omitempty"`
+}
+
+// AdminDeviceBlacklistEntryDTO representa a entrada de blacklist retornada para admin
+type AdminDeviceBlacklistEntryDTO struct {
+	ID         string `json:"id"`
+	TenantID   string `json:"tenantId"`
+	CodeUser   string `json:"codeUser"`
+	DeviceID   string `json:"deviceId"`
+	DeviceName string `json:"deviceName"`
+	IPAddress  string `json:"ipAddress"`
+	UserAgent  string `json:"userAgent"`
+	Reason     string `json:"reason"`
+	BlockedBy  string `json:"blockedBy"`
+	BlockedAt  string `json:"blockedAt"`
+	ExpiresAt  string `json:"expiresAt,omitempty"`
+}
+
+// PaginatedDeviceBlacklistResponseDTO representa a resposta paginada de blacklist
+type PaginatedDeviceBlacklistResponseDTO struct {
+	Content          []AdminDeviceBlacklistEntryDTO `json:"content"`
+	Page             int                            `json:"page"`
+	Size             int                            `json:"size"`
+	TotalElements    int64                          `json:"totalElements"`
+	TotalPages       int                            `json:"totalPages"`
+	First            bool                           `json:"first"`
+	Last             bool                           `json:"last"`
+	NumberOfElements int                            `json:"numberOfElements"`
+	Empty            bool                           `json:"empty"`
+}
