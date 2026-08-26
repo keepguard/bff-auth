@@ -334,8 +334,8 @@ func main() {
 	}
 	rateLimiterMiddleware := middlewarePkg.NewRateLimiterMiddleware(redisClient, cfg.RateLimit, zapLogger, metrics)
 
-	// Inicializa servidor HTTP com Rate Limiting
-	server := httpserver.NewServer(cfg, appLogger, metrics, rateLimiterMiddleware)
+	// Inicializa servidor HTTP com Rate Limiting e Validação de Sessão Redis
+	server := httpserver.NewServer(cfg, appLogger, metrics, rateLimiterMiddleware, redisClient)
 	server.SetupRoutes(combinedHandlers)
 
 	// =============================================================================

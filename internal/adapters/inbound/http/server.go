@@ -11,6 +11,7 @@ import (
 	"github.com/keepguard/bff-auth/internal/infrastructure/metrics"
 	"github.com/keepguard/bff-auth/internal/infrastructure/validation"
 	"github.com/labstack/echo/v4"
+	"github.com/redis/go-redis/v9"
 	echoSwagger "github.com/swaggo/echo-swagger"
 	"go.uber.org/zap"
 )
@@ -22,6 +23,7 @@ type serverImpl struct {
 	logger      logger.Logger
 	metrics     *metrics.Metrics
 	rateLimiter *middlewarePkg.RateLimiterMiddleware
+	redisClient *redis.Client
 }
 
 // NewServer cria um novo servidor HTTP
@@ -30,6 +32,7 @@ func NewServer(
 	logger logger.Logger,
 	metrics *metrics.Metrics,
 	rateLimiter *middlewarePkg.RateLimiterMiddleware,
+	redisClient *redis.Client,
 ) Server {
 	e := echo.New()
 	e.HideBanner = true
@@ -55,6 +58,7 @@ func NewServer(
 		logger:      logger,
 		metrics:     metrics,
 		rateLimiter: rateLimiter,
+		redisClient: redisClient,
 	}
 }
 
@@ -78,6 +82,8 @@ func (s *serverImpl) SetupRoutes(handlers Handler) {
 
 	rl := s.rateLimiter
 	rules := s.config.RateLimit.Rules
+	zapLogger, _ := zap.NewDevelopment()
+	tokenRevocationMiddleware := middlewarePkg.TokenRevocationMiddleware(s.redisClient, zapLogger)
 
 	// Auth routes
 	authGroup := s.echo.Group("/api/v1/auth")
@@ -85,7 +91,7 @@ func (s *serverImpl) SetupRoutes(handlers Handler) {
 	authGroup.POST("/refresh", handlers.RefreshHandler, rl.Limit("refresh", rules.Refresh))
 	authGroup.POST("/logout", handlers.LogoutHandler, rl.Limit("logout", rules.Logout))
 	authGroup.POST("/validate", handlers.ValidateTokenHandler, rl.Limit("validate", rules.Validate))
-	authGroup.POST("/change-password", handlers.ChangePasswordHandler, rl.Limit("change_password", rules.ChangePassword))
+	authGroup.POST("/change-password", handlers.ChangePasswordHandler, rl.Limit("change_password", rules.ChangePassword), tokenRevocationMiddleware)
 	authGroup.POST("/reset-password", handlers.ResetPasswordHandler, rl.Limit("reset_password", rules.ResetPassword))
 	authGroup.POST("/forgot-password", handlers.SendResetPasswordMessageHandler, rl.Limit("forgot_password", rules.ForgotPassword))
 	authGroup.POST("/device/challenge/send", handlers.SendDeviceChallengeHandler, rl.Limit("device_challenge_send", rules.DeviceChallengeSend))
@@ -93,8 +99,8 @@ func (s *serverImpl) SetupRoutes(handlers Handler) {
 	authGroup.POST("/device/quick-revoke", handlers.QuickRevokeHandler, rl.Limit("device_quick_revoke", rules.DeviceQuickRevoke))
 	authGroup.GET("/device/quick-revoke", handlers.QuickRevokeHandler, rl.Limit("device_quick_revoke", rules.DeviceQuickRevoke))
 
-	// User Sessions & Device Blacklist routes
-	userGroup := s.echo.Group("/api/v1/users/me")
+	// User Sessions & Device Blacklist routes (Protegidas com TokenRevocationMiddleware)
+	userGroup := s.echo.Group("/api/v1/users/me", tokenRevocationMiddleware)
 	userGroup.GET("/sessions", handlers.ListUserSessionsHandler)
 	userGroup.DELETE("/sessions/:deviceId", handlers.RevokeSessionHandler)
 	userGroup.DELETE("/sessions", handlers.RevokeAllOtherSessionsHandler)
@@ -103,7 +109,7 @@ func (s *serverImpl) SetupRoutes(handlers Handler) {
 	userGroup.DELETE("/devices/blacklist/:deviceId", handlers.RemoveDeviceBlacklistHandler)
 
 	// Admin Device Blacklist routes (ROLE_ADMIN, ROLE_MANAGER)
-	adminGroup := s.echo.Group("/api/v1/admin/devices/blacklist")
+	adminGroup := s.echo.Group("/api/v1/admin/devices/blacklist", tokenRevocationMiddleware)
 	adminGroup.GET("", handlers.SearchAdminDeviceBlacklistHandler)
 	adminGroup.POST("", handlers.AdminAddDeviceBlacklistHandler, rl.Limit("admin_device_blacklist", rules.DeviceBlacklist))
 	adminGroup.DELETE("/:deviceId", handlers.AdminRemoveDeviceBlacklistHandler)

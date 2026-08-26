@@ -271,18 +271,20 @@ push_to_github() {
     # Login no GitHub
     log_info "Fazendo login no GitHub Packages..."
     
-    # Tag da imagem para o GitHub
+    # Tag da imagem para o GitHub (versão + latest)
     local github_image="$GITHUB_REGISTRY/$NAMESPACE/$SERVICE_NAME:$version"
-    log_info "Fazendo tag da imagem: $SERVICE_NAME:$version -> $github_image"
+    local github_latest="$GITHUB_REGISTRY/$NAMESPACE/$SERVICE_NAME:latest"
+    log_info "Fazendo tag da imagem: $SERVICE_NAME:$version -> $github_image e $github_latest"
     docker tag "$SERVICE_NAME:$version" "$github_image"
+    docker tag "$SERVICE_NAME:$version" "$github_latest"
     
     # Push da imagem
-    log_info "Fazendo push da imagem para o GitHub..."
-    if docker push "$github_image"; then
-        log_success "Push para GitHub concluído: $github_image"
+    log_info "Fazendo push das imagens para o GitHub..."
+    if docker push "$github_image" && docker push "$github_latest"; then
+        log_success "Push para GitHub concluído: $github_image e $github_latest"
         
         # Limpar tag local do GitHub
-        docker rmi "$github_image" 2>/dev/null || true
+        docker rmi "$github_image" "$github_latest" 2>/dev/null || true
     else
         log_error "Falha no push para o GitHub"
         exit 1
