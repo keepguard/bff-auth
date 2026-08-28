@@ -409,12 +409,24 @@ func GetCorrelationID(c echo.Context) (string, error) {
 	return correlationID, nil
 }
 
-// GetTenantAndClientId obtém o application ID e client ID do header
+// GetTenantAndClientId obtém o tenant (JWT autenticado ou header) e o client ID.
 func GetTenantAndClientId(c echo.Context) (string, string, error) {
-	tenantId := c.Request().Header.Get("X-Tenant-Id")
+	headerTenant := strings.TrimSpace(c.Request().Header.Get("X-Tenant-Id"))
 	clientId := c.Request().Header.Get("X-Client-ID")
 	if clientId == "" {
 		clientId = "keepguard-default-client"
+	}
+
+	jwtTenant := tenantIdFromAuthorization(c)
+	if jwtTenant != "" && headerTenant != "" && jwtTenant != headerTenant {
+		return "", "", &HeaderError{
+			Message: "X-Tenant-Id não corresponde ao tenant_id do token",
+		}
+	}
+
+	tenantId := jwtTenant
+	if tenantId == "" {
+		tenantId = headerTenant
 	}
 	if tenantId == "" {
 		return "", "", &HeaderError{
@@ -422,10 +434,21 @@ func GetTenantAndClientId(c echo.Context) (string, string, error) {
 		}
 	}
 
-	// Define o header na resposta para o frontend
 	c.Response().Header().Set("X-Tenant-Id", tenantId)
 
 	return tenantId, clientId, nil
+}
+
+func tenantIdFromAuthorization(c echo.Context) string {
+	authHeader := c.Request().Header.Get("Authorization")
+	if !strings.HasPrefix(authHeader, "Bearer ") {
+		return ""
+	}
+	tenantId, err := pkg.ExtractTenantIdFromToken(authHeader)
+	if err != nil {
+		return ""
+	}
+	return tenantId
 }
 
 // ValidateTokenHandler trata requisições de validação de token

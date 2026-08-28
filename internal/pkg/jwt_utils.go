@@ -12,7 +12,7 @@ type JWTClaims struct {
 	CodeUser string `json:"codeUser"`
 	Sub      string `json:"sub"`
 	Username string `json:"username"`
-	// Adicione outros campos conforme necessário
+	TenantId string `json:"tenant_id"`
 }
 
 // ExtractCodeUserFromToken extrai o codeUser do token JWT sem validar a assinatura
@@ -31,7 +31,7 @@ func ExtractCodeUserFromToken(token string) (string, error) {
 
 	// Decodifica o payload (segunda parte)
 	payload := parts[1]
-	
+
 	// Adiciona padding se necessário para Base64
 	switch len(payload) % 4 {
 	case 2:
@@ -66,3 +66,43 @@ func ExtractCodeUserFromToken(token string) (string, error) {
 	return "", fmt.Errorf("codeUser não encontrado no token")
 }
 
+// ExtractTenantIdFromToken extrai o tenant_id do payload do JWT sem validar a assinatura.
+func ExtractTenantIdFromToken(token string) (string, error) {
+	claims, err := decodeJWTClaims(token)
+	if err != nil {
+		return "", err
+	}
+	if claims.TenantId == "" {
+		return "", fmt.Errorf("tenant_id não encontrado no token")
+	}
+	return claims.TenantId, nil
+}
+
+func decodeJWTClaims(token string) (*JWTClaims, error) {
+	token = strings.TrimPrefix(token, "Bearer ")
+	token = strings.TrimSpace(token)
+
+	parts := strings.Split(token, ".")
+	if len(parts) != 3 {
+		return nil, fmt.Errorf("token JWT inválido: formato incorreto")
+	}
+
+	payload := parts[1]
+	switch len(payload) % 4 {
+	case 2:
+		payload += "=="
+	case 3:
+		payload += "="
+	}
+
+	decodedPayload, err := base64.URLEncoding.DecodeString(payload)
+	if err != nil {
+		return nil, fmt.Errorf("erro ao decodificar payload do token: %w", err)
+	}
+
+	var claims JWTClaims
+	if err := json.Unmarshal(decodedPayload, &claims); err != nil {
+		return nil, fmt.Errorf("erro ao fazer parse das claims do token: %w", err)
+	}
+	return &claims, nil
+}

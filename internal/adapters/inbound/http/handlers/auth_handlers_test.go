@@ -603,3 +603,73 @@ func TestBlockMeHandler_BadRequestWithoutReason(t *testing.T) {
 	mockAuthClient.AssertNotCalled(t, "GetUserByCodeUser")
 	mockAuthClient.AssertNotCalled(t, "BlockUser")
 }
+
+func TestGetTenantAndClientId_FromHeaderWhenNoJWT(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", nil)
+	req.Header.Set("X-Tenant-Id", "tenant-header")
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	tenantId, _, err := GetTenantAndClientId(c)
+	assert.NoError(t, err)
+	assert.Equal(t, "tenant-header", tenantId)
+}
+
+func TestGetTenantAndClientId_PrefersJWTOverHeader(t *testing.T) {
+	e := echo.New()
+	header := base64.RawURLEncoding.EncodeToString([]byte(`{"alg":"none"}`))
+	payload := base64.RawURLEncoding.EncodeToString([]byte(`{"sub":"u1","tenant_id":"tenant-jwt"}`))
+	token := header + "." + payload + ".sig"
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/users/me/sessions", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("X-Tenant-Id", "tenant-jwt")
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	tenantId, _, err := GetTenantAndClientId(c)
+	assert.NoError(t, err)
+	assert.Equal(t, "tenant-jwt", tenantId)
+}
+
+func TestGetTenantAndClientId_FromJWTWithoutHeader(t *testing.T) {
+	e := echo.New()
+	header := base64.RawURLEncoding.EncodeToString([]byte(`{"alg":"none"}`))
+	payload := base64.RawURLEncoding.EncodeToString([]byte(`{"sub":"u1","tenant_id":"tenant-jwt"}`))
+	token := header + "." + payload + ".sig"
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/users/me/sessions", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	tenantId, _, err := GetTenantAndClientId(c)
+	assert.NoError(t, err)
+	assert.Equal(t, "tenant-jwt", tenantId)
+}
+
+func TestGetTenantAndClientId_MismatchHeaderAndJWT(t *testing.T) {
+	e := echo.New()
+	header := base64.RawURLEncoding.EncodeToString([]byte(`{"alg":"none"}`))
+	payload := base64.RawURLEncoding.EncodeToString([]byte(`{"sub":"u1","tenant_id":"tenant-jwt"}`))
+	token := header + "." + payload + ".sig"
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/users/me/sessions", nil)
+	req.Header.Set("Authorization", "Bearer "+token)
+	req.Header.Set("X-Tenant-Id", "other-tenant")
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	_, _, err := GetTenantAndClientId(c)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "não corresponde")
+}
+
+func TestGetTenantAndClientId_MissingWhenNoHeaderAndNoJWT(t *testing.T) {
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", nil)
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	_, _, err := GetTenantAndClientId(c)
+	assert.Error(t, err)
+	assert.Contains(t, err.Error(), "X-Tenant-Id")
+}
