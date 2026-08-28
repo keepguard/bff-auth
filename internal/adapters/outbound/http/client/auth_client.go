@@ -558,12 +558,18 @@ func (c *AuthClient) AdminRemoveDeviceFromBlacklist(ctx context.Context, deviceI
 }
 
 func (c *AuthClient) GetUserByCodeUser(ctx context.Context, codeUser, token, tenantId, correlationID string) (outboundDto.UserByCodeResponseDTO, error) {
+	companyID := authclient.CompanyIDFromContext(ctx)
+	if companyID == "" {
+		return outboundDto.UserByCodeResponseDTO{}, fmt.Errorf("companyId é obrigatório para buscar usuário")
+	}
+
 	var response outboundDto.UserByCodeResponseDTO
 	resp, err := c.client.R().
 		SetContext(ctx).
 		SetResult(&response).
 		SetHeader("X-Correlation-ID", correlationID).
 		SetHeader("X-Tenant-Id", tenantId).
+		SetHeader("X-Company-Id", companyID).
 		SetAuthToken(token).
 		Get(fmt.Sprintf("%s/api/v1/users/code-user/%s", c.baseURL, codeUser))
 	if err != nil {

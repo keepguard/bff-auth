@@ -27,6 +27,7 @@ type AuthHandlers struct {
 	changePasswordUseCase auth.ChangePasswordUseCase
 	resetPasswordUseCase  auth.ResetPasswordUseCase
 	authClient            authclient.AuthClient
+	companyClient         authclient.CompanyClient
 	logger                *zap.Logger
 }
 
@@ -39,6 +40,7 @@ func NewAuthHandlers(
 	changePasswordUseCase auth.ChangePasswordUseCase,
 	resetPasswordUseCase auth.ResetPasswordUseCase,
 	authClient authclient.AuthClient,
+	companyClient authclient.CompanyClient,
 	logger *zap.Logger,
 ) *AuthHandlers {
 	return &AuthHandlers{
@@ -49,6 +51,7 @@ func NewAuthHandlers(
 		changePasswordUseCase: changePasswordUseCase,
 		resetPasswordUseCase:  resetPasswordUseCase,
 		authClient:            authClient,
+		companyClient:         companyClient,
 		logger:                logger,
 	}
 }
@@ -62,6 +65,7 @@ func NewAuthHandlersWithLogger(
 	changePasswordUseCase auth.ChangePasswordUseCase,
 	resetPasswordUseCase auth.ResetPasswordUseCase,
 	authClient authclient.AuthClient,
+	companyClient authclient.CompanyClient,
 	log logger.Logger,
 ) *AuthHandlers {
 	zapLogger, _ := zap.NewDevelopment()
@@ -73,6 +77,7 @@ func NewAuthHandlersWithLogger(
 		changePasswordUseCase: changePasswordUseCase,
 		resetPasswordUseCase:  resetPasswordUseCase,
 		authClient:            authClient,
+		companyClient:         companyClient,
 		logger:                zapLogger,
 	}
 }
@@ -867,7 +872,16 @@ func (h *AuthHandlers) resolveSelfUserExternalID(c echo.Context, token, tenantId
 		return "", pkg.NewAppError("UNAUTHORIZED", "Token JWT sem identificador de usuário", http.StatusUnauthorized)
 	}
 
-	user, err := h.authClient.GetUserByCodeUser(c.Request().Context(), codeUser, token, tenantId, correlationID)
+	company, err := h.companyClient.GetByTenantId(c.Request().Context(), tenantId, correlationID)
+	if err != nil {
+		return "", err
+	}
+	if company.ID == "" {
+		return "", pkg.NewAppError("COMPANY_NOT_FOUND", "Empresa não encontrada para o tenant informado", http.StatusNotFound)
+	}
+
+	ctx := authclient.WithCompanyID(c.Request().Context(), company.ID)
+	user, err := h.authClient.GetUserByCodeUser(ctx, codeUser, token, tenantId, correlationID)
 	if err != nil {
 		return "", err
 	}

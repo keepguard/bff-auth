@@ -125,6 +125,16 @@ func main() {
 	}
 	zapLogger := zapLoggerImpl.GetZapLogger()
 
+	redisClient, err := cache.NewRedisClient(cache.RedisConfig{
+		Host:     cfg.Redis.Host,
+		Port:     cfg.Redis.Port,
+		Password: cfg.Redis.Password,
+		DB:       cfg.Redis.DB,
+	}, zapLogger)
+	if err != nil {
+		zapLogger.Warn("Aviso ao conectar no Redis", zap.Error(err))
+	}
+
 	// =============================================================================
 	// INICIALIZAÇÃO DO AUTH CLIENT COM DECORATORS COMPOSTOS
 	// =============================================================================
@@ -188,13 +198,20 @@ func main() {
 	// 2. Metrics Decorator
 	companyMetricsClient := companydecorator.NewCompanyMetricsDecorator(baseCompanyClient, metrics, "ms-company")
 
-	// 3. Cache Decorator (ESSENCIAL! Reduz 99% das chamadas)
+	companyRedisClient := companydecorator.NewRedisCacheDecorator(
+		companyMetricsClient,
+		companydecorator.NewRedisStringCache(redisClient),
+		metrics,
+		zapLogger,
+	)
+
+	// 3. Cache in-memory (L1) sobre Redis (L2) e HTTP (L3)
 	companyCacheConfig := companydecorator.CacheConfig{
 		TTL:             5 * time.Minute, // Cache por 5 minutos (dados raramente mudam)
 		MaxSize:         1000,            // Máximo 1000 empresas
 		CleanupInterval: 1 * time.Minute, // Limpa cache expirado a cada minuto
 	}
-	companyCachedClient := companydecorator.NewCacheDecorator(companyMetricsClient, companyCacheConfig, metrics)
+	companyCachedClient := companydecorator.NewCacheDecorator(companyRedisClient, companyCacheConfig, metrics)
 
 	// 4. Retry Decorator (rápido: 50ms, 2 tentativas)
 	companyRetryConfig := companydecorator.RetryConfig{
@@ -311,6 +328,7 @@ func main() {
 		changePasswordUseCase,
 		resetPasswordUseCase,
 		authClient,
+		companyClient,
 		appLogger,
 	)
 
@@ -322,16 +340,6 @@ func main() {
 	// Combina os handlers
 	combinedHandlers := handlersPkg.NewCombinedHandlers(authHandlers, messageHandlers)
 
-	// Inicializa Cliente Redis e Middleware de Rate Limit
-	redisClient, err := cache.NewRedisClient(cache.RedisConfig{
-		Host:     cfg.Redis.Host,
-		Port:     cfg.Redis.Port,
-		Password: cfg.Redis.Password,
-		DB:       cfg.Redis.DB,
-	}, zapLogger)
-	if err != nil {
-		zapLogger.Warn("Aviso ao conectar no Redis", zap.Error(err))
-	}
 	rateLimiterMiddleware := middlewarePkg.NewRateLimiterMiddleware(redisClient, cfg.RateLimit, zapLogger, metrics)
 
 	// Inicializa servidor HTTP com Rate Limiting e Validação de Sessão Redis

@@ -12,6 +12,7 @@ import (
 	"github.com/keepguard/bff-auth/internal/adapters/inbound/http/dto"
 	outboundDto "github.com/keepguard/bff-auth/internal/adapters/outbound/http/dto"
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
+	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
 	"github.com/keepguard/bff-auth/internal/pkg"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/assert"
@@ -124,6 +125,15 @@ func (m *MockAuthClient) GetUserByCodeUser(ctx context.Context, codeUser, token,
 	return args.Get(0).(outboundDto.UserByCodeResponseDTO), args.Error(1)
 }
 
+type MockCompanyClient struct {
+	mock.Mock
+}
+
+func (m *MockCompanyClient) GetByTenantId(ctx context.Context, tenantId, correlationID string) (authclient.CompanySimpleResponseDTO, error) {
+	args := m.Called(ctx, tenantId, correlationID)
+	return args.Get(0).(authclient.CompanySimpleResponseDTO), args.Error(1)
+}
+
 func (m *MockAuthClient) BlockUser(ctx context.Context, idUserExternal, reason, token, tenantId, correlationID string) error {
 	args := m.Called(ctx, idUserExternal, reason, token, tenantId, correlationID)
 	return args.Error(0)
@@ -207,6 +217,7 @@ func setupTestHandlers() (*AuthHandlers, *MockLoginUseCase, *MockRefreshUseCase,
 		mockChangePasswordUseCase,
 		mockResetPasswordUseCase,
 		mockAuthClient,
+		new(MockCompanyClient),
 		logger,
 	)
 
@@ -487,6 +498,9 @@ func setupLifecycleHandlers() (*AuthHandlers, *MockAuthClient) {
 	mockChangePasswordUseCase := new(MockChangePasswordUseCase)
 	mockResetPasswordUseCase := new(MockResetPasswordUseCase)
 	mockAuthClient := new(MockAuthClient)
+	mockCompanyClient := new(MockCompanyClient)
+	mockCompanyClient.On("GetByTenantId", mock.Anything, "tenant-1", "corr-1").
+		Return(authclient.CompanySimpleResponseDTO{ID: "company-1"}, nil).Maybe()
 	logger, _ := zap.NewDevelopment()
 
 	handlers := NewAuthHandlers(
@@ -497,6 +511,7 @@ func setupLifecycleHandlers() (*AuthHandlers, *MockAuthClient) {
 		mockChangePasswordUseCase,
 		mockResetPasswordUseCase,
 		mockAuthClient,
+		mockCompanyClient,
 		logger,
 	)
 	return handlers, mockAuthClient
