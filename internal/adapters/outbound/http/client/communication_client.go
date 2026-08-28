@@ -82,7 +82,7 @@ func (c *communicationClient) SendMessage(ctx context.Context, req outboundDto.S
 	resp, err := c.httpClient.R().
 		SetContext(ctx).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Tenant-Id", tenantId).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
 		SetHeader("Content-Type", "application/json").
 		SetBody(req).
 		SetResult(&response).

@@ -11,6 +11,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	inboundDto "github.com/keepguard/bff-auth/internal/adapters/inbound/http/dto"
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
+	authctx "github.com/keepguard/bff-auth/internal/domain/ports/client"
 	"github.com/stretchr/testify/assert"
 )
 
@@ -60,7 +61,7 @@ func TestAuthClient_Login_Success(t *testing.T) {
 	defer server.Close()
 
 	client := NewAuthClient(server.URL, 30*time.Second)
-	ctx := context.Background()
+	ctx := authctx.WithCompanyID(context.Background(), "test-company")
 	req := inboundDto.AuthRequestDTO{
 		Username: "testuser",
 		Password: "testpass",
@@ -102,7 +103,7 @@ func TestAuthClient_Login_HTTPError(t *testing.T) {
 	defer server.Close()
 
 	client := NewAuthClient(server.URL, 30*time.Second)
-	ctx := context.Background()
+	ctx := authctx.WithCompanyID(context.Background(), "test-company")
 	req := inboundDto.AuthRequestDTO{
 		Username: "testuser",
 		Password: "testpass",
@@ -136,7 +137,7 @@ func TestAuthClient_Login_GenericError(t *testing.T) {
 	defer server.Close()
 
 	client := NewAuthClient(server.URL, 30*time.Second)
-	ctx := context.Background()
+	ctx := authctx.WithCompanyID(context.Background(), "test-company")
 	req := inboundDto.AuthRequestDTO{
 		Username: "testuser",
 		Password: "testpass",
@@ -166,7 +167,7 @@ func TestAuthClient_RefreshToken_Success(t *testing.T) {
 		assert.Equal(t, "POST", r.Method)
 		assert.Equal(t, "/api/v1/auth/refresh", r.URL.Path)
 		assert.Equal(t, "test-correlation", r.Header.Get("X-Correlation-ID"))
-		assert.Equal(t, "test-app", r.Header.Get("X-Tenant-Id"))
+		assert.Equal(t, "test-company", r.Header.Get("X-Company-Id"))
 
 		// Verificar body
 		var req inboundDto.RefreshTokenRequestDTO
@@ -186,7 +187,7 @@ func TestAuthClient_RefreshToken_Success(t *testing.T) {
 	defer server.Close()
 
 	client := NewAuthClient(server.URL, 30*time.Second)
-	ctx := context.Background()
+	ctx := authctx.WithCompanyID(context.Background(), "test-company")
 	req := inboundDto.RefreshTokenRequestDTO{
 		Token: "refresh_token",
 	}
@@ -227,7 +228,7 @@ func TestAuthClient_RefreshToken_HTTPError(t *testing.T) {
 	defer server.Close()
 
 	client := NewAuthClient(server.URL, 30*time.Second)
-	ctx := context.Background()
+	ctx := authctx.WithCompanyID(context.Background(), "test-company")
 	req := inboundDto.RefreshTokenRequestDTO{
 		Token: "invalid_refresh_token",
 	}
@@ -257,7 +258,7 @@ func TestAuthClient_Logout_Success(t *testing.T) {
 		assert.Equal(t, "/api/v1/auth/logout", r.URL.Path)
 		assert.Equal(t, "Bearer access_token", r.Header.Get("Authorization"))
 		assert.Equal(t, "test-correlation", r.Header.Get("X-Correlation-ID"))
-		assert.Equal(t, "test-app", r.Header.Get("X-Tenant-Id"))
+		assert.Equal(t, "test-company", r.Header.Get("X-Company-Id"))
 
 		// Resposta de sucesso
 		response := map[string]string{"message": "Logout realizado com sucesso"}
@@ -268,7 +269,7 @@ func TestAuthClient_Logout_Success(t *testing.T) {
 	defer server.Close()
 
 	client := NewAuthClient(server.URL, 30*time.Second)
-	ctx := context.Background()
+	ctx := authctx.WithCompanyID(context.Background(), "test-company")
 	token := "access_token"
 	tenantId := "test-app"
 	correlationID := "test-correlation"
@@ -301,7 +302,7 @@ func TestAuthClient_Logout_HTTPError(t *testing.T) {
 	defer server.Close()
 
 	client := NewAuthClient(server.URL, 30*time.Second)
-	ctx := context.Background()
+	ctx := authctx.WithCompanyID(context.Background(), "test-company")
 	token := "invalid_token"
 	tenantId := "test-app"
 	correlationID := "test-correlation"
@@ -331,7 +332,7 @@ func TestAuthClient_Logout_GenericError(t *testing.T) {
 	defer server.Close()
 
 	client := NewAuthClient(server.URL, 30*time.Second)
-	ctx := context.Background()
+	ctx := authctx.WithCompanyID(context.Background(), "test-company")
 	token := "access_token"
 	tenantId := "test-app"
 	correlationID := "test-correlation"
@@ -590,7 +591,7 @@ func TestAuthClient_Login_RequestError(t *testing.T) {
 
 	// Criar cliente com timeout muito baixo para forçar erro
 	client := NewAuthClient(server.URL, 100*time.Millisecond)
-	ctx := context.Background()
+	ctx := authctx.WithCompanyID(context.Background(), "test-company")
 	req := inboundDto.AuthRequestDTO{
 		Username: "testuser",
 		Password: "testpass",
@@ -619,7 +620,7 @@ func TestAuthClient_RefreshToken_RequestError(t *testing.T) {
 
 	// Criar cliente com timeout muito baixo para forçar erro
 	client := NewAuthClient(server.URL, 100*time.Millisecond)
-	ctx := context.Background()
+	ctx := authctx.WithCompanyID(context.Background(), "test-company")
 	req := inboundDto.RefreshTokenRequestDTO{
 		Token: "refresh_token",
 	}
@@ -647,7 +648,7 @@ func TestAuthClient_Logout_RequestError(t *testing.T) {
 
 	// Criar cliente com timeout muito baixo para forçar erro
 	client := NewAuthClient(server.URL, 100*time.Millisecond)
-	ctx := context.Background()
+	ctx := authctx.WithCompanyID(context.Background(), "test-company")
 	token := "access_token"
 	tenantId := "test-app"
 	correlationID := "test-correlation"

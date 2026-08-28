@@ -182,7 +182,7 @@ func TestLoginUseCase_Execute_Success(t *testing.T) {
 
 	// Configurar mocks
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
-	mockAuthClient.On("Login", ctx, expectedReq, tenantId, correlationID).Return(expectedResponse, nil)
+	mockAuthClient.On("Login", mock.Anything, expectedReq, tenantId, correlationID).Return(expectedResponse, nil)
 
 	// Act
 	result, err := useCase.Execute(command)
@@ -232,7 +232,7 @@ func TestLoginUseCase_Execute_EmptyUsername(t *testing.T) {
 
 	// Configurar mocks
 	mockCompanyClient.On("GetByTenantId", ctx, tenantId, correlationID).Return(expectedCompany, nil)
-	mockAuthClient.On("Login", ctx, expectedReq, tenantId, correlationID).Return(inboundDto.AuthResponseDTO{}, assert.AnError)
+	mockAuthClient.On("Login", mock.Anything, expectedReq, tenantId, correlationID).Return(inboundDto.AuthResponseDTO{}, assert.AnError)
 
 	// Act
 	result, err := useCase.Execute(command)
@@ -272,7 +272,7 @@ func TestLoginUseCase_Execute_EmptyPassword(t *testing.T) {
 
 	// Configurar mocks
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
-	mockAuthClient.On("Login", ctx, expectedReq, tenantId, correlationID).Return(inboundDto.AuthResponseDTO{}, assert.AnError)
+	mockAuthClient.On("Login", mock.Anything, expectedReq, tenantId, correlationID).Return(inboundDto.AuthResponseDTO{}, assert.AnError)
 
 	// Act
 	result, err := useCase.Execute(command)
@@ -312,7 +312,7 @@ func TestLoginUseCase_Execute_EmptyUsernameAndPassword(t *testing.T) {
 
 	// Configurar mocks
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
-	mockAuthClient.On("Login", ctx, expectedReq, tenantId, correlationID).Return(inboundDto.AuthResponseDTO{}, assert.AnError)
+	mockAuthClient.On("Login", mock.Anything, expectedReq, tenantId, correlationID).Return(inboundDto.AuthResponseDTO{}, assert.AnError)
 
 	// Act
 	result, err := useCase.Execute(command)
@@ -350,7 +350,7 @@ func TestLoginUseCase_Execute_AuthServiceError(t *testing.T) {
 
 	// Configurar mocks
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
-	mockAuthClient.On("Login", ctx, expectedReq, tenantId, correlationID).Return(inboundDto.AuthResponseDTO{}, assert.AnError)
+	mockAuthClient.On("Login", mock.Anything, expectedReq, tenantId, correlationID).Return(inboundDto.AuthResponseDTO{}, assert.AnError)
 
 	// Act
 	result, err := useCase.Execute(command)
@@ -390,7 +390,7 @@ func TestLoginUseCase_Execute_ContextCancelled(t *testing.T) {
 
 	// Configurar mocks
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
-	mockAuthClient.On("Login", ctx, expectedReq, tenantId, correlationID).Return(inboundDto.AuthResponseDTO{}, context.Canceled)
+	mockAuthClient.On("Login", mock.Anything, expectedReq, tenantId, correlationID).Return(inboundDto.AuthResponseDTO{}, context.Canceled)
 
 	// Act
 	result, err := useCase.Execute(command)
@@ -435,7 +435,7 @@ func TestLoginUseCase_Execute_InvalidCredentials(t *testing.T) {
 
 	// Configurar mocks
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
-	mockAuthClient.On("Login", ctx, expectedReq, tenantId, correlationID).Return(inboundDto.AuthResponseDTO{}, authError)
+	mockAuthClient.On("Login", mock.Anything, expectedReq, tenantId, correlationID).Return(inboundDto.AuthResponseDTO{}, authError)
 
 	// Act
 	result, err := useCase.Execute(command)

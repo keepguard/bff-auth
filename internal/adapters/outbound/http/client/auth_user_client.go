@@ -81,7 +81,7 @@ func (c *authUserClient) GetByEmail(ctx context.Context, email, tenantId, compan
 	resp, err := c.httpClient.R().
 		SetContext(ctx).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Tenant-Id", tenantId).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
 		SetHeader("X-Company-Id", companyId).
 		SetHeader("Content-Type", "application/json").
 		Get(url)

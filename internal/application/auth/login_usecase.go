@@ -37,6 +37,8 @@ func (uc *loginUseCaseImpl) Execute(command appdto.LoginCommand) (dto.AuthRespon
 		return dto.AuthResponseDTO{}, err
 	}
 
+	command.Context = authclient.WithCompanyID(command.Context, company.ID)
+
 	// Criar DTO de requisição para o cliente
 	req := dto.AuthRequestDTO{
 		Username:  command.Username,

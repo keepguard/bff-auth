@@ -6,6 +6,7 @@ import (
 	"time"
 
 	middlewarePkg "github.com/keepguard/bff-auth/internal/adapters/inbound/http/middleware"
+	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
 	"github.com/keepguard/bff-auth/internal/infrastructure/clientip"
 	"github.com/keepguard/bff-auth/internal/infrastructure/config"
 	"github.com/keepguard/bff-auth/internal/infrastructure/logger"
@@ -34,6 +35,7 @@ func NewServer(
 	metrics *metrics.Metrics,
 	rateLimiter *middlewarePkg.RateLimiterMiddleware,
 	redisClient *redis.Client,
+	companyClient authclient.CompanyClient,
 ) Server {
 	e := echo.New()
 	e.HideBanner = true
@@ -58,6 +60,9 @@ func NewServer(
 	e.Use(middlewareInstance.SecurityMiddleware())
 	e.Use(middlewareInstance.MetricsMiddleware())
 	e.Use(middlewareInstance.TimeoutMiddleware(30 * time.Second))
+	if companyClient != nil {
+		e.Use(middlewarePkg.CompanyResolveMiddleware(companyClient))
+	}
 
 	return &serverImpl{
 		echo:        e,

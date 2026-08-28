@@ -11,6 +11,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	outboundDto "github.com/keepguard/bff-auth/internal/adapters/outbound/http/dto"
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
+	authctx "github.com/keepguard/bff-auth/internal/domain/ports/client"
 	"github.com/keepguard/bff-auth/internal/infrastructure/config"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"
@@ -70,7 +71,7 @@ func TestCommunicationClient_SendMessage_Success(t *testing.T) {
 		assert.Equal(t, "POST", r.Method)
 		assert.Equal(t, "/api/v1/messages/send", r.URL.Path)
 		assert.Equal(t, "test-correlation", r.Header.Get("X-Correlation-ID"))
-		assert.Equal(t, "test-app", r.Header.Get("X-Tenant-Id"))
+		assert.Equal(t, "test-company", r.Header.Get("X-Company-Id"))
 		assert.Equal(t, "application/json", r.Header.Get("Content-Type"))
 
 		// Verificar body
@@ -105,7 +106,7 @@ func TestCommunicationClient_SendMessage_Success(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
 	client := NewCommunicationClient(cfg, logger)
 
-	ctx := context.Background()
+	ctx := authctx.WithCompanyID(context.Background(), "test-company")
 	req := outboundDto.SendMessageRequestDTO{
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",
@@ -158,7 +159,7 @@ func TestCommunicationClient_SendMessage_HTTPError(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
 	client := NewCommunicationClient(cfg, logger)
 
-	ctx := context.Background()
+	ctx := authctx.WithCompanyID(context.Background(), "test-company")
 	req := outboundDto.SendMessageRequestDTO{
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",
@@ -204,7 +205,7 @@ func TestCommunicationClient_SendMessage_GenericError(t *testing.T) {
 	logger, _ := zap.NewDevelopment()
 	client := NewCommunicationClient(cfg, logger)
 
-	ctx := context.Background()
+	ctx := authctx.WithCompanyID(context.Background(), "test-company")
 	req := outboundDto.SendMessageRequestDTO{
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",
@@ -258,7 +259,7 @@ func TestCommunicationClient_SendMessage_RequestError(t *testing.T) {
 		logger:     logger,
 	}
 
-	ctx := context.Background()
+	ctx := authctx.WithCompanyID(context.Background(), "test-company")
 	req := outboundDto.SendMessageRequestDTO{
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",

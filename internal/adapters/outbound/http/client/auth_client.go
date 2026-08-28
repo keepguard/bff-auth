@@ -139,7 +139,7 @@ func (c *AuthClient) SendDeviceChallenge(ctx context.Context, req inboundDto.Dev
 		SetBody(req).
 		SetResult(&response).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Tenant-Id", tenantId).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
 		Post(c.baseURL + "/api/v1/auth/device/challenge/send")
 
 	if err != nil {
@@ -162,7 +162,7 @@ func (c *AuthClient) VerifyDeviceChallenge(ctx context.Context, req inboundDto.D
 		SetBody(req).
 		SetResult(&response).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Tenant-Id", tenantId).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
 		Post(c.baseURL + "/api/v1/auth/device/challenge/verify")
 
 	if err != nil {
@@ -184,7 +184,7 @@ func (c *AuthClient) ListUserSessions(ctx context.Context, token, deviceId, tena
 		SetContext(ctx).
 		SetResult(&response).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Tenant-Id", tenantId).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
 		SetAuthToken(token)
 
 	if deviceId != "" {
@@ -213,7 +213,7 @@ func (c *AuthClient) RevokeSession(ctx context.Context, deviceIdToRevoke, token,
 	resp, err := c.client.R().
 		SetContext(ctx).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Tenant-Id", tenantId).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
 		SetAuthToken(token).
 		Delete(fmt.Sprintf("%s/api/v1/users/me/sessions/%s", c.baseURL, deviceIdToRevoke))
 
@@ -229,7 +229,7 @@ func (c *AuthClient) RevokeAllOtherSessions(ctx context.Context, token, currentD
 	reqBuilder := c.client.R().
 		SetContext(ctx).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Tenant-Id", tenantId).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
 		SetAuthToken(token)
 
 	if currentDeviceId != "" {
@@ -254,7 +254,7 @@ func (c *AuthClient) RefreshToken(ctx context.Context, req inboundDto.RefreshTok
 		SetBody(req).
 		SetResult(&response).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Tenant-Id", tenantId).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
 		SetHeader("X-Client-ID", clientId).
 		Post(c.baseURL + "/api/v1/auth/refresh")
 
@@ -276,7 +276,7 @@ func (c *AuthClient) Logout(ctx context.Context, token, tenantId, correlationID 
 		SetContext(ctx).
 		SetHeader("Authorization", "Bearer "+token).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Tenant-Id", tenantId).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
 		Post(c.baseURL + "/api/v1/auth/logout")
 
 	if err != nil {
@@ -301,7 +301,7 @@ func (c *AuthClient) ValidateToken(ctx context.Context, token, tenantId, correla
 		SetContext(ctx).
 		SetBody(req).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Tenant-Id", tenantId).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
 		Post(c.baseURL + "/api/v1/auth/validate")
 
 	if err != nil {
@@ -322,7 +322,7 @@ func (c *AuthClient) ChangePassword(ctx context.Context, req outboundDto.ChangeP
 		SetContext(ctx).
 		SetBody(req).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Tenant-Id", tenantId)
+		SetHeader("X-Company-Id", companyHeader(ctx))
 
 	if deviceId != "" {
 		reqBuilder.SetHeader("X-Device-Id", deviceId)
@@ -359,7 +359,7 @@ func (c *AuthClient) ResetPassword(ctx context.Context, req outboundDto.ResetPas
 		SetContext(ctx).
 		SetBody(req).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Tenant-Id", tenantId)
+		SetHeader("X-Company-Id", companyHeader(ctx))
 
 	if deviceId != "" {
 		reqBuilder.SetHeader("X-Device-Id", deviceId)
@@ -399,7 +399,7 @@ func (c *AuthClient) GenerateResetToken(ctx context.Context, req map[string]inte
 		SetBody(req).
 		SetResult(&response).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Tenant-Id", tenantId).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
 		Post(c.baseURL + "/api/v1/auth/generate-reset-token")
 
 	if err != nil {
@@ -421,7 +421,7 @@ func (c *AuthClient) QuickRevoke(ctx context.Context, token string, blacklist bo
 		SetContext(ctx).
 		SetResult(&response).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Tenant-Id", tenantId).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
 		SetQueryParam("token", token).
 		SetQueryParam("blacklist", fmt.Sprintf("%t", blacklist)).
 		Get(c.baseURL + "/api/v1/auth/device/quick-revoke")
@@ -445,7 +445,7 @@ func (c *AuthClient) ListDeviceBlacklist(ctx context.Context, token, tenantId, c
 		SetContext(ctx).
 		SetResult(&response).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Tenant-Id", tenantId).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
 		SetAuthToken(token).
 		Get(c.baseURL + "/api/v1/users/me/devices/blacklist")
 
@@ -466,7 +466,7 @@ func (c *AuthClient) AddDeviceToBlacklist(ctx context.Context, req inboundDto.Ad
 		SetContext(ctx).
 		SetBody(req).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Tenant-Id", tenantId).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
 		SetAuthToken(token).
 		Post(c.baseURL + "/api/v1/users/me/devices/blacklist")
 
@@ -482,7 +482,7 @@ func (c *AuthClient) RemoveDeviceFromBlacklist(ctx context.Context, deviceId, to
 	resp, err := c.client.R().
 		SetContext(ctx).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Tenant-Id", tenantId).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
 		SetAuthToken(token).
 		Delete(fmt.Sprintf("%s/api/v1/users/me/devices/blacklist/%s", c.baseURL, deviceId))
 
@@ -501,7 +501,7 @@ func (c *AuthClient) SearchAdminDeviceBlacklist(ctx context.Context, queryParams
 		SetContext(ctx).
 		SetResult(&response).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Tenant-Id", tenantId).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
 		SetAuthToken(token)
 
 	for k, v := range queryParams {
@@ -528,7 +528,7 @@ func (c *AuthClient) AdminAddDeviceToBlacklist(ctx context.Context, req inboundD
 		SetContext(ctx).
 		SetBody(req).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Tenant-Id", tenantId).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
 		SetAuthToken(token).
 		Post(c.baseURL + "/api/v1/admin/devices/blacklist")
 
@@ -544,7 +544,7 @@ func (c *AuthClient) AdminRemoveDeviceFromBlacklist(ctx context.Context, deviceI
 	resp, err := c.client.R().
 		SetContext(ctx).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Tenant-Id", tenantId).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
 		SetQueryParam("userId", userId).
 		SetAuthToken(token).
 		Delete(fmt.Sprintf("%s/api/v1/admin/devices/blacklist/%s", c.baseURL, deviceId))
@@ -584,7 +584,7 @@ func (c *AuthClient) BlockUser(ctx context.Context, idUserExternal, reason, toke
 		SetContext(ctx).
 		SetBody(map[string]string{"reason": reason}).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Tenant-Id", tenantId).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
 		SetAuthToken(token).
 		Post(fmt.Sprintf("%s/api/v1/users/block/%s", c.baseURL, idUserExternal))
 	if err != nil {
@@ -598,7 +598,7 @@ func (c *AuthClient) DeleteUser(ctx context.Context, idUserExternal, reason, tok
 		SetContext(ctx).
 		SetBody(map[string]string{"reason": reason}).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Tenant-Id", tenantId).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
 		SetAuthToken(token).
 		Delete(fmt.Sprintf("%s/api/v1/users/delete/%s", c.baseURL, idUserExternal))
 	if err != nil {
