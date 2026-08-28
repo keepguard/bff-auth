@@ -299,3 +299,25 @@ func (d *retryDecorator) AdminAddDeviceToBlacklist(ctx context.Context, req inbo
 func (d *retryDecorator) AdminRemoveDeviceFromBlacklist(ctx context.Context, deviceId, userId, token, tenantId, correlationID string) error {
 	return d.inner.AdminRemoveDeviceFromBlacklist(ctx, deviceId, userId, token, tenantId, correlationID)
 }
+
+func (d *retryDecorator) GetUserByCodeUser(ctx context.Context, codeUser, token, tenantId, correlationID string) (outboundDto.UserByCodeResponseDTO, error) {
+	var response outboundDto.UserByCodeResponseDTO
+	err := d.retry(ctx, func() error {
+		var innerErr error
+		response, innerErr = d.inner.GetUserByCodeUser(ctx, codeUser, token, tenantId, correlationID)
+		return innerErr
+	})
+	return response, err
+}
+
+func (d *retryDecorator) BlockUser(ctx context.Context, idUserExternal, reason, token, tenantId, correlationID string) error {
+	return d.retry(ctx, func() error {
+		return d.inner.BlockUser(ctx, idUserExternal, reason, token, tenantId, correlationID)
+	})
+}
+
+func (d *retryDecorator) DeleteUser(ctx context.Context, idUserExternal, reason, token, tenantId, correlationID string) error {
+	return d.retry(ctx, func() error {
+		return d.inner.DeleteUser(ctx, idUserExternal, reason, token, tenantId, correlationID)
+	})
+}

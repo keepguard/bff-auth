@@ -835,6 +835,103 @@ func (h *AuthHandlers) ListUserSessionsHandler(c echo.Context) error {
 	return c.JSON(http.StatusOK, sessions)
 }
 
+func (h *AuthHandlers) bindAccountLifecycleReason(c echo.Context) (string, error) {
+	var body dto.AccountLifecycleReasonDTO
+	if err := c.Bind(&body); err != nil {
+		return "", pkg.NewAppError("INVALID_REQUEST", "Requisição inválida", http.StatusBadRequest)
+	}
+	reason := strings.TrimSpace(body.Reason)
+	if reason == "" {
+		return "", pkg.NewAppError("INVALID_REQUEST", "Motivo é obrigatório", http.StatusBadRequest)
+	}
+	return reason, nil
+}
+
+func (h *AuthHandlers) resolveSelfUserExternalID(c echo.Context, token, tenantId, correlationID string) (string, error) {
+	if strings.TrimSpace(token) == "" {
+		return "", pkg.NewAppError("UNAUTHORIZED", "Token de autorização não fornecido ou inválido", http.StatusUnauthorized)
+	}
+
+	codeUser, err := pkg.ExtractCodeUserFromToken(token)
+	if err != nil || codeUser == "" {
+		return "", pkg.NewAppError("UNAUTHORIZED", "Token JWT sem identificador de usuário", http.StatusUnauthorized)
+	}
+
+	user, err := h.authClient.GetUserByCodeUser(c.Request().Context(), codeUser, token, tenantId, correlationID)
+	if err != nil {
+		return "", err
+	}
+
+	idUserExternal := user.ExternalID()
+	if idUserExternal == "" {
+		return "", pkg.NewAppError("USER_NOT_FOUND", "Usuário autenticado não encontrado", http.StatusNotFound)
+	}
+	return idUserExternal, nil
+}
+
+func (h *AuthHandlers) accountLifecycleHeaders(c echo.Context) (correlationID, tenantId, token string, err error) {
+	correlationID, err = GetCorrelationID(c)
+	if err != nil {
+		return "", "", "", pkg.NewAppError("MISSING_HEADER", err.Error(), http.StatusBadRequest)
+	}
+
+	tenantId, _, err = GetTenantAndClientId(c)
+	if err != nil {
+		return "", "", "", pkg.NewAppError("MISSING_HEADER", err.Error(), http.StatusBadRequest)
+	}
+
+	token = strings.TrimSpace(strings.TrimPrefix(c.Request().Header.Get("Authorization"), "Bearer "))
+	return correlationID, tenantId, token, nil
+}
+
+// BlockMeHandler bloqueia a própria conta do usuário autenticado.
+func (h *AuthHandlers) BlockMeHandler(c echo.Context) error {
+	correlationID, tenantId, token, err := h.accountLifecycleHeaders(c)
+	if err != nil {
+		return handleError(c, err, correlationID)
+	}
+
+	reason, err := h.bindAccountLifecycleReason(c)
+	if err != nil {
+		return handleError(c, err, correlationID)
+	}
+
+	idUserExternal, err := h.resolveSelfUserExternalID(c, token, tenantId, correlationID)
+	if err != nil {
+		return handleError(c, err, correlationID)
+	}
+
+	if err := h.authClient.BlockUser(c.Request().Context(), idUserExternal, reason, token, tenantId, correlationID); err != nil {
+		return handleError(c, err, correlationID)
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
+// DeleteMeHandler exclui a própria conta do usuário autenticado.
+func (h *AuthHandlers) DeleteMeHandler(c echo.Context) error {
+	correlationID, tenantId, token, err := h.accountLifecycleHeaders(c)
+	if err != nil {
+		return handleError(c, err, correlationID)
+	}
+
+	reason, err := h.bindAccountLifecycleReason(c)
+	if err != nil {
+		return handleError(c, err, correlationID)
+	}
+
+	idUserExternal, err := h.resolveSelfUserExternalID(c, token, tenantId, correlationID)
+	if err != nil {
+		return handleError(c, err, correlationID)
+	}
+
+	if err := h.authClient.DeleteUser(c.Request().Context(), idUserExternal, reason, token, tenantId, correlationID); err != nil {
+		return handleError(c, err, correlationID)
+	}
+
+	return c.NoContent(http.StatusNoContent)
+}
+
 // RevokeSessionHandler revoga sessão de dispositivo específico
 func (h *AuthHandlers) RevokeSessionHandler(c echo.Context) error {
 	correlationID, err := GetCorrelationID(c)

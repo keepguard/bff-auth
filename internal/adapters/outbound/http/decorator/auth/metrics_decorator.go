@@ -309,3 +309,27 @@ func (d *metricsDecorator) AdminAddDeviceToBlacklist(ctx context.Context, req in
 func (d *metricsDecorator) AdminRemoveDeviceFromBlacklist(ctx context.Context, deviceId, userId, token, tenantId, correlationID string) error {
 	return d.inner.AdminRemoveDeviceFromBlacklist(ctx, deviceId, userId, token, tenantId, correlationID)
 }
+
+func (d *metricsDecorator) GetUserByCodeUser(ctx context.Context, codeUser, token, tenantId, correlationID string) (outboundDto.UserByCodeResponseDTO, error) {
+	start := time.Now()
+	response, err := d.inner.GetUserByCodeUser(ctx, codeUser, token, tenantId, correlationID)
+	duration := time.Since(start)
+	d.metrics.RecordUpstreamRequest(d.serviceName, "GET", "/users/code-user/:id", d.getStatusCodeFromError(err), duration)
+	return response, err
+}
+
+func (d *metricsDecorator) BlockUser(ctx context.Context, idUserExternal, reason, token, tenantId, correlationID string) error {
+	start := time.Now()
+	err := d.inner.BlockUser(ctx, idUserExternal, reason, token, tenantId, correlationID)
+	duration := time.Since(start)
+	d.metrics.RecordUpstreamRequest(d.serviceName, "POST", "/users/block/:id", d.getStatusCodeFromError(err), duration)
+	return err
+}
+
+func (d *metricsDecorator) DeleteUser(ctx context.Context, idUserExternal, reason, token, tenantId, correlationID string) error {
+	start := time.Now()
+	err := d.inner.DeleteUser(ctx, idUserExternal, reason, token, tenantId, correlationID)
+	duration := time.Since(start)
+	d.metrics.RecordUpstreamRequest(d.serviceName, "DELETE", "/users/delete/:id", d.getStatusCodeFromError(err), duration)
+	return err
+}

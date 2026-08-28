@@ -97,3 +97,11 @@ func (h *CombinedHandlers) AdminAddDeviceBlacklistHandler(c echo.Context) error 
 func (h *CombinedHandlers) AdminRemoveDeviceBlacklistHandler(c echo.Context) error {
 	return h.AuthHandlers.AdminRemoveDeviceBlacklistHandler(c)
 }
+
+func (h *CombinedHandlers) BlockMeHandler(c echo.Context) error {
+	return h.AuthHandlers.BlockMeHandler(c)
+}
+
+func (h *CombinedHandlers) DeleteMeHandler(c echo.Context) error {
+	return h.AuthHandlers.DeleteMeHandler(c)
+}

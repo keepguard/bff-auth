@@ -28,4 +28,7 @@ type AuthClient interface {
 	SearchAdminDeviceBlacklist(ctx context.Context, queryParams map[string]string, token, tenantId, correlationID string) (inboundDto.PaginatedDeviceBlacklistResponseDTO, error)
 	AdminAddDeviceToBlacklist(ctx context.Context, req inboundDto.AdminAddDeviceBlacklistRequestDTO, token, tenantId, correlationID string) error
 	AdminRemoveDeviceFromBlacklist(ctx context.Context, deviceId, userId, token, tenantId, correlationID string) error
+	GetUserByCodeUser(ctx context.Context, codeUser, token, tenantId, correlationID string) (outboundDto.UserByCodeResponseDTO, error)
+	BlockUser(ctx context.Context, idUserExternal, reason, token, tenantId, correlationID string) error
+	DeleteUser(ctx context.Context, idUserExternal, reason, token, tenantId, correlationID string) error
 }

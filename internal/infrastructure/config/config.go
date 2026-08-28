@@ -31,8 +31,8 @@ type RedisConfig struct {
 
 // RateLimitConfig configurações gerais de Rate Limit
 type RateLimitConfig struct {
-	Enabled bool                  `mapstructure:"enabled"`
-	Rules   RateLimitRulesConfig  `mapstructure:"rules"`
+	Enabled bool                 `mapstructure:"enabled"`
+	Rules   RateLimitRulesConfig `mapstructure:"rules"`
 }
 
 // RateLimitRulesConfig mapeamento das regras específicas
@@ -48,6 +48,7 @@ type RateLimitRulesConfig struct {
 	Logout                RateLimitRule `mapstructure:"logout"`
 	DeviceQuickRevoke     RateLimitRule `mapstructure:"device_quick_revoke"`
 	DeviceBlacklist       RateLimitRule `mapstructure:"device_blacklist"`
+	AccountLifecycle      RateLimitRule `mapstructure:"account_lifecycle"`
 	Default               RateLimitRule `mapstructure:"default"`
 }
 

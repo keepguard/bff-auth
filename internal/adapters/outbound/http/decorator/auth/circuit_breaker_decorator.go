@@ -223,3 +223,27 @@ func (d *circuitBreakerDecorator) AdminRemoveDeviceFromBlacklist(ctx context.Con
 	})
 	return err
 }
+
+func (d *circuitBreakerDecorator) GetUserByCodeUser(ctx context.Context, codeUser, token, tenantId, correlationID string) (outboundDto.UserByCodeResponseDTO, error) {
+	result, err := d.circuitBreaker.Execute(ctx, d.serviceName, func() (interface{}, error) {
+		return d.inner.GetUserByCodeUser(ctx, codeUser, token, tenantId, correlationID)
+	})
+	if err != nil {
+		return outboundDto.UserByCodeResponseDTO{}, err
+	}
+	return result.(outboundDto.UserByCodeResponseDTO), nil
+}
+
+func (d *circuitBreakerDecorator) BlockUser(ctx context.Context, idUserExternal, reason, token, tenantId, correlationID string) error {
+	_, err := d.circuitBreaker.Execute(ctx, d.serviceName, func() (interface{}, error) {
+		return nil, d.inner.BlockUser(ctx, idUserExternal, reason, token, tenantId, correlationID)
+	})
+	return err
+}
+
+func (d *circuitBreakerDecorator) DeleteUser(ctx context.Context, idUserExternal, reason, token, tenantId, correlationID string) error {
+	_, err := d.circuitBreaker.Execute(ctx, d.serviceName, func() (interface{}, error) {
+		return nil, d.inner.DeleteUser(ctx, idUserExternal, reason, token, tenantId, correlationID)
+	})
+	return err
+}

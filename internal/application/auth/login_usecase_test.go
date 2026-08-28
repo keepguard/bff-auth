@@ -112,6 +112,21 @@ func (m *MockAuthClient) AdminRemoveDeviceFromBlacklist(ctx context.Context, dev
 	return args.Error(0)
 }
 
+func (m *MockAuthClient) GetUserByCodeUser(ctx context.Context, codeUser, token, tenantId, correlationID string) (outboundDto.UserByCodeResponseDTO, error) {
+	args := m.Called(ctx, codeUser, token, tenantId, correlationID)
+	return args.Get(0).(outboundDto.UserByCodeResponseDTO), args.Error(1)
+}
+
+func (m *MockAuthClient) BlockUser(ctx context.Context, idUserExternal, reason, token, tenantId, correlationID string) error {
+	args := m.Called(ctx, idUserExternal, reason, token, tenantId, correlationID)
+	return args.Error(0)
+}
+
+func (m *MockAuthClient) DeleteUser(ctx context.Context, idUserExternal, reason, token, tenantId, correlationID string) error {
+	args := m.Called(ctx, idUserExternal, reason, token, tenantId, correlationID)
+	return args.Error(0)
+}
+
 // MockCompanyClient é um mock para CompanyClient
 type MockCompanyClient struct {
 	mock.Mock

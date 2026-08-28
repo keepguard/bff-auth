@@ -28,6 +28,25 @@ type UserByEmailResponseDTO struct {
 	EmailVerified bool   `json:"emailVerified"`
 }
 
+// UserByCodeResponseDTO representa a busca de usuário por codeUser no ms-auth.
+type UserByCodeResponseDTO struct {
+	ID                string `json:"id"`
+	IDUserExternal    string `json:"idUserExternal"`
+	IDUserExternalAlt string `json:"id_user_external"`
+	CodeUser          string `json:"codeUser"`
+	Username          string `json:"username"`
+	Email             string `json:"email"`
+	Status            string `json:"status"`
+}
+
+// ExternalID retorna o idUserExternal independentemente do naming do JSON.
+func (u UserByCodeResponseDTO) ExternalID() string {
+	if u.IDUserExternal != "" {
+		return u.IDUserExternal
+	}
+	return u.IDUserExternalAlt
+}
+
 // GenerateResetTokenMSRequestDTO representa a requisição de geração de token de reset para o ms-auth
 type GenerateResetTokenMSRequestDTO struct {
 	CodeUser          string `json:"codeUser"`

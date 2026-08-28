@@ -29,6 +29,8 @@ type Handler interface {
 	SearchAdminDeviceBlacklistHandler(c echo.Context) error
 	AdminAddDeviceBlacklistHandler(c echo.Context) error
 	AdminRemoveDeviceBlacklistHandler(c echo.Context) error
+	BlockMeHandler(c echo.Context) error
+	DeleteMeHandler(c echo.Context) error
 }
 
 // Middleware define a interface para middlewares HTTP

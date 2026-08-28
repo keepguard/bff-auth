@@ -87,6 +87,9 @@ rate_limit:
     device_blacklist:
       limit: 100
       window: 60s
+    account_lifecycle:
+      limit: 10
+      window: 60s
     default:
       limit: 500
       window: 60s

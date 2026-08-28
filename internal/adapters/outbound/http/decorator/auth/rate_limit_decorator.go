@@ -265,3 +265,24 @@ func (d *rateLimitDecorator) AdminAddDeviceToBlacklist(ctx context.Context, req 
 func (d *rateLimitDecorator) AdminRemoveDeviceFromBlacklist(ctx context.Context, deviceId, userId, token, tenantId, correlationID string) error {
 	return d.inner.AdminRemoveDeviceFromBlacklist(ctx, deviceId, userId, token, tenantId, correlationID)
 }
+
+func (d *rateLimitDecorator) GetUserByCodeUser(ctx context.Context, codeUser, token, tenantId, correlationID string) (outboundDto.UserByCodeResponseDTO, error) {
+	if err := d.checkRateLimit(); err != nil {
+		return outboundDto.UserByCodeResponseDTO{}, err
+	}
+	return d.inner.GetUserByCodeUser(ctx, codeUser, token, tenantId, correlationID)
+}
+
+func (d *rateLimitDecorator) BlockUser(ctx context.Context, idUserExternal, reason, token, tenantId, correlationID string) error {
+	if err := d.checkRateLimit(); err != nil {
+		return err
+	}
+	return d.inner.BlockUser(ctx, idUserExternal, reason, token, tenantId, correlationID)
+}
+
+func (d *rateLimitDecorator) DeleteUser(ctx context.Context, idUserExternal, reason, token, tenantId, correlationID string) error {
+	if err := d.checkRateLimit(); err != nil {
+		return err
+	}
+	return d.inner.DeleteUser(ctx, idUserExternal, reason, token, tenantId, correlationID)
+}

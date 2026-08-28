@@ -33,10 +33,10 @@ func DefaultSmartCacheConfig() SmartCacheConfig {
 
 // tokenMetadata armazena metadados do token
 type tokenMetadata struct {
-	token        string
-	expiresAt    time.Time
-	createdAt    time.Time
-	tenantId string
+	token     string
+	expiresAt time.Time
+	createdAt time.Time
+	tenantId  string
 }
 
 // isExpired verifica se o token expirou
@@ -122,10 +122,10 @@ func (c *smartCache) storeTokenMetadata(token string, expiresIn int64, tenantId 
 
 	key := c.generateTokenKey(token, tenantId)
 	c.tokens[key] = &tokenMetadata{
-		token:        token,
-		expiresAt:    time.Now().Add(ttl),
-		createdAt:    time.Now(),
-		tenantId: tenantId,
+		token:     token,
+		expiresAt: time.Now().Add(ttl),
+		createdAt: time.Now(),
+		tenantId:  tenantId,
 	}
 }
 
@@ -355,4 +355,16 @@ func (d *smartCacheDecorator) AdminAddDeviceToBlacklist(ctx context.Context, req
 
 func (d *smartCacheDecorator) AdminRemoveDeviceFromBlacklist(ctx context.Context, deviceId, userId, token, tenantId, correlationID string) error {
 	return d.inner.AdminRemoveDeviceFromBlacklist(ctx, deviceId, userId, token, tenantId, correlationID)
+}
+
+func (d *smartCacheDecorator) GetUserByCodeUser(ctx context.Context, codeUser, token, tenantId, correlationID string) (outboundDto.UserByCodeResponseDTO, error) {
+	return d.inner.GetUserByCodeUser(ctx, codeUser, token, tenantId, correlationID)
+}
+
+func (d *smartCacheDecorator) BlockUser(ctx context.Context, idUserExternal, reason, token, tenantId, correlationID string) error {
+	return d.inner.BlockUser(ctx, idUserExternal, reason, token, tenantId, correlationID)
+}
+
+func (d *smartCacheDecorator) DeleteUser(ctx context.Context, idUserExternal, reason, token, tenantId, correlationID string) error {
+	return d.inner.DeleteUser(ctx, idUserExternal, reason, token, tenantId, correlationID)
 }

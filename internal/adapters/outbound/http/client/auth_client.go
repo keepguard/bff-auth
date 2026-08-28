@@ -535,3 +535,49 @@ func (c *AuthClient) AdminRemoveDeviceFromBlacklist(ctx context.Context, deviceI
 
 	return c.handleHTTPError(resp, "admin_remove_device_blacklist")
 }
+
+func (c *AuthClient) GetUserByCodeUser(ctx context.Context, codeUser, token, tenantId, correlationID string) (outboundDto.UserByCodeResponseDTO, error) {
+	var response outboundDto.UserByCodeResponseDTO
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetResult(&response).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Tenant-Id", tenantId).
+		SetAuthToken(token).
+		Get(fmt.Sprintf("%s/api/v1/users/code-user/%s", c.baseURL, codeUser))
+	if err != nil {
+		return outboundDto.UserByCodeResponseDTO{}, fmt.Errorf("erro ao buscar usuário por codeUser: %w", err)
+	}
+	if httpErr := c.handleHTTPError(resp, "get_user_by_code"); httpErr != nil {
+		return outboundDto.UserByCodeResponseDTO{}, httpErr
+	}
+	return response, nil
+}
+
+func (c *AuthClient) BlockUser(ctx context.Context, idUserExternal, reason, token, tenantId, correlationID string) error {
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetBody(map[string]string{"reason": reason}).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Tenant-Id", tenantId).
+		SetAuthToken(token).
+		Post(fmt.Sprintf("%s/api/v1/users/block/%s", c.baseURL, idUserExternal))
+	if err != nil {
+		return fmt.Errorf("erro ao bloquear usuário: %w", err)
+	}
+	return c.handleHTTPError(resp, "block_user")
+}
+
+func (c *AuthClient) DeleteUser(ctx context.Context, idUserExternal, reason, token, tenantId, correlationID string) error {
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetBody(map[string]string{"reason": reason}).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Tenant-Id", tenantId).
+		SetAuthToken(token).
+		Delete(fmt.Sprintf("%s/api/v1/users/delete/%s", c.baseURL, idUserExternal))
+	if err != nil {
+		return fmt.Errorf("erro ao excluir usuário: %w", err)
+	}
+	return c.handleHTTPError(resp, "delete_user")
+}

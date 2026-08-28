@@ -3,6 +3,7 @@ package http
 import (
 	"bytes"
 	"context"
+	"encoding/base64"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -115,6 +116,21 @@ func (m *MockAuthClient) AdminAddDeviceToBlacklist(ctx context.Context, req dto.
 
 func (m *MockAuthClient) AdminRemoveDeviceFromBlacklist(ctx context.Context, deviceId, userId, token, tenantId, correlationID string) error {
 	args := m.Called(ctx, deviceId, userId, token, tenantId, correlationID)
+	return args.Error(0)
+}
+
+func (m *MockAuthClient) GetUserByCodeUser(ctx context.Context, codeUser, token, tenantId, correlationID string) (outboundDto.UserByCodeResponseDTO, error) {
+	args := m.Called(ctx, codeUser, token, tenantId, correlationID)
+	return args.Get(0).(outboundDto.UserByCodeResponseDTO), args.Error(1)
+}
+
+func (m *MockAuthClient) BlockUser(ctx context.Context, idUserExternal, reason, token, tenantId, correlationID string) error {
+	args := m.Called(ctx, idUserExternal, reason, token, tenantId, correlationID)
+	return args.Error(0)
+}
+
+func (m *MockAuthClient) DeleteUser(ctx context.Context, idUserExternal, reason, token, tenantId, correlationID string) error {
+	args := m.Called(ctx, idUserExternal, reason, token, tenantId, correlationID)
 	return args.Error(0)
 }
 
@@ -455,4 +471,120 @@ func TestGetCorrelationID_WithoutExistingID(t *testing.T) {
 	assert.Error(t, err)
 	assert.Empty(t, correlationID)
 	assert.Equal(t, "Header X-Correlation-ID é obrigatório", err.Error())
+}
+
+func testJWTWithSub(sub string) string {
+	header := base64.RawURLEncoding.EncodeToString([]byte(`{"alg":"none","typ":"JWT"}`))
+	payload := base64.RawURLEncoding.EncodeToString([]byte(`{"sub":"` + sub + `"}`))
+	return header + "." + payload + ".sig"
+}
+
+func setupLifecycleHandlers() (*AuthHandlers, *MockAuthClient) {
+	mockLoginUseCase := new(MockLoginUseCase)
+	mockRefreshUseCase := new(MockRefreshUseCase)
+	mockLogoutUseCase := new(MockLogoutUseCase)
+	mockValidateTokenUseCase := new(MockValidateTokenUseCase)
+	mockChangePasswordUseCase := new(MockChangePasswordUseCase)
+	mockResetPasswordUseCase := new(MockResetPasswordUseCase)
+	mockAuthClient := new(MockAuthClient)
+	logger, _ := zap.NewDevelopment()
+
+	handlers := NewAuthHandlers(
+		mockLoginUseCase,
+		mockRefreshUseCase,
+		mockLogoutUseCase,
+		mockValidateTokenUseCase,
+		mockChangePasswordUseCase,
+		mockResetPasswordUseCase,
+		mockAuthClient,
+		logger,
+	)
+	return handlers, mockAuthClient
+}
+
+func newLifecycleContext(method, path, token, body string) (echo.Context, *httptest.ResponseRecorder) {
+	e := echo.New()
+	req := httptest.NewRequest(method, path, bytes.NewReader([]byte(body)))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Correlation-ID", "corr-1")
+	req.Header.Set("X-Tenant-Id", "tenant-1")
+	if token != "" {
+		req.Header.Set("Authorization", "Bearer "+token)
+	}
+	rec := httptest.NewRecorder()
+	return e.NewContext(req, rec), rec
+}
+
+func TestBlockMeHandler_ForwardsJWTAndExternalID(t *testing.T) {
+	handlers, mockAuthClient := setupLifecycleHandlers()
+	token := testJWTWithSub("user-sub-1")
+	c, rec := newLifecycleContext(http.MethodPost, "/api/v1/users/me/block", token, `{"reason":"quero bloquear"}`)
+
+	mockAuthClient.On("GetUserByCodeUser", mock.Anything, "user-sub-1", token, "tenant-1", "corr-1").
+		Return(outboundDto.UserByCodeResponseDTO{IDUserExternal: "ext-id-1"}, nil)
+	mockAuthClient.On("BlockUser", mock.Anything, "ext-id-1", "quero bloquear", token, "tenant-1", "corr-1").
+		Return(nil)
+
+	err := handlers.BlockMeHandler(c)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+	mockAuthClient.AssertExpectations(t)
+}
+
+func TestDeleteMeHandler_ForwardsJWTAndExternalID(t *testing.T) {
+	handlers, mockAuthClient := setupLifecycleHandlers()
+	token := testJWTWithSub("user-sub-1")
+	c, rec := newLifecycleContext(http.MethodDelete, "/api/v1/users/me", token, `{"reason":"encerrar conta"}`)
+
+	mockAuthClient.On("GetUserByCodeUser", mock.Anything, "user-sub-1", token, "tenant-1", "corr-1").
+		Return(outboundDto.UserByCodeResponseDTO{IDUserExternal: "ext-id-1"}, nil)
+	mockAuthClient.On("DeleteUser", mock.Anything, "ext-id-1", "encerrar conta", token, "tenant-1", "corr-1").
+		Return(nil)
+
+	err := handlers.DeleteMeHandler(c)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+	mockAuthClient.AssertExpectations(t)
+}
+
+func TestBlockMeHandler_Propagates403(t *testing.T) {
+	handlers, mockAuthClient := setupLifecycleHandlers()
+	token := testJWTWithSub("user-sub-1")
+	c, rec := newLifecycleContext(http.MethodPost, "/api/v1/users/me/block", token, `{"reason":"quero bloquear"}`)
+
+	mockAuthClient.On("GetUserByCodeUser", mock.Anything, "user-sub-1", token, "tenant-1", "corr-1").
+		Return(outboundDto.UserByCodeResponseDTO{IDUserExternal: "ext-id-1"}, nil)
+	mockAuthClient.On("BlockUser", mock.Anything, "ext-id-1", "quero bloquear", token, "tenant-1", "corr-1").
+		Return(&appdto.HTTPError{StatusCode: http.StatusForbidden, ErrorCode: "FORBIDDEN", Message: "Sem permissão"})
+
+	err := handlers.BlockMeHandler(c)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusForbidden, rec.Code)
+
+	var response pkg.ErrorResponse
+	assert.NoError(t, json.Unmarshal(rec.Body.Bytes(), &response))
+	assert.Equal(t, "FORBIDDEN", response.Error)
+	mockAuthClient.AssertExpectations(t)
+}
+
+func TestBlockMeHandler_UnauthorizedWithoutToken(t *testing.T) {
+	handlers, mockAuthClient := setupLifecycleHandlers()
+	c, rec := newLifecycleContext(http.MethodPost, "/api/v1/users/me/block", "", `{"reason":"quero bloquear"}`)
+
+	err := handlers.BlockMeHandler(c)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusUnauthorized, rec.Code)
+	mockAuthClient.AssertNotCalled(t, "BlockUser")
+}
+
+func TestBlockMeHandler_BadRequestWithoutReason(t *testing.T) {
+	handlers, mockAuthClient := setupLifecycleHandlers()
+	token := testJWTWithSub("user-sub-1")
+	c, rec := newLifecycleContext(http.MethodPost, "/api/v1/users/me/block", token, `{"reason":"   "}`)
+
+	err := handlers.BlockMeHandler(c)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+	mockAuthClient.AssertNotCalled(t, "GetUserByCodeUser")
+	mockAuthClient.AssertNotCalled(t, "BlockUser")
 }

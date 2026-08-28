@@ -101,6 +101,8 @@ func (s *serverImpl) SetupRoutes(handlers Handler) {
 
 	// User Sessions & Device Blacklist routes (Protegidas com TokenRevocationMiddleware)
 	userGroup := s.echo.Group("/api/v1/users/me", tokenRevocationMiddleware)
+	userGroup.POST("/block", handlers.BlockMeHandler, rl.Limit("account_lifecycle", rules.AccountLifecycle))
+	userGroup.DELETE("", handlers.DeleteMeHandler, rl.Limit("account_lifecycle", rules.AccountLifecycle))
 	userGroup.GET("/sessions", handlers.ListUserSessionsHandler)
 	userGroup.DELETE("/sessions/:deviceId", handlers.RevokeSessionHandler)
 	userGroup.DELETE("/sessions", handlers.RevokeAllOtherSessionsHandler)

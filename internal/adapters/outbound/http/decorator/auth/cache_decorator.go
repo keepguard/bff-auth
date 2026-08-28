@@ -286,3 +286,15 @@ func (d *cacheDecorator) AdminAddDeviceToBlacklist(ctx context.Context, req inbo
 func (d *cacheDecorator) AdminRemoveDeviceFromBlacklist(ctx context.Context, deviceId, userId, token, tenantId, correlationID string) error {
 	return d.inner.AdminRemoveDeviceFromBlacklist(ctx, deviceId, userId, token, tenantId, correlationID)
 }
+
+func (d *cacheDecorator) GetUserByCodeUser(ctx context.Context, codeUser, token, tenantId, correlationID string) (outboundDto.UserByCodeResponseDTO, error) {
+	return d.inner.GetUserByCodeUser(ctx, codeUser, token, tenantId, correlationID)
+}
+
+func (d *cacheDecorator) BlockUser(ctx context.Context, idUserExternal, reason, token, tenantId, correlationID string) error {
+	return d.inner.BlockUser(ctx, idUserExternal, reason, token, tenantId, correlationID)
+}
+
+func (d *cacheDecorator) DeleteUser(ctx context.Context, idUserExternal, reason, token, tenantId, correlationID string) error {
+	return d.inner.DeleteUser(ctx, idUserExternal, reason, token, tenantId, correlationID)
+}
