@@ -39,7 +39,7 @@ func TestAuthClient_Login_Success(t *testing.T) {
 		assert.Equal(t, "POST", r.Method)
 		assert.Equal(t, "/api/v1/auth/login", r.URL.Path)
 		assert.Equal(t, "test-correlation", r.Header.Get("X-Correlation-ID"))
-		assert.Equal(t, "test-app", r.Header.Get("X-Tenant-Id"))
+		assert.Empty(t, r.Header.Get("X-Tenant-Id"))
 
 		// Verificar body
 		var req inboundDto.AuthRequestDTO

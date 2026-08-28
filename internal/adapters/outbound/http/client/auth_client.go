@@ -95,7 +95,6 @@ func (c *AuthClient) Login(ctx context.Context, req inboundDto.AuthRequestDTO, t
 		SetBody(req).
 		SetResult(&response).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Tenant-Id", tenantId).
 		SetHeader("X-Client-ID", clientId)
 
 	if req.CompanyID != "" {
@@ -568,7 +567,6 @@ func (c *AuthClient) GetUserByCodeUser(ctx context.Context, codeUser, token, ten
 		SetContext(ctx).
 		SetResult(&response).
 		SetHeader("X-Correlation-ID", correlationID).
-		SetHeader("X-Tenant-Id", tenantId).
 		SetHeader("X-Company-Id", companyID).
 		SetAuthToken(token).
 		Get(fmt.Sprintf("%s/api/v1/users/code-user/%s", c.baseURL, codeUser))

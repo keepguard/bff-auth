@@ -205,23 +205,14 @@ func main() {
 		zapLogger,
 	)
 
-	// 3. Cache in-memory (L1) sobre Redis (L2) e HTTP (L3)
-	companyCacheConfig := companydecorator.CacheConfig{
-		TTL:             5 * time.Minute, // Cache por 5 minutos (dados raramente mudam)
-		MaxSize:         1000,            // Máximo 1000 empresas
-		CleanupInterval: 1 * time.Minute, // Limpa cache expirado a cada minuto
-	}
-	companyCachedClient := companydecorator.NewCacheDecorator(companyRedisClient, companyCacheConfig, metrics)
-
-	// 4. Retry Decorator (rápido: 50ms, 2 tentativas)
 	companyRetryConfig := companydecorator.RetryConfig{
-		MaxAttempts:  2,                     // Apenas 2 tentativas (com cache, raramente usado)
-		InitialDelay: 50 * time.Millisecond, // Muito rápido (chamado em toda req)
+		MaxAttempts:  2,
+		InitialDelay: 50 * time.Millisecond,
 		MaxDelay:     500 * time.Millisecond,
 		Multiplier:   2.0,
 		Jitter:       true,
 	}
-	companyRetryClient := companydecorator.NewRetryDecorator(companyCachedClient, companyRetryConfig)
+	companyRetryClient := companydecorator.NewRetryDecorator(companyRedisClient, companyRetryConfig)
 
 	// 5. Circuit Breaker (Protege se ms-company cair - CRÍTICO!)
 	companyClient := companydecorator.NewCircuitBreakerDecorator(companyRetryClient, cbManager, "ms-company")
