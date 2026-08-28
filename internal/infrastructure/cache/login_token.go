@@ -3,6 +3,7 @@ package cache
 import (
 	"context"
 	"fmt"
+	"strings"
 	"time"
 
 	"github.com/keepguard/bff-auth/internal/domain/ports/client"
@@ -14,7 +15,7 @@ const loginTokenPrefix = "tokenlogin"
 
 // LoginTokenKey replica a chave gravada pelo ms-auth: tokenlogin:{codeUser}:{jwt}
 func LoginTokenKey(codeUser, token string) string {
-	return fmt.Sprintf("%s:%s:%s", loginTokenPrefix, codeUser, token)
+	return fmt.Sprintf("%s:%s:%s", loginTokenPrefix, strings.ToLower(strings.TrimSpace(codeUser)), token)
 }
 
 // RedisLoginTokenChecker consulta tokenlogin no Redis.

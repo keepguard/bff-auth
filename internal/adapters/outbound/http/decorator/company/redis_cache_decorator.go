@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"strings"
 
 	portsclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
 	"github.com/keepguard/bff-auth/internal/infrastructure/metrics"
@@ -80,11 +81,10 @@ func (d *redisCacheDecorator) GetByTenantId(ctx context.Context, tenantId, corre
 }
 
 func (d *redisCacheDecorator) lookup(ctx context.Context, tenantId string) (portsclient.CompanySimpleResponseDTO, bool) {
+	tenantId = strings.ToLower(strings.TrimSpace(tenantId))
 	keys := []string{
 		companyCachePrefix + "tenantId:" + tenantId,
 		companyCachePrefix + "simple:tenantId:" + tenantId,
-		companyCachePrefix + "xapp:" + tenantId,
-		companyCachePrefix + "simple:xapp:" + tenantId,
 	}
 	for _, key := range keys {
 		val, err := d.cache.Get(ctx, key)

@@ -10,6 +10,7 @@ import (
 
 func TestLoginTokenKey(t *testing.T) {
 	assert.Equal(t, "tokenlogin:user-1:jwt-abc", LoginTokenKey("user-1", "jwt-abc"))
+	assert.Equal(t, "tokenlogin:user-1:jwt-abc", LoginTokenKey("USER-1", "jwt-abc"))
 }
 
 func TestLookupLoginToken_NilClient(t *testing.T) {
