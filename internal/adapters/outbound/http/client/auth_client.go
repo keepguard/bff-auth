@@ -23,6 +23,12 @@ func applyClientIP(req *resty.Request, ip string) {
 	req.SetHeader("X-Forwarded-For", ip)
 }
 
+func applyClientLocation(req *resty.Request, ctx context.Context) {
+	if loc := requestmeta.ClientLocation(ctx); loc != "" {
+		req.SetHeader("X-Public-Location", loc)
+	}
+}
+
 // AuthClient implementa o cliente HTTP para autenticação
 type AuthClient struct {
 	client  *resty.Client
@@ -106,6 +112,7 @@ func (c *AuthClient) Login(ctx context.Context, req inboundDto.AuthRequestDTO, t
 		reqBuilder.SetHeader("X-Device-Type", deviceType)
 	}
 	applyClientIP(reqBuilder, ipAddress)
+	applyClientLocation(reqBuilder, ctx)
 	if userAgent != "" {
 		reqBuilder.SetHeader("User-Agent", userAgent)
 	}
@@ -187,6 +194,7 @@ func (c *AuthClient) ListUserSessions(ctx context.Context, token, deviceId, tena
 	if ip := requestmeta.ClientIP(ctx); ip != "" {
 		applyClientIP(reqBuilder, ip)
 	}
+	applyClientLocation(reqBuilder, ctx)
 
 	resp, err := reqBuilder.Get(c.baseURL + "/api/v1/users/me/sessions")
 
@@ -327,6 +335,7 @@ func (c *AuthClient) ChangePassword(ctx context.Context, req outboundDto.ChangeP
 		reqBuilder.SetHeader("X-Device-Type", deviceType)
 	}
 	applyClientIP(reqBuilder, ipAddress)
+	applyClientLocation(reqBuilder, ctx)
 	if userAgent != "" {
 		reqBuilder.SetHeader("User-Agent", userAgent)
 	}
@@ -363,6 +372,7 @@ func (c *AuthClient) ResetPassword(ctx context.Context, req outboundDto.ResetPas
 		reqBuilder.SetHeader("X-Device-Type", deviceType)
 	}
 	applyClientIP(reqBuilder, ipAddress)
+	applyClientLocation(reqBuilder, ctx)
 	if userAgent != "" {
 		reqBuilder.SetHeader("User-Agent", userAgent)
 	}

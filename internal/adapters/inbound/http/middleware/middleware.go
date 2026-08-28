@@ -169,6 +169,7 @@ func (m *middlewareImpl) CORSMiddleware() echo.MiddlewareFunc {
 			"X-Device-Name",
 			"X-Device-Type",
 			"X-Public-IP",
+			"X-Public-Location",
 			"X-Client-IP",
 			"Idempotency-Key",
 		},

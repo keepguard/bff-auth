@@ -1,6 +1,7 @@
 package http
 
 import (
+	"context"
 	"fmt"
 	"net/http"
 	"strings"
@@ -83,6 +84,11 @@ func resolveClientIP(c echo.Context) string {
 	return c.RealIP()
 }
 
+func withClientNetwork(c echo.Context) context.Context {
+	ctx := requestmeta.WithClientIP(c.Request().Context(), resolveClientIP(c))
+	return requestmeta.WithClientLocation(ctx, c.Request().Header.Get("X-Public-Location"))
+}
+
 // LoginHandler trata requisições de login
 // @Summary Login
 // @Description Realiza login do usuário usando credenciais de username e password. Requer headers obrigatórios X-Correlation-ID e X-Tenant-Id.
@@ -152,7 +158,7 @@ func (h *AuthHandlers) LoginHandler(c echo.Context) error {
 		deviceType,
 		ipAddress,
 		userAgent,
-		c.Request().Context(),
+		withClientNetwork(c),
 	)
 
 	// Validar comando
@@ -594,7 +600,7 @@ func (h *AuthHandlers) ChangePasswordHandler(c echo.Context) error {
 		deviceType,
 		ipAddress,
 		userAgent,
-		c.Request().Context(),
+		withClientNetwork(c),
 	)
 
 	// Validar comando
@@ -697,7 +703,7 @@ func (h *AuthHandlers) ResetPasswordHandler(c echo.Context) error {
 		deviceType,
 		ipAddress,
 		userAgent,
-		c.Request().Context(),
+		withClientNetwork(c),
 	)
 
 	// Validar comando
@@ -829,7 +835,7 @@ func (h *AuthHandlers) ListUserSessionsHandler(c echo.Context) error {
 
 	token := strings.TrimPrefix(c.Request().Header.Get("Authorization"), "Bearer ")
 	deviceId := c.Request().Header.Get("X-Device-Id")
-	ctx := requestmeta.WithClientIP(c.Request().Context(), resolveClientIP(c))
+	ctx := withClientNetwork(c)
 
 	sessions, err := h.authClient.ListUserSessions(ctx, token, deviceId, tenantId, correlationID)
 	if err != nil {
