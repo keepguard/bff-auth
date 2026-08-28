@@ -9,6 +9,7 @@ import (
 	"github.com/keepguard/bff-auth/internal/application/auth"
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
 	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	"github.com/keepguard/bff-auth/internal/infrastructure/clientip"
 	"github.com/keepguard/bff-auth/internal/infrastructure/logger"
 	"github.com/keepguard/bff-auth/internal/infrastructure/requestmeta"
 	"github.com/keepguard/bff-auth/internal/pkg"
@@ -75,6 +76,13 @@ func NewAuthHandlersWithLogger(
 	}
 }
 
+func resolveClientIP(c echo.Context) string {
+	if ip := clientip.FromRequest(c.Request()); ip != "" {
+		return ip
+	}
+	return c.RealIP()
+}
+
 // LoginHandler trata requisições de login
 // @Summary Login
 // @Description Realiza login do usuário usando credenciais de username e password. Requer headers obrigatórios X-Correlation-ID e X-Tenant-Id.
@@ -129,7 +137,7 @@ func (h *AuthHandlers) LoginHandler(c echo.Context) error {
 	deviceId := c.Request().Header.Get("X-Device-Id")
 	deviceName := c.Request().Header.Get("X-Device-Name")
 	deviceType := c.Request().Header.Get("X-Device-Type")
-	ipAddress := c.RealIP()
+	ipAddress := resolveClientIP(c)
 	userAgent := c.Request().UserAgent()
 
 	// Criar comando de domínio encapsulado com device
@@ -570,10 +578,7 @@ func (h *AuthHandlers) ChangePasswordHandler(c echo.Context) error {
 	deviceId := c.Request().Header.Get("X-Device-Id")
 	deviceName := c.Request().Header.Get("X-Device-Name")
 	deviceType := c.Request().Header.Get("X-Device-Type")
-	ipAddress := c.Request().Header.Get("X-Forwarded-For")
-	if ipAddress == "" {
-		ipAddress = c.RealIP()
-	}
+	ipAddress := resolveClientIP(c)
 	userAgent := c.Request().Header.Get("User-Agent")
 
 	// Criar comando de domínio encapsulado
@@ -676,10 +681,7 @@ func (h *AuthHandlers) ResetPasswordHandler(c echo.Context) error {
 	deviceId := c.Request().Header.Get("X-Device-Id")
 	deviceName := c.Request().Header.Get("X-Device-Name")
 	deviceType := c.Request().Header.Get("X-Device-Type")
-	ipAddress := c.Request().Header.Get("X-Forwarded-For")
-	if ipAddress == "" {
-		ipAddress = c.RealIP()
-	}
+	ipAddress := resolveClientIP(c)
 	userAgent := c.Request().Header.Get("User-Agent")
 
 	// Criar comando de domínio encapsulado
@@ -827,7 +829,7 @@ func (h *AuthHandlers) ListUserSessionsHandler(c echo.Context) error {
 
 	token := strings.TrimPrefix(c.Request().Header.Get("Authorization"), "Bearer ")
 	deviceId := c.Request().Header.Get("X-Device-Id")
-	ctx := requestmeta.WithClientIP(c.Request().Context(), c.RealIP())
+	ctx := requestmeta.WithClientIP(c.Request().Context(), resolveClientIP(c))
 
 	sessions, err := h.authClient.ListUserSessions(ctx, token, deviceId, tenantId, correlationID)
 	if err != nil {

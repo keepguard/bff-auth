@@ -14,6 +14,15 @@ import (
 	"github.com/keepguard/bff-auth/internal/infrastructure/requestmeta"
 )
 
+func applyClientIP(req *resty.Request, ip string) {
+	if ip == "" {
+		return
+	}
+	req.SetHeader("X-Client-IP", ip)
+	req.SetHeader("X-Real-IP", ip)
+	req.SetHeader("X-Forwarded-For", ip)
+}
+
 // AuthClient implementa o cliente HTTP para autenticação
 type AuthClient struct {
 	client  *resty.Client
@@ -96,9 +105,7 @@ func (c *AuthClient) Login(ctx context.Context, req inboundDto.AuthRequestDTO, t
 	if deviceType != "" {
 		reqBuilder.SetHeader("X-Device-Type", deviceType)
 	}
-	if ipAddress != "" {
-		reqBuilder.SetHeader("X-Forwarded-For", ipAddress)
-	}
+	applyClientIP(reqBuilder, ipAddress)
 	if userAgent != "" {
 		reqBuilder.SetHeader("User-Agent", userAgent)
 	}
@@ -178,7 +185,7 @@ func (c *AuthClient) ListUserSessions(ctx context.Context, token, deviceId, tena
 		reqBuilder.SetHeader("X-Device-Id", deviceId)
 	}
 	if ip := requestmeta.ClientIP(ctx); ip != "" {
-		reqBuilder.SetHeader("X-Forwarded-For", ip)
+		applyClientIP(reqBuilder, ip)
 	}
 
 	resp, err := reqBuilder.Get(c.baseURL + "/api/v1/users/me/sessions")
@@ -319,9 +326,7 @@ func (c *AuthClient) ChangePassword(ctx context.Context, req outboundDto.ChangeP
 	if deviceType != "" {
 		reqBuilder.SetHeader("X-Device-Type", deviceType)
 	}
-	if ipAddress != "" {
-		reqBuilder.SetHeader("X-Forwarded-For", ipAddress)
-	}
+	applyClientIP(reqBuilder, ipAddress)
 	if userAgent != "" {
 		reqBuilder.SetHeader("User-Agent", userAgent)
 	}
@@ -357,9 +362,7 @@ func (c *AuthClient) ResetPassword(ctx context.Context, req outboundDto.ResetPas
 	if deviceType != "" {
 		reqBuilder.SetHeader("X-Device-Type", deviceType)
 	}
-	if ipAddress != "" {
-		reqBuilder.SetHeader("X-Forwarded-For", ipAddress)
-	}
+	applyClientIP(reqBuilder, ipAddress)
 	if userAgent != "" {
 		reqBuilder.SetHeader("User-Agent", userAgent)
 	}
