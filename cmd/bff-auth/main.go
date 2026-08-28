@@ -140,7 +140,7 @@ func main() {
 	// =============================================================================
 	// A ordem dos decorators importa! Cada decorator envolve o anterior.
 	// Ordem de execução (de fora para dentro):
-	// Request → Logging → Circuit Breaker → Retry → Metrics → Smart Cache → HTTP Client
+	// Request → Logging → Circuit Breaker → Retry → Metrics → Redis user_cache → HTTP Client
 
 	// 1. Cliente HTTP base (mais interno - faz a requisição HTTP real)
 	baseAuthClient := httpclient.NewAuthClient(
@@ -148,21 +148,17 @@ func main() {
 		cfg.Services.Auth.Timeout,
 	)
 
-	// 2. Smart Cache Decorator (cache inteligente baseado no ExpiresIn do token)
-	smartCacheConfig := authdecorator.SmartCacheConfig{
-		MaxTTL:          10 * time.Minute, // TTL máximo de 10 minutos (segurança)
-		MinTTL:          30 * time.Second, // TTL mínimo de 30 segundos
-		MaxSize:         1000,             // Máximo 1000 tokens em cache
-		CleanupInterval: 1 * time.Minute,  // Limpa cache expirado a cada minuto
-	}
-	// Smart Cache usa o ExpiresIn do token para determinar o TTL do cache!
-	// Se token expira em 3600s (1h), cache será válido por até 3600s (limitado a MaxTTL)
-	cachedClient := authdecorator.NewSmartCacheDecorator(baseAuthClient, smartCacheConfig, metrics)
+	authByCodeRedisClient := authdecorator.NewRedisUserCacheDecorator(
+		baseAuthClient,
+		companydecorator.NewRedisStringCache(redisClient),
+		metrics,
+		zapLogger,
+	)
 
-	// 3. Metrics Decorator (coleta métricas automaticamente)
-	metricsClient := authdecorator.NewMetricsDecorator(cachedClient, metrics, "ms-auth")
+	// 2. Metrics Decorator (coleta métricas automaticamente)
+	metricsClient := authdecorator.NewMetricsDecorator(authByCodeRedisClient, metrics, "ms-auth")
 
-	// 4. Retry Decorator (retry inteligente com backoff exponencial)
+	// 3. Retry Decorator (retry inteligente com backoff exponencial)
 	retryConfig := authdecorator.RetryConfig{
 		MaxAttempts:  2,                      // Máximo 2 tentativas (reduzido para evitar latência excessiva)
 		InitialDelay: 100 * time.Millisecond, // Delay inicial de 100ms
@@ -172,10 +168,10 @@ func main() {
 	}
 	retryClient := authdecorator.NewRetryDecorator(metricsClient, retryConfig)
 
-	// 5. Circuit Breaker Decorator (protege contra falhas em cascata)
+	// 4. Circuit Breaker Decorator (protege contra falhas em cascata)
 	cbClient := authdecorator.NewCircuitBreakerDecorator(retryClient, cbManager, "ms-auth")
 
-	// 6. Logging Decorator (mais externo - loga todas as requisições/respostas)
+	// 5. Logging Decorator (mais externo - loga todas as requisições/respostas)
 	authClient := authdecorator.NewLoggingDecorator(cbClient, zapLogger, "ms-auth")
 
 	// Cliente final está pronto! Todos os aspectos estão automaticamente aplicados:
@@ -183,7 +179,6 @@ func main() {
 	// ✅ Circuit breaker para resiliência
 	// ✅ Retry inteligente com backoff
 	// ✅ Métricas Prometheus automáticas
-	// ✅ Smart Cache para ValidateToken (baseado no ExpiresIn do token)
 	// =============================================================================
 
 	// =============================================================================
@@ -229,7 +224,13 @@ func main() {
 	// Request → Logging → Metrics → HTTP Client
 
 	baseAuthUserClient := httpclient.NewAuthUserClient(cfg, zapLogger)
-	authUserMetricsClient := userdecorator.NewUserMetricsDecorator(baseAuthUserClient, metrics, "ms-auth-users")
+	authUserEmailRedisClient := userdecorator.NewRedisEmailCacheDecorator(
+		baseAuthUserClient,
+		companydecorator.NewRedisStringCache(redisClient),
+		metrics,
+		zapLogger,
+	)
+	authUserMetricsClient := userdecorator.NewUserMetricsDecorator(authUserEmailRedisClient, metrics, "ms-auth-users")
 	authUserClient := userdecorator.NewUserLoggingDecorator(authUserMetricsClient, zapLogger, "ms-auth-users")
 
 	// ✅ Logs automáticos + Métricas Prometheus
@@ -303,7 +304,12 @@ func main() {
 	loginUseCase := auth.NewLoginUseCase(authClient, companyClient)
 	refreshUseCase := auth.NewRefreshUseCase(authClient, companyClient)
 	logoutUseCase := auth.NewLogoutUseCase(authClient, companyClient)
-	validateTokenUseCase := auth.NewValidateTokenUseCase(authClient, companyClient, zapLogger)
+	validateTokenUseCase := auth.NewValidateTokenUseCase(
+		authClient,
+		companyClient,
+		cache.NewRedisLoginTokenChecker(redisClient),
+		zapLogger,
+	)
 	changePasswordUseCase := auth.NewChangePasswordUseCase(authClient, companyClient, zapLogger)
 	resetPasswordUseCase := auth.NewResetPasswordUseCase(authClient, authUserClient, companyClient, messagePublisher, zapLogger)
 
@@ -345,16 +351,16 @@ func main() {
 		if metricsPort == "" {
 			metricsPort = "9092"
 		}
-		
+
 		metricsMux := http.NewServeMux()
 		metricsMux.Handle(cfg.Metrics.ScrapePath, promhttp.Handler())
-		
+
 		appLogger.Info("Servidor de métricas iniciado",
 			zap.String("service", "bff-auth"),
 			zap.String("port", metricsPort),
 			zap.String("path", cfg.Metrics.ScrapePath),
 		)
-		
+
 		if err := http.ListenAndServe(":"+metricsPort, metricsMux); err != nil {
 			appLogger.Error("Erro no servidor de métricas",
 				zap.Error(err),

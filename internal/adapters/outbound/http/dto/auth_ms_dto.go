@@ -37,6 +37,7 @@ type UserByCodeResponseDTO struct {
 	Username          string `json:"username"`
 	Email             string `json:"email"`
 	Status            string `json:"status"`
+	CompanyID         string `json:"companyId"`
 }
 
 // ExternalID retorna o idUserExternal independentemente do naming do JSON.

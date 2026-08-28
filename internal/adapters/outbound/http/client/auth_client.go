@@ -99,6 +99,8 @@ func (c *AuthClient) Login(ctx context.Context, req inboundDto.AuthRequestDTO, t
 
 	if req.CompanyID != "" {
 		reqBuilder.SetHeader("X-Company-Id", req.CompanyID)
+	} else if id := companyHeader(ctx); id != "" {
+		reqBuilder.SetHeader("X-Company-Id", id)
 	}
 
 	if deviceId != "" {

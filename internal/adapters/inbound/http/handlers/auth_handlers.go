@@ -453,7 +453,7 @@ func tenantIdFromAuthorization(c echo.Context) string {
 
 // ValidateTokenHandler trata requisições de validação de token
 // @Summary Validate token
-// @Description Valida se um token JWT é válido e não expirou. Requer headers obrigatórios X-Correlation-ID e X-Tenant-Id.
+// @Description Valida se um token JWT está ativo no Redis (tokenlogin) e no ms-auth. Requer headers obrigatórios X-Correlation-ID e X-Tenant-Id.
 // @Tags auth
 // @Accept json
 // @Produce json
