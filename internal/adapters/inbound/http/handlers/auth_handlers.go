@@ -10,6 +10,7 @@ import (
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
 	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
 	"github.com/keepguard/bff-auth/internal/infrastructure/logger"
+	"github.com/keepguard/bff-auth/internal/infrastructure/requestmeta"
 	"github.com/keepguard/bff-auth/internal/pkg"
 	"github.com/labstack/echo/v4"
 	"go.uber.org/zap"
@@ -826,8 +827,9 @@ func (h *AuthHandlers) ListUserSessionsHandler(c echo.Context) error {
 
 	token := strings.TrimPrefix(c.Request().Header.Get("Authorization"), "Bearer ")
 	deviceId := c.Request().Header.Get("X-Device-Id")
+	ctx := requestmeta.WithClientIP(c.Request().Context(), c.RealIP())
 
-	sessions, err := h.authClient.ListUserSessions(c.Request().Context(), token, deviceId, tenantId, correlationID)
+	sessions, err := h.authClient.ListUserSessions(ctx, token, deviceId, tenantId, correlationID)
 	if err != nil {
 		return handleError(c, err, correlationID)
 	}

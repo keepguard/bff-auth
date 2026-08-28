@@ -37,6 +37,7 @@ func NewServer(
 	e := echo.New()
 	e.HideBanner = true
 	e.HidePort = true
+	e.IPExtractor = echo.ExtractIPFromXFFHeader()
 
 	// Middlewares
 	zapLogger, _ := zap.NewDevelopment()

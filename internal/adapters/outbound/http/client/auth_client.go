@@ -11,6 +11,7 @@ import (
 	outboundDto "github.com/keepguard/bff-auth/internal/adapters/outbound/http/dto"
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
 	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	"github.com/keepguard/bff-auth/internal/infrastructure/requestmeta"
 )
 
 // AuthClient implementa o cliente HTTP para autenticação
@@ -175,6 +176,9 @@ func (c *AuthClient) ListUserSessions(ctx context.Context, token, deviceId, tena
 
 	if deviceId != "" {
 		reqBuilder.SetHeader("X-Device-Id", deviceId)
+	}
+	if ip := requestmeta.ClientIP(ctx); ip != "" {
+		reqBuilder.SetHeader("X-Forwarded-For", ip)
 	}
 
 	resp, err := reqBuilder.Get(c.baseURL + "/api/v1/users/me/sessions")
