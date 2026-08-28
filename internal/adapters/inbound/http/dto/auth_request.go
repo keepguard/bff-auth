@@ -2,8 +2,9 @@ package dto
 
 // AuthRequestDTO representa a requisição de autenticação
 type AuthRequestDTO struct {
-	Username string `json:"username" validate:"required,username"`
-	Password string `json:"password" validate:"required,password"`
+	Username  string `json:"username" validate:"required,username"`
+	Password  string `json:"password" validate:"required,password"`
+	CompanyID string `json:"companyId,omitempty"`
 }
 
 // RefreshTokenRequestDTO representa a requisição de refresh de token

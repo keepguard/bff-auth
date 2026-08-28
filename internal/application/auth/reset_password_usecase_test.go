@@ -20,8 +20,8 @@ type MockUserClient struct {
 	mock.Mock
 }
 
-func (m *MockUserClient) GetByEmail(ctx context.Context, email, tenantId, correlationID string) (outboundDto.UserByEmailResponseDTO, error) {
-	args := m.Called(ctx, email, tenantId, correlationID)
+func (m *MockUserClient) GetByEmail(ctx context.Context, email, tenantId, companyId, correlationID string) (outboundDto.UserByEmailResponseDTO, error) {
+	args := m.Called(ctx, email, tenantId, companyId, correlationID)
 	return args.Get(0).(outboundDto.UserByEmailResponseDTO), args.Error(1)
 }
 
@@ -92,7 +92,7 @@ func TestResetPasswordUseCase_Execute_Success(t *testing.T) {
 
 	// Configurar mocks
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
-	mockUserClient.On("GetByEmail", ctx, email, tenantId, correlationID).Return(expectedUser, nil)
+	mockUserClient.On("GetByEmail", ctx, email, tenantId, "550e8400-e29b-41d4-a716-446655440000", correlationID).Return(expectedUser, nil)
 	mockAuthClient.On("ResetPassword", ctx, expectedReq, tenantId, correlationID, "", "", "", "", "").Return(nil)
 
 	// Act
@@ -146,7 +146,7 @@ func TestResetPasswordUseCase_Execute_UserNotFound(t *testing.T) {
 
 	// Configurar mocks
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
-	mockUserClient.On("GetByEmail", ctx, email, tenantId, correlationID).Return(outboundDto.UserByEmailResponseDTO{}, userError)
+	mockUserClient.On("GetByEmail", ctx, email, tenantId, "550e8400-e29b-41d4-a716-446655440000", correlationID).Return(outboundDto.UserByEmailResponseDTO{}, userError)
 
 	// Act
 	err := useCase.Execute(command)
@@ -203,7 +203,7 @@ func TestResetPasswordUseCase_Execute_UserNotActive(t *testing.T) {
 
 	// Configurar mocks
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
-	mockUserClient.On("GetByEmail", ctx, email, tenantId, correlationID).Return(expectedUser, nil)
+	mockUserClient.On("GetByEmail", ctx, email, tenantId, "550e8400-e29b-41d4-a716-446655440000", correlationID).Return(expectedUser, nil)
 
 	// Act
 	err := useCase.Execute(command)
@@ -278,7 +278,7 @@ func TestResetPasswordUseCase_Execute_InvalidResetToken(t *testing.T) {
 
 	// Configurar mocks
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
-	mockUserClient.On("GetByEmail", ctx, email, tenantId, correlationID).Return(expectedUser, nil)
+	mockUserClient.On("GetByEmail", ctx, email, tenantId, "550e8400-e29b-41d4-a716-446655440000", correlationID).Return(expectedUser, nil)
 	mockAuthClient.On("ResetPassword", ctx, expectedReq, tenantId, correlationID, "", "", "", "", "").Return(authError)
 
 	// Act
@@ -440,7 +440,7 @@ func TestResetPasswordUseCase_Execute_ContextCancelled(t *testing.T) {
 
 	// Configurar mocks
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
-	mockUserClient.On("GetByEmail", ctx, email, tenantId, correlationID).Return(expectedUser, nil)
+	mockUserClient.On("GetByEmail", ctx, email, tenantId, "550e8400-e29b-41d4-a716-446655440000", correlationID).Return(expectedUser, nil)
 	mockAuthClient.On("ResetPassword", ctx, expectedReq, tenantId, correlationID, "", "", "", "", "").Return(context.Canceled)
 
 	// Act
@@ -508,7 +508,7 @@ func TestResetPasswordUseCase_Execute_AuthServiceError(t *testing.T) {
 
 	// Configurar mocks
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
-	mockUserClient.On("GetByEmail", ctx, email, tenantId, correlationID).Return(expectedUser, nil)
+	mockUserClient.On("GetByEmail", ctx, email, tenantId, "550e8400-e29b-41d4-a716-446655440000", correlationID).Return(expectedUser, nil)
 	mockAuthClient.On("ResetPassword", ctx, expectedReq, tenantId, correlationID, "", "", "", "", "").Return(authError)
 
 	// Act

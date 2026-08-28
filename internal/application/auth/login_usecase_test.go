@@ -175,8 +175,9 @@ func TestLoginUseCase_Execute_Success(t *testing.T) {
 	}
 
 	expectedReq := inboundDto.AuthRequestDTO{
-		Username: "testuser",
-		Password: "testpass",
+		Username:  "testuser",
+		Password:  "testpass",
+		CompanyID: "550e8400-e29b-41d4-a716-446655440000",
 	}
 
 	// Configurar mocks
@@ -215,8 +216,9 @@ func TestLoginUseCase_Execute_EmptyUsername(t *testing.T) {
 	// Como a validação é feita no handler, o use case sempre chama o cliente
 	// Vamos simular um erro de credenciais inválidas
 	expectedReq := inboundDto.AuthRequestDTO{
-		Username: "",
-		Password: "testpass",
+		Username:  "",
+		Password:  "testpass",
+		CompanyID: "550e8400-e29b-41d4-a716-446655440000",
 	}
 
 	expectedCompany := authclient.CompanySimpleResponseDTO{
@@ -263,8 +265,9 @@ func TestLoginUseCase_Execute_EmptyPassword(t *testing.T) {
 	// Como a validação é feita no handler, o use case sempre chama o cliente
 	// Vamos simular um erro de credenciais inválidas
 	expectedReq := inboundDto.AuthRequestDTO{
-		Username: "testuser",
-		Password: "",
+		Username:  "testuser",
+		Password:  "",
+		CompanyID: "550e8400-e29b-41d4-a716-446655440000",
 	}
 
 	// Configurar mocks
@@ -302,8 +305,9 @@ func TestLoginUseCase_Execute_EmptyUsernameAndPassword(t *testing.T) {
 	// Como a validação é feita no handler, o use case sempre chama o cliente
 	// Vamos simular um erro de credenciais inválidas
 	expectedReq := inboundDto.AuthRequestDTO{
-		Username: "",
-		Password: "",
+		Username:  "",
+		Password:  "",
+		CompanyID: "550e8400-e29b-41d4-a716-446655440000",
 	}
 
 	// Configurar mocks
@@ -339,8 +343,9 @@ func TestLoginUseCase_Execute_AuthServiceError(t *testing.T) {
 	)
 
 	expectedReq := inboundDto.AuthRequestDTO{
-		Username: "testuser",
-		Password: "testpass",
+		Username:  "testuser",
+		Password:  "testpass",
+		CompanyID: "550e8400-e29b-41d4-a716-446655440000",
 	}
 
 	// Configurar mocks
@@ -378,8 +383,9 @@ func TestLoginUseCase_Execute_ContextCancelled(t *testing.T) {
 	)
 
 	expectedReq := inboundDto.AuthRequestDTO{
-		Username: "testuser",
-		Password: "testpass",
+		Username:  "testuser",
+		Password:  "testpass",
+		CompanyID: "550e8400-e29b-41d4-a716-446655440000",
 	}
 
 	// Configurar mocks
@@ -416,8 +422,9 @@ func TestLoginUseCase_Execute_InvalidCredentials(t *testing.T) {
 	)
 
 	expectedReq := inboundDto.AuthRequestDTO{
-		Username: "invaliduser",
-		Password: "wrongpass",
+		Username:  "invaliduser",
+		Password:  "wrongpass",
+		CompanyID: "550e8400-e29b-41d4-a716-446655440000",
 	}
 
 	authError := &appdto.HTTPError{

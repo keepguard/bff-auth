@@ -32,15 +32,16 @@ func NewLoginUseCase(authClient authclient.AuthClient, companyClient authclient.
 // Execute executa o caso de uso de login
 func (uc *loginUseCaseImpl) Execute(command appdto.LoginCommand) (dto.AuthResponseDTO, error) {
 	// Primeiro, verifica se a empresa existe consultando o Company Service
-	_, err := uc.companyClient.GetByTenantId(command.Context, command.TenantId, command.CorrelationID)
+	company, err := uc.companyClient.GetByTenantId(command.Context, command.TenantId, command.CorrelationID)
 	if err != nil {
 		return dto.AuthResponseDTO{}, err
 	}
 
 	// Criar DTO de requisição para o cliente
 	req := dto.AuthRequestDTO{
-		Username: command.Username,
-		Password: command.Password,
+		Username:  command.Username,
+		Password:  command.Password,
+		CompanyID: company.ID,
 	}
 
 	// Chama o cliente de autenticação com metadados de dispositivo

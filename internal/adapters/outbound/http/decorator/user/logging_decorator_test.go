@@ -17,8 +17,8 @@ type MockUserClient struct {
 	mock.Mock
 }
 
-func (m *MockUserClient) GetByEmail(ctx context.Context, email, tenantId, correlationID string) (outboundDto.UserByEmailResponseDTO, error) {
-	args := m.Called(ctx, email, tenantId, correlationID)
+func (m *MockUserClient) GetByEmail(ctx context.Context, email, tenantId, companyId, correlationID string) (outboundDto.UserByEmailResponseDTO, error) {
+	args := m.Called(ctx, email, tenantId, companyId, correlationID)
 	return args.Get(0).(outboundDto.UserByEmailResponseDTO), args.Error(1)
 }
 
@@ -59,10 +59,10 @@ func TestUserLoggingDecorator_GetByEmail_Success(t *testing.T) {
 		EmailVerified: true,
 	}
 
-	mockInner.On("GetByEmail", ctx, email, tenantId, correlationID).Return(expectedResponse, nil)
+	mockInner.On("GetByEmail", ctx, email, tenantId, "company-123", correlationID).Return(expectedResponse, nil)
 
 	// Act
-	result, err := decorator.GetByEmail(ctx, email, tenantId, correlationID)
+	result, err := decorator.GetByEmail(ctx, email, tenantId, "company-123", correlationID)
 
 	// Assert
 	assert.NoError(t, err)
@@ -91,10 +91,10 @@ func TestUserLoggingDecorator_GetByEmail_Error(t *testing.T) {
 
 	expectedError := errors.New("user not found")
 
-	mockInner.On("GetByEmail", ctx, email, tenantId, correlationID).Return(outboundDto.UserByEmailResponseDTO{}, expectedError)
+	mockInner.On("GetByEmail", ctx, email, tenantId, "company-123", correlationID).Return(outboundDto.UserByEmailResponseDTO{}, expectedError)
 
 	// Act
-	_, err := decorator.GetByEmail(ctx, email, tenantId, correlationID)
+	_, err := decorator.GetByEmail(ctx, email, tenantId, "company-123", correlationID)
 
 	// Assert
 	assert.Error(t, err)

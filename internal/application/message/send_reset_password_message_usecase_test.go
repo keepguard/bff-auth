@@ -136,8 +136,8 @@ type MockUserClient struct {
 	mock.Mock
 }
 
-func (m *MockUserClient) GetByEmail(ctx context.Context, email, tenantId, correlationID string) (outboundDto.UserByEmailResponseDTO, error) {
-	args := m.Called(ctx, email, tenantId, correlationID)
+func (m *MockUserClient) GetByEmail(ctx context.Context, email, tenantId, companyId, correlationID string) (outboundDto.UserByEmailResponseDTO, error) {
+	args := m.Called(ctx, email, tenantId, companyId, correlationID)
 	return args.Get(0).(outboundDto.UserByEmailResponseDTO), args.Error(1)
 }
 
@@ -234,7 +234,7 @@ func TestSendResetPasswordMessageUseCase_Execute_Success(t *testing.T) {
 
 	// Configurar mocks
 	mockCompanyClient.On("GetByTenantId", ctx, tenantId, correlationID).Return(expectedCompany, nil)
-	mockUserClient.On("GetByEmail", ctx, email, tenantId, correlationID).Return(expectedUser, nil)
+	mockUserClient.On("GetByEmail", ctx, email, tenantId, "company-123", correlationID).Return(expectedUser, nil)
 	mockAuthClient.On("GenerateResetToken", ctx, expectedGenerateTokenReq, tenantId, correlationID).Return(expectedGenerateTokenResponse, nil)
 	mockMessagePublisher.On("PublishMessage", ctx, expectedMessageReq).Return(nil)
 
@@ -330,7 +330,7 @@ func TestSendResetPasswordMessageUseCase_Execute_UserNotFound(t *testing.T) {
 
 	// Configurar mocks
 	mockCompanyClient.On("GetByTenantId", ctx, tenantId, correlationID).Return(expectedCompany, nil)
-	mockUserClient.On("GetByEmail", ctx, email, tenantId, correlationID).Return(outboundDto.UserByEmailResponseDTO{}, userError)
+	mockUserClient.On("GetByEmail", ctx, email, tenantId, "company-123", correlationID).Return(outboundDto.UserByEmailResponseDTO{}, userError)
 
 	// Act
 	result, err := useCase.Execute(command)
@@ -383,7 +383,7 @@ func TestSendResetPasswordMessageUseCase_Execute_UserNotActive(t *testing.T) {
 
 	// Configurar mocks
 	mockCompanyClient.On("GetByTenantId", ctx, tenantId, correlationID).Return(expectedCompany, nil)
-	mockUserClient.On("GetByEmail", ctx, email, tenantId, correlationID).Return(inactiveUser, nil)
+	mockUserClient.On("GetByEmail", ctx, email, tenantId, "company-123", correlationID).Return(inactiveUser, nil)
 
 	// Act
 	result, err := useCase.Execute(command)
@@ -443,7 +443,7 @@ func TestSendResetPasswordMessageUseCase_Execute_UserStatusPending(t *testing.T)
 
 	// Configurar mocks
 	mockCompanyClient.On("GetByTenantId", ctx, tenantId, correlationID).Return(expectedCompany, nil)
-	mockUserClient.On("GetByEmail", ctx, email, tenantId, correlationID).Return(pendingUser, nil)
+	mockUserClient.On("GetByEmail", ctx, email, tenantId, "company-123", correlationID).Return(pendingUser, nil)
 
 	// Act
 	result, err := useCase.Execute(command)
@@ -513,7 +513,7 @@ func TestSendResetPasswordMessageUseCase_Execute_GenerateTokenError(t *testing.T
 
 	// Configurar mocks
 	mockCompanyClient.On("GetByTenantId", ctx, tenantId, correlationID).Return(expectedCompany, nil)
-	mockUserClient.On("GetByEmail", ctx, email, tenantId, correlationID).Return(expectedUser, nil)
+	mockUserClient.On("GetByEmail", ctx, email, tenantId, "company-123", correlationID).Return(expectedUser, nil)
 	mockAuthClient.On("GenerateResetToken", ctx, expectedGenerateTokenReq, tenantId, correlationID).Return(outboundDto.GenerateResetTokenMSResponseDTO{}, generateTokenError)
 
 	// Act
@@ -583,7 +583,7 @@ func TestSendResetPasswordMessageUseCase_Execute_MessagePublisherError(t *testin
 
 	// Configurar mocks
 	mockCompanyClient.On("GetByTenantId", ctx, tenantId, correlationID).Return(expectedCompany, nil)
-	mockUserClient.On("GetByEmail", ctx, email, tenantId, correlationID).Return(expectedUser, nil)
+	mockUserClient.On("GetByEmail", ctx, email, tenantId, "company-123", correlationID).Return(expectedUser, nil)
 	mockAuthClient.On("GenerateResetToken", ctx, expectedGenerateTokenReq, tenantId, correlationID).Return(expectedGenerateTokenResponse, nil)
 	mockMessagePublisher.On("PublishMessage", ctx, mock.AnythingOfType("messaging.MessageDTO")).Return(errors.New("rabbitmq connection failed"))
 
@@ -654,7 +654,7 @@ func TestSendResetPasswordMessageUseCase_Execute_SendMessageFailure(t *testing.T
 
 	// Configurar mocks
 	mockCompanyClient.On("GetByTenantId", ctx, tenantId, correlationID).Return(expectedCompany, nil)
-	mockUserClient.On("GetByEmail", ctx, email, tenantId, correlationID).Return(expectedUser, nil)
+	mockUserClient.On("GetByEmail", ctx, email, tenantId, "company-123", correlationID).Return(expectedUser, nil)
 	mockAuthClient.On("GenerateResetToken", ctx, expectedGenerateTokenReq, tenantId, correlationID).Return(expectedGenerateTokenResponse, nil)
 	mockMessagePublisher.On("PublishMessage", ctx, mock.AnythingOfType("messaging.MessageDTO")).Return(nil)
 
@@ -741,7 +741,7 @@ func TestSendResetPasswordMessageUseCase_Execute_UserGenericError(t *testing.T) 
 
 	// Configurar mocks
 	mockCompanyClient.On("GetByTenantId", ctx, tenantId, correlationID).Return(expectedCompany, nil)
-	mockUserClient.On("GetByEmail", ctx, email, tenantId, correlationID).Return(outboundDto.UserByEmailResponseDTO{}, genericError)
+	mockUserClient.On("GetByEmail", ctx, email, tenantId, "company-123", correlationID).Return(outboundDto.UserByEmailResponseDTO{}, genericError)
 
 	// Act
 	result, err := useCase.Execute(command)
