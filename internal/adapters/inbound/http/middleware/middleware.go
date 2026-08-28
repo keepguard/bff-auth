@@ -168,6 +168,8 @@ func (m *middlewareImpl) CORSMiddleware() echo.MiddlewareFunc {
 			"X-Device-Id",
 			"X-Device-Name",
 			"X-Device-Type",
+			"X-Public-IP",
+			"X-Client-IP",
 			"Idempotency-Key",
 		},
 		ExposeHeaders: []string{

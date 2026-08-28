@@ -7,6 +7,15 @@ import (
 	"github.com/stretchr/testify/assert"
 )
 
+func TestFromRequestPrefersFrontendPublicIP(t *testing.T) {
+	req, _ := http.NewRequest(http.MethodGet, "/", nil)
+	req.Header.Set("X-Public-IP", "189.45.12.8")
+	req.Header.Set("X-Forwarded-For", "10.42.0.1")
+	req.RemoteAddr = "10.42.0.15:443"
+
+	assert.Equal(t, "189.45.12.8", FromRequest(req))
+}
+
 func TestFromRequestPrefersPublicClientIP(t *testing.T) {
 	req, _ := http.NewRequest(http.MethodGet, "/", nil)
 	req.Header.Set("X-Forwarded-For", "10.42.0.1, 189.45.12.8")
