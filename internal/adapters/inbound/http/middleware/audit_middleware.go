@@ -33,6 +33,9 @@ func AuditMiddleware(publisher auditport.EventPublisher, sourceService string) e
 			if status == http.StatusForbidden || status == http.StatusUnauthorized {
 				outcome = "DENIED"
 			}
+			if outcome == "SUCCESS" && domainCoveredByMS(path) {
+				return err
+			}
 			event := auditport.Event{
 				EventID:       newUUID(),
 				OccurredAt:    time.Now().UTC().Format(time.RFC3339),
@@ -72,7 +75,41 @@ func shouldSkipAudit(method, path string) bool {
 	if path == "/api/v1/auth/validate" {
 		return true
 	}
+	if strings.Contains(path, "/auth/refresh") {
+		return true
+	}
 	return false
+}
+
+func domainCoveredByMS(path string) bool {
+	switch {
+	case strings.Contains(path, "/auth/login"):
+		return true
+	case strings.Contains(path, "/auth/logout"):
+		return true
+	case strings.Contains(path, "/change-password"):
+		return true
+	case strings.Contains(path, "/reset-password"):
+		return true
+	case strings.Contains(path, "/forgot-password"):
+		return true
+	case strings.Contains(path, "/device/challenge/send"):
+		return true
+	case strings.Contains(path, "/device/challenge/verify"):
+		return true
+	case strings.Contains(path, "/quick-revoke"):
+		return true
+	case strings.Contains(path, "/sessions"):
+		return true
+	case strings.Contains(path, "/devices/blacklist"):
+		return true
+	case strings.HasSuffix(path, "/block"):
+		return true
+	case strings.Contains(path, "/users/me"):
+		return true
+	default:
+		return false
+	}
 }
 
 func mapAuditAction(method, path string) string {

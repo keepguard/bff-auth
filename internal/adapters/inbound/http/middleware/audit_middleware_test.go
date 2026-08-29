@@ -26,13 +26,14 @@ func TestMapAuditActionLogin(t *testing.T) {
 	require.Equal(t, "LOGOUT", mapAuditAction(http.MethodPost, "/api/v1/auth/logout"))
 }
 
-func TestShouldSkipValidateAndGet(t *testing.T) {
+func TestShouldSkipValidateGetAndRefresh(t *testing.T) {
 	require.True(t, shouldSkipAudit(http.MethodPost, "/api/v1/auth/validate"))
 	require.True(t, shouldSkipAudit(http.MethodGet, "/api/v1/users/me/sessions"))
+	require.True(t, shouldSkipAudit(http.MethodPost, "/api/v1/auth/refresh"))
 	require.False(t, shouldSkipAudit(http.MethodPost, "/api/v1/auth/login"))
 }
 
-func TestAuditMiddlewareEmitsLoginWithCorrelationID(t *testing.T) {
+func TestAuditMiddlewareSkipsLoginSuccess(t *testing.T) {
 	rec := &recPub{}
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", nil)
@@ -46,9 +47,26 @@ func TestAuditMiddlewareEmitsLoginWithCorrelationID(t *testing.T) {
 		return c.NoContent(http.StatusOK)
 	})(c)
 	require.NoError(t, err)
+	require.Empty(t, rec.events)
+}
+
+func TestAuditMiddlewareEmitsLoginDenied(t *testing.T) {
+	rec := &recPub{}
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", nil)
+	req.Header.Set("X-Correlation-ID", "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa")
+	rr := httptest.NewRecorder()
+	c := e.NewContext(req, rr)
+	c.SetPath("/api/v1/auth/login")
+
+	mw := AuditMiddleware(rec, "bff-auth")
+	err := mw(func(c echo.Context) error {
+		return c.NoContent(http.StatusUnauthorized)
+	})(c)
+	require.NoError(t, err)
 	require.Len(t, rec.events, 1)
 	require.Equal(t, "LOGIN", rec.events[0].Action)
 	require.Equal(t, "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", rec.events[0].CorrelationID)
-	require.Equal(t, "SUCCESS", rec.events[0].Outcome)
+	require.Equal(t, "DENIED", rec.events[0].Outcome)
 	require.Equal(t, "bff-auth", rec.events[0].SourceService)
 }
