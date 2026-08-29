@@ -42,11 +42,11 @@ func TokenRevocationMiddleware(redisClient *redis.Client, logger *zap.Logger) ec
 				zap.String("codeUser", codeUser),
 				zap.String("path", c.Path()),
 			)
-			correlationID := c.Response().Header().Get(echo.HeaderXRequestID)
+			correlationID := GetCorrelationID(c)
 			return c.JSON(http.StatusUnauthorized, pkg.ErrorResponse{
-				Error:   "TOKEN_REVOKED",
-				Message: "Sessão revogada ou expirada. Por favor, realize login novamente.",
-				TraceID: correlationID,
+				Error:         "TOKEN_REVOKED",
+				Message:       "Sessão revogada ou expirada. Por favor, realize login novamente.",
+				CorrelationID: correlationID,
 			})
 		}
 	}

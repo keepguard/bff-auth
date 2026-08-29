@@ -127,7 +127,7 @@ definitions:
         type: string
       message:
         type: string
-      traceId:
+      correlationId:
         type: string
     type: object
 host: localhost:8381

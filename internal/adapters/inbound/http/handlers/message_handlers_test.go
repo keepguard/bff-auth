@@ -81,7 +81,7 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_Success(t *testing.T) {
 // TestMessageHandlers_SendResetPasswordMessageHandler_MissingCorrelationID testa sem correlation ID
 func TestMessageHandlers_SendResetPasswordMessageHandler_MissingCorrelationID(t *testing.T) {
 	// Arrange
-	handlers, _ := setupTestMessageHandlers()
+	handlers, mockUseCase := setupTestMessageHandlers()
 
 	e := echo.New()
 	reqBody := inboundDto.SendResetPasswordMessageRequestDTO{
@@ -91,22 +91,20 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_MissingCorrelationID(t 
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/forgot-password", bytes.NewReader(reqBodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")
-	// Não definir X-Correlation-ID
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	// Act
+	expectedResponse := inboundDto.SendResetPasswordMessageResponseDTO{
+		Success: true,
+		Message: "Mensagem enviada com sucesso",
+	}
+	mockUseCase.On("Execute", mock.Anything).Return(expectedResponse, nil)
+
 	err := handlers.SendResetPasswordMessageHandler(c)
 
-	// Assert
 	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
-
-	var response pkg.ErrorResponse
-	err = json.Unmarshal(rec.Body.Bytes(), &response)
-	assert.NoError(t, err)
-	assert.Equal(t, "MISSING_HEADER", response.Error)
-	assert.Contains(t, response.Message, "X-Correlation-ID")
+	assert.Equal(t, http.StatusOK, rec.Code)
+	assert.NotEmpty(t, rec.Header().Get("X-Correlation-ID"))
 }
 
 // TestMessageHandlers_SendResetPasswordMessageHandler_MissingTenantId testa sem X-Tenant-Id

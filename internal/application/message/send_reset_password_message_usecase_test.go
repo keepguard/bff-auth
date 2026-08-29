@@ -219,7 +219,8 @@ func TestSendResetPasswordMessageUseCase_Execute_Success(t *testing.T) {
 	}
 
 	expectedMessageReq := messaging.MessageDTO{
-		TenantId:      tenantId,
+		TenantId:          tenantId,
+		CorrelationID:     correlationID,
 		XCorrelationID:    correlationID,
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",

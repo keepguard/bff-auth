@@ -57,7 +57,7 @@ func (j *JWTMiddleware) Middleware() echo.MiddlewareFunc {
 			token, err := j.extractToken(c)
 			if err != nil {
 				j.logger.Error("Erro ao extrair token JWT",
-					zap.String("traceId", c.Response().Header().Get(echo.HeaderXRequestID)),
+					zap.String("correlationId", GetCorrelationID(c)),
 					zap.Error(err),
 				)
 				return j.handleError(c, err)
@@ -67,7 +67,7 @@ func (j *JWTMiddleware) Middleware() echo.MiddlewareFunc {
 			claims, err := j.validateToken(token)
 			if err != nil {
 				j.logger.Error("Token JWT inválido",
-					zap.String("traceId", c.Response().Header().Get(echo.HeaderXRequestID)),
+					zap.String("correlationId", GetCorrelationID(c)),
 					zap.Error(err),
 				)
 				return j.handleError(c, err)

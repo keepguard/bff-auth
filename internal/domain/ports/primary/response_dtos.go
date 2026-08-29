@@ -13,7 +13,7 @@ type ErrorResponse struct {
 
 	// @Description ID de rastreamento da requisição
 	// @Example 12345678-1234-1234-1234-123456789abc
-	TraceID string `json:"traceId,omitempty" example:"12345678-1234-1234-1234-123456789abc"`
+	CorrelationID string `json:"correlationId,omitempty" example:"12345678-1234-1234-1234-123456789abc"`
 }
 
 // SuccessResponse representa uma resposta de sucesso padronizada
@@ -25,5 +25,5 @@ type SuccessResponse struct {
 
 	// @Description ID de rastreamento da requisição
 	// @Example 12345678-1234-1234-1234-123456789abc
-	TraceID string `json:"traceId,omitempty" example:"12345678-1234-1234-1234-123456789abc"`
+	CorrelationID string `json:"correlationId,omitempty" example:"12345678-1234-1234-1234-123456789abc"`
 }

@@ -460,10 +460,9 @@ func TestGetOrCreateCorrelationID_WithExistingID(t *testing.T) {
 	c := e.NewContext(req, rec)
 
 	// Act
-	correlationID, err := GetCorrelationID(c)
+	correlationID := GetCorrelationID(c)
 
 	// Assert
-	assert.NoError(t, err)
 	assert.Equal(t, "existing-correlation-id", correlationID)
 	assert.Equal(t, "existing-correlation-id", c.Response().Header().Get("X-Correlation-ID"))
 }
@@ -476,12 +475,11 @@ func TestGetCorrelationID_WithoutExistingID(t *testing.T) {
 	c := e.NewContext(req, rec)
 
 	// Act
-	correlationID, err := GetCorrelationID(c)
+	correlationID := GetCorrelationID(c)
 
 	// Assert
-	assert.Error(t, err)
-	assert.Empty(t, correlationID)
-	assert.Equal(t, "Header X-Correlation-ID é obrigatório", err.Error())
+	assert.NotEmpty(t, correlationID)
+	assert.Equal(t, correlationID, c.Response().Header().Get("X-Correlation-ID"))
 }
 
 func testJWTWithSub(sub string) string {

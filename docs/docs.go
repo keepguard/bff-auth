@@ -720,7 +720,7 @@ const docTemplate = `{
                 "message": {
                     "type": "string"
                 },
-                "traceId": {
+                "correlationId": {
                     "type": "string"
                 }
             }

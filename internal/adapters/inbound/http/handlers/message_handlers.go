@@ -48,7 +48,7 @@ func NewMessageHandlersWithLogger(
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param X-Correlation-ID header string true "ID de correlação para rastreamento da requisição"
+// @Param X-Correlation-ID header string false "ID de correlação para rastreamento da requisição"
 // @Param X-Tenant-Id header string true "ID da aplicação cliente (UUID)"
 // @Param request body dto.SendResetPasswordMessageRequestDTO true "Email do usuário"
 // @Success 200 {object} dto.SendResetPasswordMessageResponseDTO "Mensagem enviada com sucesso"
@@ -58,21 +58,14 @@ func NewMessageHandlersWithLogger(
 // @Router /auth/forgot-password [post]
 func (h *MessageHandlers) SendResetPasswordMessageHandler(c echo.Context) error {
 	// Obter correlation ID e application ID (obrigatórios)
-	correlationID, err := GetCorrelationID(c)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: "",
-		})
-	}
+	correlationID := GetCorrelationID(c)
 
 	tenantId, _, err := GetTenantAndClientId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: correlationID,
+			Error:         "MISSING_HEADER",
+			Message:       err.Error(),
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -84,9 +77,9 @@ func (h *MessageHandlers) SendResetPasswordMessageHandler(c echo.Context) error 
 			zap.Error(err),
 		)
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "INVALID_REQUEST",
-			Message: "Requisição inválida",
-			TraceID: correlationID,
+			Error:         "INVALID_REQUEST",
+			Message:       "Requisição inválida",
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -106,9 +99,9 @@ func (h *MessageHandlers) SendResetPasswordMessageHandler(c echo.Context) error 
 			zap.Error(err),
 		)
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "VALIDATION_ERROR",
-			Message: err.Error(),
-			TraceID: correlationID,
+			Error:         "VALIDATION_ERROR",
+			Message:       err.Error(),
+			CorrelationID: correlationID,
 		})
 	}
 

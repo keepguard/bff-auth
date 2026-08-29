@@ -2,9 +2,12 @@ package http
 
 import (
 	"context"
+	"crypto/rand"
+	"encoding/hex"
 	"fmt"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/keepguard/bff-auth/internal/adapters/inbound/http/dto"
 	"github.com/keepguard/bff-auth/internal/application/auth"
@@ -100,7 +103,7 @@ func withClientNetwork(c echo.Context) context.Context {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param X-Correlation-ID header string true "ID de correlação para rastreamento da requisição"
+// @Param X-Correlation-ID header string false "ID de correlação para rastreamento da requisição"
 // @Param X-Tenant-Id header string true "ID da aplicação cliente (UUID)"
 // @Param request body dto.AuthRequestDTO true "Credenciais de login"
 // @Success 200 {object} dto.AuthResponseDTO "Login realizado com sucesso"
@@ -112,21 +115,14 @@ func withClientNetwork(c echo.Context) context.Context {
 // @Router /auth/login [post]
 func (h *AuthHandlers) LoginHandler(c echo.Context) error {
 	// Obter correlation ID e application ID (obrigatórios)
-	correlationID, err := GetCorrelationID(c)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: "",
-		})
-	}
+	correlationID := GetCorrelationID(c)
 
 	tenantId, clientId, err := GetTenantAndClientId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: correlationID,
+			Error:         "MISSING_HEADER",
+			Message:       err.Error(),
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -138,9 +134,9 @@ func (h *AuthHandlers) LoginHandler(c echo.Context) error {
 			zap.Error(err),
 		)
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "INVALID_REQUEST",
-			Message: "Requisição inválida",
-			TraceID: correlationID,
+			Error:         "INVALID_REQUEST",
+			Message:       "Requisição inválida",
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -174,9 +170,9 @@ func (h *AuthHandlers) LoginHandler(c echo.Context) error {
 			zap.Error(err),
 		)
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "VALIDATION_ERROR",
-			Message: err.Error(),
-			TraceID: correlationID,
+			Error:         "VALIDATION_ERROR",
+			Message:       err.Error(),
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -206,7 +202,7 @@ func (h *AuthHandlers) LoginHandler(c echo.Context) error {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param X-Correlation-ID header string true "ID de correlação para rastreamento da requisição"
+// @Param X-Correlation-ID header string false "ID de correlação para rastreamento da requisição"
 // @Param X-Tenant-Id header string true "ID da aplicação cliente (UUID)"
 // @Param request body dto.RefreshTokenRequestDTO true "Token de refresh para renovação"
 // @Success 200 {object} dto.RefreshTokenResponseDTO "Token renovado com sucesso"
@@ -216,21 +212,14 @@ func (h *AuthHandlers) LoginHandler(c echo.Context) error {
 // @Router /auth/refresh [post]
 func (h *AuthHandlers) RefreshHandler(c echo.Context) error {
 	// Obter correlation ID e application ID (obrigatórios)
-	correlationID, err := GetCorrelationID(c)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: "",
-		})
-	}
+	correlationID := GetCorrelationID(c)
 
 	tenantId, clientId, err := GetTenantAndClientId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: correlationID,
+			Error:         "MISSING_HEADER",
+			Message:       err.Error(),
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -242,9 +231,9 @@ func (h *AuthHandlers) RefreshHandler(c echo.Context) error {
 			zap.Error(err),
 		)
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "INVALID_REQUEST",
-			Message: "Requisição inválida",
-			TraceID: correlationID,
+			Error:         "INVALID_REQUEST",
+			Message:       "Requisição inválida",
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -265,9 +254,9 @@ func (h *AuthHandlers) RefreshHandler(c echo.Context) error {
 			zap.Error(err),
 		)
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "VALIDATION_ERROR",
-			Message: err.Error(),
-			TraceID: correlationID,
+			Error:         "VALIDATION_ERROR",
+			Message:       err.Error(),
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -296,7 +285,7 @@ func (h *AuthHandlers) RefreshHandler(c echo.Context) error {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param X-Correlation-ID header string true "ID de correlação para rastreamento da requisição"
+// @Param X-Correlation-ID header string false "ID de correlação para rastreamento da requisição"
 // @Param X-Tenant-Id header string true "ID da aplicação cliente (UUID)"
 // @Param Authorization header string true "Token Bearer para autenticação"
 // @Success 200 {object} map[string]string "Logout realizado com sucesso"
@@ -306,21 +295,14 @@ func (h *AuthHandlers) RefreshHandler(c echo.Context) error {
 // @Router /auth/logout [post]
 func (h *AuthHandlers) LogoutHandler(c echo.Context) error {
 	// Obter correlation ID e application ID (obrigatórios)
-	correlationID, err := GetCorrelationID(c)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: "",
-		})
-	}
+	correlationID := GetCorrelationID(c)
 
 	tenantId, _, err := GetTenantAndClientId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: correlationID,
+			Error:         "MISSING_HEADER",
+			Message:       err.Error(),
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -328,9 +310,9 @@ func (h *AuthHandlers) LogoutHandler(c echo.Context) error {
 	authHeader := c.Request().Header.Get("Authorization")
 	if authHeader == "" {
 		return c.JSON(http.StatusUnauthorized, pkg.ErrorResponse{
-			Error:   "UNAUTHORIZED",
-			Message: "Token de autorização não fornecido",
-			TraceID: correlationID,
+			Error:         "UNAUTHORIZED",
+			Message:       "Token de autorização não fornecido",
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -338,9 +320,9 @@ func (h *AuthHandlers) LogoutHandler(c echo.Context) error {
 	token := strings.TrimPrefix(authHeader, "Bearer ")
 	if token == "" {
 		return c.JSON(http.StatusUnauthorized, pkg.ErrorResponse{
-			Error:   "UNAUTHORIZED",
-			Message: "Token inválido",
-			TraceID: correlationID,
+			Error:         "UNAUTHORIZED",
+			Message:       "Token inválido",
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -360,9 +342,9 @@ func (h *AuthHandlers) LogoutHandler(c echo.Context) error {
 			zap.Error(err),
 		)
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "VALIDATION_ERROR",
-			Message: err.Error(),
-			TraceID: correlationID,
+			Error:         "VALIDATION_ERROR",
+			Message:       err.Error(),
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -394,19 +376,29 @@ func (e *HeaderError) Error() string {
 	return e.Message
 }
 
-// GetCorrelationID obtém o correlation ID do header (obrigatório)
-func GetCorrelationID(c echo.Context) (string, error) {
-	correlationID := c.Request().Header.Get("X-Correlation-ID")
+// GetCorrelationID lê ou gera UUID e ecoa no header X-Correlation-ID.
+func GetCorrelationID(c echo.Context) string {
+	correlationID := strings.TrimSpace(c.Request().Header.Get("X-Correlation-ID"))
 	if correlationID == "" {
-		return "", &HeaderError{
-			Message: "Header X-Correlation-ID é obrigatório",
-		}
+		correlationID = strings.TrimSpace(c.Response().Header().Get("X-Correlation-ID"))
 	}
-
-	// Define o header na resposta para o frontend
+	if correlationID == "" {
+		correlationID = generateCorrelationUUID()
+	}
+	c.Request().Header.Set("X-Correlation-ID", correlationID)
 	c.Response().Header().Set("X-Correlation-ID", correlationID)
+	return correlationID
+}
 
-	return correlationID, nil
+func generateCorrelationUUID() string {
+	b := make([]byte, 16)
+	if _, err := rand.Read(b); err != nil {
+		return fmt.Sprintf("%d", time.Now().UnixNano())
+	}
+	b[6] = (b[6] & 0x0f) | 0x40
+	b[8] = (b[8] & 0x3f) | 0x80
+	h := hex.EncodeToString(b)
+	return h[0:8] + "-" + h[8:12] + "-" + h[12:16] + "-" + h[16:20] + "-" + h[20:32]
 }
 
 // GetTenantAndClientId obtém o tenant (JWT autenticado ou header) e o client ID.
@@ -457,7 +449,7 @@ func tenantIdFromAuthorization(c echo.Context) string {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param X-Correlation-ID header string true "ID de correlação para rastreamento da requisição"
+// @Param X-Correlation-ID header string false "ID de correlação para rastreamento da requisição"
 // @Param X-Tenant-Id header string true "ID da aplicação cliente (UUID)"
 // @Param request body dto.ValidateTokenRequestDTO true "Token para validação"
 // @Success 200 {object} map[string]string "Token válido"
@@ -467,21 +459,14 @@ func tenantIdFromAuthorization(c echo.Context) string {
 // @Router /auth/validate [post]
 func (h *AuthHandlers) ValidateTokenHandler(c echo.Context) error {
 	// Obter correlation ID e application ID (obrigatórios)
-	correlationID, err := GetCorrelationID(c)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: "",
-		})
-	}
+	correlationID := GetCorrelationID(c)
 
 	tenantId, _, err := GetTenantAndClientId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: correlationID,
+			Error:         "MISSING_HEADER",
+			Message:       err.Error(),
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -493,9 +478,9 @@ func (h *AuthHandlers) ValidateTokenHandler(c echo.Context) error {
 			zap.Error(err),
 		)
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "INVALID_REQUEST",
-			Message: "Requisição inválida",
-			TraceID: correlationID,
+			Error:         "INVALID_REQUEST",
+			Message:       "Requisição inválida",
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -515,9 +500,9 @@ func (h *AuthHandlers) ValidateTokenHandler(c echo.Context) error {
 			zap.Error(err),
 		)
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "VALIDATION_ERROR",
-			Message: err.Error(),
-			TraceID: correlationID,
+			Error:         "VALIDATION_ERROR",
+			Message:       err.Error(),
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -546,7 +531,7 @@ func (h *AuthHandlers) ValidateTokenHandler(c echo.Context) error {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param X-Correlation-ID header string true "ID de correlação para rastreamento da requisição"
+// @Param X-Correlation-ID header string false "ID de correlação para rastreamento da requisição"
 // @Param X-Tenant-Id header string true "ID da aplicação cliente (UUID)"
 // @Param Authorization header string true "Token Bearer para autenticação"
 // @Param request body dto.ChangePasswordRequestDTO true "Dados para alteração de senha"
@@ -557,21 +542,14 @@ func (h *AuthHandlers) ValidateTokenHandler(c echo.Context) error {
 // @Router /auth/change-password [post]
 func (h *AuthHandlers) ChangePasswordHandler(c echo.Context) error {
 	// Obter correlation ID e application ID (obrigatórios)
-	correlationID, err := GetCorrelationID(c)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: "",
-		})
-	}
+	correlationID := GetCorrelationID(c)
 
 	tenantId, _, err := GetTenantAndClientId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: correlationID,
+			Error:         "MISSING_HEADER",
+			Message:       err.Error(),
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -579,9 +557,9 @@ func (h *AuthHandlers) ChangePasswordHandler(c echo.Context) error {
 	authHeader := c.Request().Header.Get("Authorization")
 	if authHeader == "" {
 		return c.JSON(http.StatusUnauthorized, pkg.ErrorResponse{
-			Error:   "UNAUTHORIZED",
-			Message: "Token de autorização não fornecido",
-			TraceID: correlationID,
+			Error:         "UNAUTHORIZED",
+			Message:       "Token de autorização não fornecido",
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -589,9 +567,9 @@ func (h *AuthHandlers) ChangePasswordHandler(c echo.Context) error {
 	token := strings.TrimPrefix(authHeader, "Bearer ")
 	if token == "" {
 		return c.JSON(http.StatusUnauthorized, pkg.ErrorResponse{
-			Error:   "UNAUTHORIZED",
-			Message: "Token inválido",
-			TraceID: correlationID,
+			Error:         "UNAUTHORIZED",
+			Message:       "Token inválido",
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -603,9 +581,9 @@ func (h *AuthHandlers) ChangePasswordHandler(c echo.Context) error {
 			zap.Error(err),
 		)
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "INVALID_REQUEST",
-			Message: "Requisição inválida",
-			TraceID: correlationID,
+			Error:         "INVALID_REQUEST",
+			Message:       "Requisição inválida",
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -639,9 +617,9 @@ func (h *AuthHandlers) ChangePasswordHandler(c echo.Context) error {
 			zap.Error(err),
 		)
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "VALIDATION_ERROR",
-			Message: err.Error(),
-			TraceID: correlationID,
+			Error:         "VALIDATION_ERROR",
+			Message:       err.Error(),
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -670,7 +648,7 @@ func (h *AuthHandlers) ChangePasswordHandler(c echo.Context) error {
 // @Tags auth
 // @Accept json
 // @Produce json
-// @Param X-Correlation-ID header string true "ID de correlação para rastreamento da requisição"
+// @Param X-Correlation-ID header string false "ID de correlação para rastreamento da requisição"
 // @Param X-Tenant-Id header string true "ID da aplicação cliente (UUID)"
 // @Param request body dto.ResetPasswordRequestDTO true "Dados para reset de senha"
 // @Success 200 {object} map[string]string "Senha resetada com sucesso"
@@ -680,21 +658,14 @@ func (h *AuthHandlers) ChangePasswordHandler(c echo.Context) error {
 // @Router /auth/reset-password [post]
 func (h *AuthHandlers) ResetPasswordHandler(c echo.Context) error {
 	// Obter correlation ID e application ID (obrigatórios)
-	correlationID, err := GetCorrelationID(c)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: "",
-		})
-	}
+	correlationID := GetCorrelationID(c)
 
 	tenantId, _, err := GetTenantAndClientId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: correlationID,
+			Error:         "MISSING_HEADER",
+			Message:       err.Error(),
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -706,9 +677,9 @@ func (h *AuthHandlers) ResetPasswordHandler(c echo.Context) error {
 			zap.Error(err),
 		)
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "INVALID_REQUEST",
-			Message: "Requisição inválida",
-			TraceID: correlationID,
+			Error:         "INVALID_REQUEST",
+			Message:       "Requisição inválida",
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -742,9 +713,9 @@ func (h *AuthHandlers) ResetPasswordHandler(c echo.Context) error {
 			zap.Error(err),
 		)
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "VALIDATION_ERROR",
-			Message: err.Error(),
-			TraceID: correlationID,
+			Error:         "VALIDATION_ERROR",
+			Message:       err.Error(),
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -769,30 +740,23 @@ func (h *AuthHandlers) ResetPasswordHandler(c echo.Context) error {
 
 // SendDeviceChallengeHandler dispara OTP para canal selecionado no dispositivo
 func (h *AuthHandlers) SendDeviceChallengeHandler(c echo.Context) error {
-	correlationID, err := GetCorrelationID(c)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: "",
-		})
-	}
+	correlationID := GetCorrelationID(c)
 
 	tenantId, _, err := GetTenantAndClientId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: correlationID,
+			Error:         "MISSING_HEADER",
+			Message:       err.Error(),
+			CorrelationID: correlationID,
 		})
 	}
 
 	var req dto.DeviceChallengeSendRequestDTO
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "INVALID_REQUEST",
-			Message: "Requisição inválida",
-			TraceID: correlationID,
+			Error:         "INVALID_REQUEST",
+			Message:       "Requisição inválida",
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -806,30 +770,23 @@ func (h *AuthHandlers) SendDeviceChallengeHandler(c echo.Context) error {
 
 // VerifyDeviceChallengeHandler valida OTP de dispositivo e emite JWT
 func (h *AuthHandlers) VerifyDeviceChallengeHandler(c echo.Context) error {
-	correlationID, err := GetCorrelationID(c)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: "",
-		})
-	}
+	correlationID := GetCorrelationID(c)
 
 	tenantId, _, err := GetTenantAndClientId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: correlationID,
+			Error:         "MISSING_HEADER",
+			Message:       err.Error(),
+			CorrelationID: correlationID,
 		})
 	}
 
 	var req dto.DeviceChallengeVerifyRequestDTO
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "INVALID_REQUEST",
-			Message: "Requisição inválida",
-			TraceID: correlationID,
+			Error:         "INVALID_REQUEST",
+			Message:       "Requisição inválida",
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -843,21 +800,14 @@ func (h *AuthHandlers) VerifyDeviceChallengeHandler(c echo.Context) error {
 
 // ListUserSessionsHandler lista sessões do usuário autenticado
 func (h *AuthHandlers) ListUserSessionsHandler(c echo.Context) error {
-	correlationID, err := GetCorrelationID(c)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: "",
-		})
-	}
+	correlationID := GetCorrelationID(c)
 
 	tenantId, _, err := GetTenantAndClientId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: correlationID,
+			Error:         "MISSING_HEADER",
+			Message:       err.Error(),
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -917,10 +867,7 @@ func (h *AuthHandlers) resolveSelfUserExternalID(c echo.Context, token, tenantId
 }
 
 func (h *AuthHandlers) accountLifecycleHeaders(c echo.Context) (correlationID, tenantId, token string, err error) {
-	correlationID, err = GetCorrelationID(c)
-	if err != nil {
-		return "", "", "", pkg.NewAppError("MISSING_HEADER", err.Error(), http.StatusBadRequest)
-	}
+	correlationID = GetCorrelationID(c)
 
 	tenantId, _, err = GetTenantAndClientId(c)
 	if err != nil {
@@ -981,21 +928,14 @@ func (h *AuthHandlers) DeleteMeHandler(c echo.Context) error {
 
 // RevokeSessionHandler revoga sessão de dispositivo específico
 func (h *AuthHandlers) RevokeSessionHandler(c echo.Context) error {
-	correlationID, err := GetCorrelationID(c)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: "",
-		})
-	}
+	correlationID := GetCorrelationID(c)
 
 	tenantId, _, err := GetTenantAndClientId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: correlationID,
+			Error:         "MISSING_HEADER",
+			Message:       err.Error(),
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -1011,21 +951,14 @@ func (h *AuthHandlers) RevokeSessionHandler(c echo.Context) error {
 
 // RevokeAllOtherSessionsHandler revoga todas as outras sessões exceto atual
 func (h *AuthHandlers) RevokeAllOtherSessionsHandler(c echo.Context) error {
-	correlationID, err := GetCorrelationID(c)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: "",
-		})
-	}
+	correlationID := GetCorrelationID(c)
 
 	tenantId, _, err := GetTenantAndClientId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: correlationID,
+			Error:         "MISSING_HEADER",
+			Message:       err.Error(),
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -1041,10 +974,7 @@ func (h *AuthHandlers) RevokeAllOtherSessionsHandler(c echo.Context) error {
 
 // QuickRevokeHandler revoga dispositivo através do link de e-mail (com opção de blacklist)
 func (h *AuthHandlers) QuickRevokeHandler(c echo.Context) error {
-	correlationID := c.Request().Header.Get("X-Correlation-ID")
-	if correlationID == "" {
-		correlationID = "rev_" + c.Request().Header.Get("CF-Ray")
-	}
+	correlationID := GetCorrelationID(c)
 
 	tenantId := c.Request().Header.Get("X-Tenant-Id")
 	if tenantId == "" {
@@ -1054,9 +984,9 @@ func (h *AuthHandlers) QuickRevokeHandler(c echo.Context) error {
 	token := c.QueryParam("token")
 	if token == "" {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_PARAM",
-			Message: "Parâmetro 'token' é obrigatório",
-			TraceID: correlationID,
+			Error:         "MISSING_PARAM",
+			Message:       "Parâmetro 'token' é obrigatório",
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -1106,21 +1036,14 @@ func (h *AuthHandlers) QuickRevokeHandler(c echo.Context) error {
 
 // ListDeviceBlacklistHandler lista dispositivos bloqueados na blacklist
 func (h *AuthHandlers) ListDeviceBlacklistHandler(c echo.Context) error {
-	correlationID, err := GetCorrelationID(c)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: "",
-		})
-	}
+	correlationID := GetCorrelationID(c)
 
 	tenantId, _, err := GetTenantAndClientId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: correlationID,
+			Error:         "MISSING_HEADER",
+			Message:       err.Error(),
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -1136,21 +1059,14 @@ func (h *AuthHandlers) ListDeviceBlacklistHandler(c echo.Context) error {
 
 // AddDeviceBlacklistHandler adiciona um dispositivo à blacklist
 func (h *AuthHandlers) AddDeviceBlacklistHandler(c echo.Context) error {
-	correlationID, err := GetCorrelationID(c)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: "",
-		})
-	}
+	correlationID := GetCorrelationID(c)
 
 	tenantId, _, err := GetTenantAndClientId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: correlationID,
+			Error:         "MISSING_HEADER",
+			Message:       err.Error(),
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -1159,9 +1075,9 @@ func (h *AuthHandlers) AddDeviceBlacklistHandler(c echo.Context) error {
 	var req dto.AddDeviceBlacklistRequestDTO
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "INVALID_REQUEST",
-			Message: "Requisição inválida",
-			TraceID: correlationID,
+			Error:         "INVALID_REQUEST",
+			Message:       "Requisição inválida",
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -1174,21 +1090,14 @@ func (h *AuthHandlers) AddDeviceBlacklistHandler(c echo.Context) error {
 
 // RemoveDeviceBlacklistHandler remove um dispositivo da blacklist
 func (h *AuthHandlers) RemoveDeviceBlacklistHandler(c echo.Context) error {
-	correlationID, err := GetCorrelationID(c)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: "",
-		})
-	}
+	correlationID := GetCorrelationID(c)
 
 	tenantId, _, err := GetTenantAndClientId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: correlationID,
+			Error:         "MISSING_HEADER",
+			Message:       err.Error(),
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -1204,21 +1113,14 @@ func (h *AuthHandlers) RemoveDeviceBlacklistHandler(c echo.Context) error {
 
 // SearchAdminDeviceBlacklistHandler consulta blacklist com filtros paginados (Admin)
 func (h *AuthHandlers) SearchAdminDeviceBlacklistHandler(c echo.Context) error {
-	correlationID, err := GetCorrelationID(c)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: "",
-		})
-	}
+	correlationID := GetCorrelationID(c)
 
 	tenantId, _, err := GetTenantAndClientId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: correlationID,
+			Error:         "MISSING_HEADER",
+			Message:       err.Error(),
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -1246,21 +1148,14 @@ func (h *AuthHandlers) SearchAdminDeviceBlacklistHandler(c echo.Context) error {
 
 // AdminAddDeviceBlacklistHandler adiciona dispositivo à blacklist (Admin)
 func (h *AuthHandlers) AdminAddDeviceBlacklistHandler(c echo.Context) error {
-	correlationID, err := GetCorrelationID(c)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: "",
-		})
-	}
+	correlationID := GetCorrelationID(c)
 
 	tenantId, _, err := GetTenantAndClientId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: correlationID,
+			Error:         "MISSING_HEADER",
+			Message:       err.Error(),
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -1269,9 +1164,9 @@ func (h *AuthHandlers) AdminAddDeviceBlacklistHandler(c echo.Context) error {
 	var req dto.AdminAddDeviceBlacklistRequestDTO
 	if err := c.Bind(&req); err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "INVALID_REQUEST",
-			Message: "Requisição inválida",
-			TraceID: correlationID,
+			Error:         "INVALID_REQUEST",
+			Message:       "Requisição inválida",
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -1284,21 +1179,14 @@ func (h *AuthHandlers) AdminAddDeviceBlacklistHandler(c echo.Context) error {
 
 // AdminRemoveDeviceBlacklistHandler remove dispositivo da blacklist (Admin)
 func (h *AuthHandlers) AdminRemoveDeviceBlacklistHandler(c echo.Context) error {
-	correlationID, err := GetCorrelationID(c)
-	if err != nil {
-		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: "",
-		})
-	}
+	correlationID := GetCorrelationID(c)
 
 	tenantId, _, err := GetTenantAndClientId(c)
 	if err != nil {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_HEADER",
-			Message: err.Error(),
-			TraceID: correlationID,
+			Error:         "MISSING_HEADER",
+			Message:       err.Error(),
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -1308,9 +1196,9 @@ func (h *AuthHandlers) AdminRemoveDeviceBlacklistHandler(c echo.Context) error {
 
 	if userId == "" {
 		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:   "MISSING_PARAM",
-			Message: "Parâmetro 'userId' é obrigatório",
-			TraceID: correlationID,
+			Error:         "MISSING_PARAM",
+			Message:       "Parâmetro 'userId' é obrigatório",
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -1329,9 +1217,9 @@ func handleError(c echo.Context, err error, correlationID string) error {
 
 	if err != nil && (strings.Contains(err.Error(), "circuit breaker is open") || strings.Contains(err.Error(), "circuit breaker is half-open")) {
 		return c.JSON(http.StatusServiceUnavailable, pkg.ErrorResponse{
-			Error:   "SERVICE_TEMPORARILY_UNAVAILABLE",
-			Message: "O serviço está temporariamente indisponível. Por favor, tente novamente em instantes.",
-			TraceID: correlationID,
+			Error:         "SERVICE_TEMPORARILY_UNAVAILABLE",
+			Message:       "O serviço está temporariamente indisponível. Por favor, tente novamente em instantes.",
+			CorrelationID: correlationID,
 		})
 	}
 
@@ -1380,8 +1268,8 @@ func handleError(c echo.Context, err error, correlationID string) error {
 	}
 
 	return c.JSON(statusCode, pkg.ErrorResponse{
-		Error:   errorCode,
-		Message: msg,
-		TraceID: correlationID,
+		Error:         errorCode,
+		Message:       msg,
+		CorrelationID: correlationID,
 	})
 }
