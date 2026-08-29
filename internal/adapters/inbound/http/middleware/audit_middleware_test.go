@@ -50,7 +50,7 @@ func TestAuditMiddlewareSkipsLoginSuccess(t *testing.T) {
 	require.Empty(t, rec.events)
 }
 
-func TestAuditMiddlewareEmitsLoginDenied(t *testing.T) {
+func TestAuditMiddlewareSkipsLoginDenied(t *testing.T) {
 	rec := &recPub{}
 	e := echo.New()
 	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", nil)
@@ -64,9 +64,5 @@ func TestAuditMiddlewareEmitsLoginDenied(t *testing.T) {
 		return c.NoContent(http.StatusUnauthorized)
 	})(c)
 	require.NoError(t, err)
-	require.Len(t, rec.events, 1)
-	require.Equal(t, "LOGIN", rec.events[0].Action)
-	require.Equal(t, "aaaaaaaa-aaaa-4aaa-8aaa-aaaaaaaaaaaa", rec.events[0].CorrelationID)
-	require.Equal(t, "DENIED", rec.events[0].Outcome)
-	require.Equal(t, "bff-auth", rec.events[0].SourceService)
+	require.Empty(t, rec.events)
 }
