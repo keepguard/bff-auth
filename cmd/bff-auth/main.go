@@ -27,6 +27,7 @@ import (
 	userdecorator "github.com/keepguard/bff-auth/internal/adapters/outbound/http/decorator/user"
 	messagingDecorator "github.com/keepguard/bff-auth/internal/adapters/outbound/messaging/decorator"
 	rabbitmqPublisher "github.com/keepguard/bff-auth/internal/adapters/outbound/messaging/rabbitmq"
+	auditPublisher "github.com/keepguard/bff-auth/internal/adapters/outbound/messaging/audit"
 	"github.com/keepguard/bff-auth/internal/application/auth"
 	"github.com/keepguard/bff-auth/internal/application/message"
 	"github.com/keepguard/bff-auth/internal/infrastructure/cache"
@@ -300,6 +301,15 @@ func main() {
 		zap.String("routingKey", cfg.RabbitMQ.RoutingKey),
 	)
 
+	auditEventPublisher, err := auditPublisher.NewPublisher(&cfg.RabbitMQ, zapLogger)
+	if err != nil {
+		appLogger.Warn("Auditoria RabbitMQ indisponível; eventos não serão publicados",
+			zap.Error(err),
+			zap.String("component", "bff-auth"),
+		)
+		auditEventPublisher = nil
+	}
+
 	// Inicializa use cases de autenticação
 	loginUseCase := auth.NewLoginUseCase(authClient, companyClient)
 	refreshUseCase := auth.NewRefreshUseCase(authClient, companyClient)
@@ -340,7 +350,7 @@ func main() {
 	rateLimiterMiddleware := middlewarePkg.NewRateLimiterMiddleware(redisClient, cfg.RateLimit, zapLogger, metrics)
 
 	// Inicializa servidor HTTP com Rate Limiting e Validação de Sessão Redis
-	server := httpserver.NewServer(cfg, appLogger, metrics, rateLimiterMiddleware, redisClient, companyClient)
+	server := httpserver.NewServer(cfg, appLogger, metrics, rateLimiterMiddleware, redisClient, companyClient, auditEventPublisher)
 	server.SetupRoutes(combinedHandlers)
 
 	// =============================================================================
@@ -414,6 +424,12 @@ func main() {
 			zap.String("component", "bff-auth"),
 			zap.String("service", "bff-auth"),
 		)
+	}
+
+	if auditEventPublisher != nil {
+		if err := auditEventPublisher.Close(); err != nil {
+			appLogger.Error("Erro ao fechar Audit Publisher", zap.Error(err))
+		}
 	}
 
 	if err := server.Stop(ctx); err != nil {

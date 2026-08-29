@@ -7,6 +7,7 @@ import (
 
 	middlewarePkg "github.com/keepguard/bff-auth/internal/adapters/inbound/http/middleware"
 	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	auditport "github.com/keepguard/bff-auth/internal/domain/ports/audit"
 	"github.com/keepguard/bff-auth/internal/infrastructure/clientip"
 	"github.com/keepguard/bff-auth/internal/infrastructure/config"
 	"github.com/keepguard/bff-auth/internal/infrastructure/logger"
@@ -36,6 +37,7 @@ func NewServer(
 	rateLimiter *middlewarePkg.RateLimiterMiddleware,
 	redisClient *redis.Client,
 	companyClient authclient.CompanyClient,
+	auditPublisher auditport.EventPublisher,
 ) Server {
 	e := echo.New()
 	e.HideBanner = true
@@ -54,6 +56,7 @@ func NewServer(
 
 	e.Use(middlewareInstance.RequestIDMiddleware())
 	e.Use(middlewareInstance.CorrelationIDMiddleware())
+	e.Use(middlewarePkg.AuditMiddleware(auditPublisher, "bff-auth"))
 	e.Use(middlewareInstance.RecoveryMiddleware())
 	e.Use(middlewareInstance.LoggingMiddleware())
 	e.Use(middlewarePkg.ValidationMiddleware(validator))
