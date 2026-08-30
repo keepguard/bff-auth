@@ -13,6 +13,12 @@ type JWTClaims struct {
 	Sub      string `json:"sub"`
 	Username string `json:"username"`
 	TenantId string `json:"tenant_id"`
+	DeviceID string `json:"device_id"`
+}
+
+// ExtractAllClaims extrai todas as claims do token JWT sem validar a assinatura
+func ExtractAllClaims(token string) (*JWTClaims, error) {
+	return decodeJWTClaims(token)
 }
 
 // ExtractCodeUserFromToken extrai o codeUser do token JWT sem validar a assinatura
