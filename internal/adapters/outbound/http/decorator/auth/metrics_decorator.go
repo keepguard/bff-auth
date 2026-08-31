@@ -310,6 +310,34 @@ func (d *metricsDecorator) AdminRemoveDeviceFromBlacklist(ctx context.Context, d
 	return d.inner.AdminRemoveDeviceFromBlacklist(ctx, deviceId, userId, token, tenantId, correlationID)
 }
 
+func (d *metricsDecorator) ListTenantUserSessions(ctx context.Context, userId, token, tenantId, correlationID string) ([]inboundDto.DeviceSessionDTO, error) {
+	start := time.Now()
+	response, err := d.inner.ListTenantUserSessions(ctx, userId, token, tenantId, correlationID)
+	d.metrics.RecordUpstreamRequest(d.serviceName, "GET", "/users/:id/sessions", d.getStatusCodeFromError(err), time.Since(start))
+	return response, err
+}
+
+func (d *metricsDecorator) RevokeTenantUserSession(ctx context.Context, userId, deviceId, token, tenantId, correlationID string) error {
+	start := time.Now()
+	err := d.inner.RevokeTenantUserSession(ctx, userId, deviceId, token, tenantId, correlationID)
+	d.metrics.RecordUpstreamRequest(d.serviceName, "DELETE", "/users/:id/sessions/:deviceId", d.getStatusCodeFromError(err), time.Since(start))
+	return err
+}
+
+func (d *metricsDecorator) ListTenantUserBlacklist(ctx context.Context, userId, token, tenantId, correlationID string) ([]inboundDto.AdminDeviceBlacklistEntryDTO, error) {
+	start := time.Now()
+	response, err := d.inner.ListTenantUserBlacklist(ctx, userId, token, tenantId, correlationID)
+	d.metrics.RecordUpstreamRequest(d.serviceName, "GET", "/users/:id/devices/blacklist", d.getStatusCodeFromError(err), time.Since(start))
+	return response, err
+}
+
+func (d *metricsDecorator) SearchTenantSessions(ctx context.Context, queryParams map[string]string, token, tenantId, correlationID string) (inboundDto.PaginatedDeviceSessionResponseDTO, error) {
+	start := time.Now()
+	response, err := d.inner.SearchTenantSessions(ctx, queryParams, token, tenantId, correlationID)
+	d.metrics.RecordUpstreamRequest(d.serviceName, "GET", "/sessions", d.getStatusCodeFromError(err), time.Since(start))
+	return response, err
+}
+
 func (d *metricsDecorator) GetUserByCodeUser(ctx context.Context, codeUser, token, tenantId, correlationID string) (outboundDto.UserByCodeResponseDTO, error) {
 	start := time.Now()
 	response, err := d.inner.GetUserByCodeUser(ctx, codeUser, token, tenantId, correlationID)

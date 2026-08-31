@@ -1209,6 +1209,110 @@ func (h *AuthHandlers) AdminRemoveDeviceBlacklistHandler(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
+func (h *AuthHandlers) tenantAuthHeaders(c echo.Context) (correlationID, tenantId, token string, err error) {
+	correlationID = GetCorrelationID(c)
+	tenantId, _, err = GetTenantAndClientId(c)
+	if err != nil {
+		return "", "", "", pkg.NewAppError("MISSING_HEADER", err.Error(), http.StatusBadRequest)
+	}
+	token = strings.TrimSpace(strings.TrimPrefix(c.Request().Header.Get("Authorization"), "Bearer "))
+	if token == "" {
+		return correlationID, tenantId, "", pkg.NewAppError("UNAUTHORIZED", "Token de autorização não fornecido ou inválido", http.StatusUnauthorized)
+	}
+	return correlationID, tenantId, token, nil
+}
+
+func (h *AuthHandlers) ListTenantUserSessionsHandler(c echo.Context) error {
+	correlationID, tenantId, token, err := h.tenantAuthHeaders(c)
+	if err != nil {
+		return handleError(c, err, correlationID)
+	}
+	userId := c.Param("userId")
+	sessions, err := h.authClient.ListTenantUserSessions(c.Request().Context(), userId, token, tenantId, correlationID)
+	if err != nil {
+		return handleError(c, err, correlationID)
+	}
+	return c.JSON(http.StatusOK, sessions)
+}
+
+func (h *AuthHandlers) RevokeTenantUserSessionHandler(c echo.Context) error {
+	correlationID, tenantId, token, err := h.tenantAuthHeaders(c)
+	if err != nil {
+		return handleError(c, err, correlationID)
+	}
+	if err := h.authClient.RevokeTenantUserSession(c.Request().Context(), c.Param("userId"), c.Param("deviceId"), token, tenantId, correlationID); err != nil {
+		return handleError(c, err, correlationID)
+	}
+	return c.NoContent(http.StatusNoContent)
+}
+
+func (h *AuthHandlers) ListTenantUserBlacklistHandler(c echo.Context) error {
+	correlationID, tenantId, token, err := h.tenantAuthHeaders(c)
+	if err != nil {
+		return handleError(c, err, correlationID)
+	}
+	blacklist, err := h.authClient.ListTenantUserBlacklist(c.Request().Context(), c.Param("userId"), token, tenantId, correlationID)
+	if err != nil {
+		return handleError(c, err, correlationID)
+	}
+	return c.JSON(http.StatusOK, blacklist)
+}
+
+func (h *AuthHandlers) AddTenantUserBlacklistHandler(c echo.Context) error {
+	correlationID, tenantId, token, err := h.tenantAuthHeaders(c)
+	if err != nil {
+		return handleError(c, err, correlationID)
+	}
+	var req dto.AddDeviceBlacklistRequestDTO
+	if err := c.Bind(&req); err != nil {
+		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
+			Error:         "INVALID_REQUEST",
+			Message:       "Requisição inválida",
+			CorrelationID: correlationID,
+		})
+	}
+	adminReq := dto.AdminAddDeviceBlacklistRequestDTO{
+		UserID:     c.Param("userId"),
+		DeviceID:   req.DeviceID,
+		DeviceName: req.DeviceName,
+		Reason:     req.Reason,
+	}
+	if err := h.authClient.AdminAddDeviceToBlacklist(c.Request().Context(), adminReq, token, tenantId, correlationID); err != nil {
+		return handleError(c, err, correlationID)
+	}
+	return c.NoContent(http.StatusNoContent)
+}
+
+func (h *AuthHandlers) RemoveTenantUserBlacklistHandler(c echo.Context) error {
+	correlationID, tenantId, token, err := h.tenantAuthHeaders(c)
+	if err != nil {
+		return handleError(c, err, correlationID)
+	}
+	if err := h.authClient.AdminRemoveDeviceFromBlacklist(c.Request().Context(), c.Param("deviceId"), c.Param("userId"), token, tenantId, correlationID); err != nil {
+		return handleError(c, err, correlationID)
+	}
+	return c.NoContent(http.StatusNoContent)
+}
+
+func (h *AuthHandlers) SearchTenantSessionsHandler(c echo.Context) error {
+	correlationID, tenantId, token, err := h.tenantAuthHeaders(c)
+	if err != nil {
+		return handleError(c, err, correlationID)
+	}
+	queryParams := map[string]string{
+		"userId":   c.QueryParam("userId"),
+		"deviceId": c.QueryParam("deviceId"),
+		"page":     c.QueryParam("page"),
+		"size":     c.QueryParam("size"),
+		"sort":     c.QueryParam("sort"),
+	}
+	sessions, err := h.authClient.SearchTenantSessions(c.Request().Context(), queryParams, token, tenantId, correlationID)
+	if err != nil {
+		return handleError(c, err, correlationID)
+	}
+	return c.JSON(http.StatusOK, sessions)
+}
+
 // handleError trata erros de forma padronizada
 func handleError(c echo.Context, err error, correlationID string) error {
 	statusCode := http.StatusInternalServerError

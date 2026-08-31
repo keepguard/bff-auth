@@ -98,6 +98,30 @@ func (h *CombinedHandlers) AdminRemoveDeviceBlacklistHandler(c echo.Context) err
 	return h.AuthHandlers.AdminRemoveDeviceBlacklistHandler(c)
 }
 
+func (h *CombinedHandlers) ListTenantUserSessionsHandler(c echo.Context) error {
+	return h.AuthHandlers.ListTenantUserSessionsHandler(c)
+}
+
+func (h *CombinedHandlers) RevokeTenantUserSessionHandler(c echo.Context) error {
+	return h.AuthHandlers.RevokeTenantUserSessionHandler(c)
+}
+
+func (h *CombinedHandlers) ListTenantUserBlacklistHandler(c echo.Context) error {
+	return h.AuthHandlers.ListTenantUserBlacklistHandler(c)
+}
+
+func (h *CombinedHandlers) AddTenantUserBlacklistHandler(c echo.Context) error {
+	return h.AuthHandlers.AddTenantUserBlacklistHandler(c)
+}
+
+func (h *CombinedHandlers) RemoveTenantUserBlacklistHandler(c echo.Context) error {
+	return h.AuthHandlers.RemoveTenantUserBlacklistHandler(c)
+}
+
+func (h *CombinedHandlers) SearchTenantSessionsHandler(c echo.Context) error {
+	return h.AuthHandlers.SearchTenantSessionsHandler(c)
+}
+
 func (h *CombinedHandlers) BlockMeHandler(c echo.Context) error {
 	return h.AuthHandlers.BlockMeHandler(c)
 }

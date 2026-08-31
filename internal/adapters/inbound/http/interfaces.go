@@ -29,6 +29,12 @@ type Handler interface {
 	SearchAdminDeviceBlacklistHandler(c echo.Context) error
 	AdminAddDeviceBlacklistHandler(c echo.Context) error
 	AdminRemoveDeviceBlacklistHandler(c echo.Context) error
+	ListTenantUserSessionsHandler(c echo.Context) error
+	RevokeTenantUserSessionHandler(c echo.Context) error
+	ListTenantUserBlacklistHandler(c echo.Context) error
+	AddTenantUserBlacklistHandler(c echo.Context) error
+	RemoveTenantUserBlacklistHandler(c echo.Context) error
+	SearchTenantSessionsHandler(c echo.Context) error
 	BlockMeHandler(c echo.Context) error
 	DeleteMeHandler(c echo.Context) error
 }

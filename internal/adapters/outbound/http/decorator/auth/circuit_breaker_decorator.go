@@ -224,6 +224,43 @@ func (d *circuitBreakerDecorator) AdminRemoveDeviceFromBlacklist(ctx context.Con
 	return err
 }
 
+func (d *circuitBreakerDecorator) ListTenantUserSessions(ctx context.Context, userId, token, tenantId, correlationID string) ([]inboundDto.DeviceSessionDTO, error) {
+	result, err := d.circuitBreaker.Execute(ctx, d.serviceName, func() (interface{}, error) {
+		return d.inner.ListTenantUserSessions(ctx, userId, token, tenantId, correlationID)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.([]inboundDto.DeviceSessionDTO), nil
+}
+
+func (d *circuitBreakerDecorator) RevokeTenantUserSession(ctx context.Context, userId, deviceId, token, tenantId, correlationID string) error {
+	_, err := d.circuitBreaker.Execute(ctx, d.serviceName, func() (interface{}, error) {
+		return nil, d.inner.RevokeTenantUserSession(ctx, userId, deviceId, token, tenantId, correlationID)
+	})
+	return err
+}
+
+func (d *circuitBreakerDecorator) ListTenantUserBlacklist(ctx context.Context, userId, token, tenantId, correlationID string) ([]inboundDto.AdminDeviceBlacklistEntryDTO, error) {
+	result, err := d.circuitBreaker.Execute(ctx, d.serviceName, func() (interface{}, error) {
+		return d.inner.ListTenantUserBlacklist(ctx, userId, token, tenantId, correlationID)
+	})
+	if err != nil {
+		return nil, err
+	}
+	return result.([]inboundDto.AdminDeviceBlacklistEntryDTO), nil
+}
+
+func (d *circuitBreakerDecorator) SearchTenantSessions(ctx context.Context, queryParams map[string]string, token, tenantId, correlationID string) (inboundDto.PaginatedDeviceSessionResponseDTO, error) {
+	result, err := d.circuitBreaker.Execute(ctx, d.serviceName, func() (interface{}, error) {
+		return d.inner.SearchTenantSessions(ctx, queryParams, token, tenantId, correlationID)
+	})
+	if err != nil {
+		return inboundDto.PaginatedDeviceSessionResponseDTO{}, err
+	}
+	return result.(inboundDto.PaginatedDeviceSessionResponseDTO), nil
+}
+
 func (d *circuitBreakerDecorator) GetUserByCodeUser(ctx context.Context, codeUser, token, tenantId, correlationID string) (outboundDto.UserByCodeResponseDTO, error) {
 	result, err := d.circuitBreaker.Execute(ctx, d.serviceName, func() (interface{}, error) {
 		return d.inner.GetUserByCodeUser(ctx, codeUser, token, tenantId, correlationID)

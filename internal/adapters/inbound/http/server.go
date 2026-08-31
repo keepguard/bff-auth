@@ -100,6 +100,8 @@ func (s *serverImpl) SetupRoutes(handlers Handler) {
 	rules := s.config.RateLimit.Rules
 	zapLogger, _ := zap.NewDevelopment()
 	tokenRevocationMiddleware := middlewarePkg.TokenRevocationMiddleware(s.redisClient, zapLogger)
+	requireBearer := middlewarePkg.RequireBearer()
+	tenantRoles := middlewarePkg.RequireAnyRole("ADMIN", "SYSTEM", "MANAGER")
 
 	// Auth routes
 	authGroup := s.echo.Group("/api/v1/auth")
@@ -116,7 +118,7 @@ func (s *serverImpl) SetupRoutes(handlers Handler) {
 	authGroup.GET("/device/quick-revoke", handlers.QuickRevokeHandler, rl.Limit("device_quick_revoke", rules.DeviceQuickRevoke))
 
 	// User Sessions & Device Blacklist routes (Protegidas com TokenRevocationMiddleware)
-	userGroup := s.echo.Group("/api/v1/users/me", tokenRevocationMiddleware)
+	userGroup := s.echo.Group("/api/v1/users/me", requireBearer, tokenRevocationMiddleware)
 	userGroup.POST("/block", handlers.BlockMeHandler, rl.Limit("account_lifecycle", rules.AccountLifecycle))
 	userGroup.DELETE("", handlers.DeleteMeHandler, rl.Limit("account_lifecycle", rules.AccountLifecycle))
 	userGroup.GET("/sessions", handlers.ListUserSessionsHandler)
@@ -126,8 +128,18 @@ func (s *serverImpl) SetupRoutes(handlers Handler) {
 	userGroup.POST("/devices/blacklist", handlers.AddDeviceBlacklistHandler, rl.Limit("device_blacklist", rules.DeviceBlacklist))
 	userGroup.DELETE("/devices/blacklist/:deviceId", handlers.RemoveDeviceBlacklistHandler)
 
-	// Admin Device Blacklist routes (ROLE_ADMIN, ROLE_MANAGER)
-	adminGroup := s.echo.Group("/api/v1/admin/devices/blacklist", tokenRevocationMiddleware)
+	tenantAuth := []echo.MiddlewareFunc{requireBearer, tokenRevocationMiddleware, tenantRoles}
+	tenantUserGroup := s.echo.Group("/api/v1/users/:userId", tenantAuth...)
+	tenantUserGroup.GET("/sessions", handlers.ListTenantUserSessionsHandler)
+	tenantUserGroup.DELETE("/sessions/:deviceId", handlers.RevokeTenantUserSessionHandler)
+	tenantUserGroup.GET("/devices/blacklist", handlers.ListTenantUserBlacklistHandler)
+	tenantUserGroup.POST("/devices/blacklist", handlers.AddTenantUserBlacklistHandler, rl.Limit("device_blacklist", rules.DeviceBlacklist))
+	tenantUserGroup.DELETE("/devices/blacklist/:deviceId", handlers.RemoveTenantUserBlacklistHandler)
+
+	s.echo.GET("/api/v1/sessions", handlers.SearchTenantSessionsHandler, tenantAuth...)
+	s.echo.GET("/api/v1/devices/blacklist", handlers.SearchAdminDeviceBlacklistHandler, tenantAuth...)
+
+	adminGroup := s.echo.Group("/api/v1/admin/devices/blacklist", requireBearer, tokenRevocationMiddleware, tenantRoles)
 	adminGroup.GET("", handlers.SearchAdminDeviceBlacklistHandler)
 	adminGroup.POST("", handlers.AdminAddDeviceBlacklistHandler, rl.Limit("admin_device_blacklist", rules.DeviceBlacklist))
 	adminGroup.DELETE("/:deviceId", handlers.AdminRemoveDeviceBlacklistHandler)

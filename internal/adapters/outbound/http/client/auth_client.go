@@ -512,7 +512,7 @@ func (c *AuthClient) SearchAdminDeviceBlacklist(ctx context.Context, queryParams
 		}
 	}
 
-	resp, err := req.Get(c.baseURL + "/api/v1/admin/devices/blacklist")
+	resp, err := req.Get(c.baseURL + "/api/v1/devices/blacklist")
 	if err != nil {
 		return response, fmt.Errorf("erro ao consultar blacklist de dispositivos: %w", err)
 	}
@@ -532,7 +532,7 @@ func (c *AuthClient) AdminAddDeviceToBlacklist(ctx context.Context, req inboundD
 		SetHeader("X-Correlation-ID", correlationID).
 		SetHeader("X-Company-Id", companyHeader(ctx)).
 		SetAuthToken(token).
-		Post(c.baseURL + "/api/v1/admin/devices/blacklist")
+		Post(fmt.Sprintf("%s/api/v1/users/%s/devices/blacklist", c.baseURL, req.UserID))
 
 	if err != nil {
 		return fmt.Errorf("erro ao adicionar dispositivo à blacklist administrativamente: %w", err)
@@ -547,15 +547,86 @@ func (c *AuthClient) AdminRemoveDeviceFromBlacklist(ctx context.Context, deviceI
 		SetContext(ctx).
 		SetHeader("X-Correlation-ID", correlationID).
 		SetHeader("X-Company-Id", companyHeader(ctx)).
-		SetQueryParam("userId", userId).
 		SetAuthToken(token).
-		Delete(fmt.Sprintf("%s/api/v1/admin/devices/blacklist/%s", c.baseURL, deviceId))
+		Delete(fmt.Sprintf("%s/api/v1/users/%s/devices/blacklist/%s", c.baseURL, userId, deviceId))
 
 	if err != nil {
 		return fmt.Errorf("erro ao remover dispositivo da blacklist administrativamente: %w", err)
 	}
 
 	return c.handleHTTPError(resp, "admin_remove_device_blacklist")
+}
+
+func (c *AuthClient) ListTenantUserSessions(ctx context.Context, userId, token, tenantId, correlationID string) ([]inboundDto.DeviceSessionDTO, error) {
+	var response []inboundDto.DeviceSessionDTO
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetResult(&response).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
+		SetAuthToken(token).
+		Get(fmt.Sprintf("%s/api/v1/users/%s/sessions", c.baseURL, userId))
+	if err != nil {
+		return nil, fmt.Errorf("erro ao listar sessões do usuário: %w", err)
+	}
+	if httpErr := c.handleHTTPError(resp, "list_tenant_user_sessions"); httpErr != nil {
+		return nil, httpErr
+	}
+	return response, nil
+}
+
+func (c *AuthClient) RevokeTenantUserSession(ctx context.Context, userId, deviceId, token, tenantId, correlationID string) error {
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
+		SetAuthToken(token).
+		Delete(fmt.Sprintf("%s/api/v1/users/%s/sessions/%s", c.baseURL, userId, deviceId))
+	if err != nil {
+		return fmt.Errorf("erro ao revogar sessão do usuário: %w", err)
+	}
+	return c.handleHTTPError(resp, "revoke_tenant_user_session")
+}
+
+func (c *AuthClient) ListTenantUserBlacklist(ctx context.Context, userId, token, tenantId, correlationID string) ([]inboundDto.AdminDeviceBlacklistEntryDTO, error) {
+	var response []inboundDto.AdminDeviceBlacklistEntryDTO
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetResult(&response).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
+		SetAuthToken(token).
+		Get(fmt.Sprintf("%s/api/v1/users/%s/devices/blacklist", c.baseURL, userId))
+	if err != nil {
+		return nil, fmt.Errorf("erro ao listar blacklist do usuário: %w", err)
+	}
+	if httpErr := c.handleHTTPError(resp, "list_tenant_user_blacklist"); httpErr != nil {
+		return nil, httpErr
+	}
+	return response, nil
+}
+
+func (c *AuthClient) SearchTenantSessions(ctx context.Context, queryParams map[string]string, token, tenantId, correlationID string) (inboundDto.PaginatedDeviceSessionResponseDTO, error) {
+	var response inboundDto.PaginatedDeviceSessionResponseDTO
+	req := c.client.R().
+		SetContext(ctx).
+		SetResult(&response).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
+		SetAuthToken(token)
+	for k, v := range queryParams {
+		if v != "" {
+			req.SetQueryParam(k, v)
+		}
+	}
+	resp, err := req.Get(c.baseURL + "/api/v1/sessions")
+	if err != nil {
+		return response, fmt.Errorf("erro ao consultar sessões do tenant: %w", err)
+	}
+	if httpErr := c.handleHTTPError(resp, "search_tenant_sessions"); httpErr != nil {
+		return response, httpErr
+	}
+	return response, nil
 }
 
 func (c *AuthClient) GetUserByCodeUser(ctx context.Context, codeUser, token, tenantId, correlationID string) (outboundDto.UserByCodeResponseDTO, error) {

@@ -48,6 +48,8 @@ type DeviceSessionDTO struct {
 	IsTrusted    bool   `json:"isTrusted"`
 	LastActiveAt string `json:"lastActiveAt"`
 	CreatedAt    string `json:"createdAt"`
+	CodeUser     string `json:"codeUser,omitempty"`
+	Writable     *bool  `json:"writable,omitempty"`
 }
 
 // DeviceBlacklistDTO representa um dispositivo na blacklist
@@ -89,12 +91,14 @@ type AdminDeviceBlacklistEntryDTO struct {
 	BlockedBy  string `json:"blockedBy"`
 	BlockedAt  string `json:"blockedAt"`
 	ExpiresAt  string `json:"expiresAt,omitempty"`
+	Writable   *bool  `json:"writable,omitempty"`
 }
 
 // PaginatedDeviceBlacklistResponseDTO representa a resposta paginada de blacklist
 type PaginatedDeviceBlacklistResponseDTO struct {
 	Content          []AdminDeviceBlacklistEntryDTO `json:"content"`
 	Page             int                            `json:"page"`
+	Number           int                            `json:"number"`
 	Size             int                            `json:"size"`
 	TotalElements    int64                          `json:"totalElements"`
 	TotalPages       int                            `json:"totalPages"`
@@ -102,4 +106,18 @@ type PaginatedDeviceBlacklistResponseDTO struct {
 	Last             bool                           `json:"last"`
 	NumberOfElements int                            `json:"numberOfElements"`
 	Empty            bool                           `json:"empty"`
+}
+
+// PaginatedDeviceSessionResponseDTO representa a resposta paginada de sessões do tenant
+type PaginatedDeviceSessionResponseDTO struct {
+	Content          []DeviceSessionDTO `json:"content"`
+	Page             int                 `json:"page"`
+	Number           int                 `json:"number"`
+	Size             int                 `json:"size"`
+	TotalElements    int64              `json:"totalElements"`
+	TotalPages       int                 `json:"totalPages"`
+	First            bool               `json:"first"`
+	Last             bool               `json:"last"`
+	NumberOfElements int                 `json:"numberOfElements"`
+	Empty            bool               `json:"empty"`
 }

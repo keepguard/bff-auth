@@ -300,6 +300,22 @@ func (d *retryDecorator) AdminRemoveDeviceFromBlacklist(ctx context.Context, dev
 	return d.inner.AdminRemoveDeviceFromBlacklist(ctx, deviceId, userId, token, tenantId, correlationID)
 }
 
+func (d *retryDecorator) ListTenantUserSessions(ctx context.Context, userId, token, tenantId, correlationID string) ([]inboundDto.DeviceSessionDTO, error) {
+	return d.inner.ListTenantUserSessions(ctx, userId, token, tenantId, correlationID)
+}
+
+func (d *retryDecorator) RevokeTenantUserSession(ctx context.Context, userId, deviceId, token, tenantId, correlationID string) error {
+	return d.inner.RevokeTenantUserSession(ctx, userId, deviceId, token, tenantId, correlationID)
+}
+
+func (d *retryDecorator) ListTenantUserBlacklist(ctx context.Context, userId, token, tenantId, correlationID string) ([]inboundDto.AdminDeviceBlacklistEntryDTO, error) {
+	return d.inner.ListTenantUserBlacklist(ctx, userId, token, tenantId, correlationID)
+}
+
+func (d *retryDecorator) SearchTenantSessions(ctx context.Context, queryParams map[string]string, token, tenantId, correlationID string) (inboundDto.PaginatedDeviceSessionResponseDTO, error) {
+	return d.inner.SearchTenantSessions(ctx, queryParams, token, tenantId, correlationID)
+}
+
 func (d *retryDecorator) GetUserByCodeUser(ctx context.Context, codeUser, token, tenantId, correlationID string) (outboundDto.UserByCodeResponseDTO, error) {
 	var response outboundDto.UserByCodeResponseDTO
 	err := d.retry(ctx, func() error {

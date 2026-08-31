@@ -120,6 +120,26 @@ func (m *MockAuthClient) AdminRemoveDeviceFromBlacklist(ctx context.Context, dev
 	return args.Error(0)
 }
 
+func (m *MockAuthClient) ListTenantUserSessions(ctx context.Context, userId, token, tenantId, correlationID string) ([]dto.DeviceSessionDTO, error) {
+	args := m.Called(ctx, userId, token, tenantId, correlationID)
+	return args.Get(0).([]dto.DeviceSessionDTO), args.Error(1)
+}
+
+func (m *MockAuthClient) RevokeTenantUserSession(ctx context.Context, userId, deviceId, token, tenantId, correlationID string) error {
+	args := m.Called(ctx, userId, deviceId, token, tenantId, correlationID)
+	return args.Error(0)
+}
+
+func (m *MockAuthClient) ListTenantUserBlacklist(ctx context.Context, userId, token, tenantId, correlationID string) ([]dto.AdminDeviceBlacklistEntryDTO, error) {
+	args := m.Called(ctx, userId, token, tenantId, correlationID)
+	return args.Get(0).([]dto.AdminDeviceBlacklistEntryDTO), args.Error(1)
+}
+
+func (m *MockAuthClient) SearchTenantSessions(ctx context.Context, queryParams map[string]string, token, tenantId, correlationID string) (dto.PaginatedDeviceSessionResponseDTO, error) {
+	args := m.Called(ctx, queryParams, token, tenantId, correlationID)
+	return args.Get(0).(dto.PaginatedDeviceSessionResponseDTO), args.Error(1)
+}
+
 func (m *MockAuthClient) GetUserByCodeUser(ctx context.Context, codeUser, token, tenantId, correlationID string) (outboundDto.UserByCodeResponseDTO, error) {
 	args := m.Called(ctx, codeUser, token, tenantId, correlationID)
 	return args.Get(0).(outboundDto.UserByCodeResponseDTO), args.Error(1)
