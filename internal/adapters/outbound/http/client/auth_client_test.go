@@ -155,7 +155,7 @@ func TestAuthClient_Login_GenericError(t *testing.T) {
 	httpErr, ok := err.(*appdto.HTTPError)
 	assert.True(t, ok)
 	assert.Equal(t, 500, httpErr.StatusCode)
-	assert.Equal(t, "erro de login: status 500", httpErr.Message)
+	assert.Equal(t, "Erro ao comunicar com o serviço de autenticação (operação: login)", httpErr.Message)
 	assert.Equal(t, "HTTP_ERROR", httpErr.ErrorCode)
 }
 
@@ -346,7 +346,7 @@ func TestAuthClient_Logout_GenericError(t *testing.T) {
 	httpErr, ok := err.(*appdto.HTTPError)
 	assert.True(t, ok)
 	assert.Equal(t, 500, httpErr.StatusCode)
-	assert.Equal(t, "erro de logout: status 500", httpErr.Message)
+	assert.Equal(t, "Erro ao comunicar com o serviço de autenticação (operação: logout)", httpErr.Message)
 	assert.Equal(t, "HTTP_ERROR", httpErr.ErrorCode)
 }
 
@@ -416,6 +416,39 @@ func TestHandleHTTPError_MSAuthError(t *testing.T) {
 	assert.Equal(t, msError.Properties, httpErr.Details)
 }
 
+// TestHandleHTTPError_TranslatesEnglishDetail traduz mensagens legadas em inglês do ms-auth
+func TestHandleHTTPError_TranslatesEnglishDetail(t *testing.T) {
+	client := &AuthClient{}
+	msError := appdto.MSAuthErrorResponse{
+		Type:   "about:blank",
+		Title:  "Credenciais inválidas",
+		Status: 401,
+		Detail: "Invalid password",
+		Properties: map[string]interface{}{
+			"errorCode": "INVALID_PASSWORD",
+		},
+	}
+	msErrorJSON, _ := json.Marshal(msError)
+
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		w.WriteHeader(http.StatusUnauthorized)
+		w.Write(msErrorJSON)
+	}))
+	defer server.Close()
+
+	resp, err := resty.New().R().Get(server.URL)
+	assert.NoError(t, err)
+
+	err = client.handleHTTPError(resp, "login")
+	assert.Error(t, err)
+
+	httpErr, ok := err.(*appdto.HTTPError)
+	assert.True(t, ok)
+	assert.Equal(t, "Senha inválida", httpErr.Message)
+	assert.Equal(t, "INVALID_PASSWORD", httpErr.ErrorCode)
+}
+
 // TestHandleHTTPError_GenericError testa handleHTTPError com erro genérico
 func TestHandleHTTPError_GenericError(t *testing.T) {
 	// Arrange
@@ -441,7 +474,7 @@ func TestHandleHTTPError_GenericError(t *testing.T) {
 	httpErr, ok := err.(*appdto.HTTPError)
 	assert.True(t, ok)
 	assert.Equal(t, 500, httpErr.StatusCode)
-	assert.Equal(t, "erro de test: status 500", httpErr.Message)
+	assert.Equal(t, "Erro ao comunicar com o serviço de autenticação (operação: test)", httpErr.Message)
 	assert.Equal(t, "HTTP_ERROR", httpErr.ErrorCode)
 	assert.Equal(t, "Internal Server Error", httpErr.Details["body"])
 }
@@ -471,7 +504,7 @@ func TestHandleHTTPError_InvalidJSON(t *testing.T) {
 	httpErr, ok := err.(*appdto.HTTPError)
 	assert.True(t, ok)
 	assert.Equal(t, 400, httpErr.StatusCode)
-	assert.Equal(t, "erro de test: status 400", httpErr.Message)
+	assert.Equal(t, "Erro ao comunicar com o serviço de autenticação (operação: test)", httpErr.Message)
 	assert.Equal(t, "HTTP_ERROR", httpErr.ErrorCode)
 }
 
@@ -508,7 +541,7 @@ func TestHandleHTTPError_EmptyTitle(t *testing.T) {
 	httpErr, ok := err.(*appdto.HTTPError)
 	assert.True(t, ok)
 	assert.Equal(t, 400, httpErr.StatusCode)
-	assert.Equal(t, "Bad Request", httpErr.Message)
+	assert.Equal(t, "Dados de entrada inválidos", httpErr.Message)
 	assert.Equal(t, "UNKNOWN_ERROR", httpErr.ErrorCode)
 }
 

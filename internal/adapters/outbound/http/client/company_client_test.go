@@ -87,7 +87,7 @@ func TestCompanyClient_GetByTenantId_NotFound(t *testing.T) {
 
 	// Assert
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "company service retornou erro")
+	assert.Contains(t, err.Error(), "Empresa não encontrada")
 	assert.Equal(t, client.CompanySimpleResponseDTO{}, result)
 }
 
@@ -119,7 +119,7 @@ func TestCompanyClient_GetByTenantId_ServerError(t *testing.T) {
 
 	// Assert
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "company service retornou erro")
+	assert.Contains(t, err.Error(), "Erro interno do servidor")
 	assert.Equal(t, client.CompanySimpleResponseDTO{}, result)
 }
 

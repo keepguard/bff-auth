@@ -50,19 +50,19 @@ func NewLoginCommandWithDevice(username, password, tenantId, correlationID, clie
 // Validate valida os dados do comando de login
 func (c *LoginCommand) Validate() error {
 	if c.Username == "" {
-		return &ValidationError{Field: "username", Message: "username é obrigatório"}
+		return &ValidationError{Field: "username", Message: "Nome de usuário é obrigatório"}
 	}
 	if c.Password == "" {
-		return &ValidationError{Field: "password", Message: "password é obrigatório"}
+		return &ValidationError{Field: "password", Message: "Senha é obrigatória"}
 	}
 	if c.TenantId == "" {
-		return &ValidationError{Field: "tenantId", Message: "tenantId é obrigatório"}
+		return &ValidationError{Field: "tenantId", Message: "Tenant é obrigatório"}
 	}
 	if c.CorrelationID == "" {
-		return &ValidationError{Field: "correlationID", Message: "correlationID é obrigatório"}
+		return &ValidationError{Field: "correlationID", Message: "Identificador de correlação é obrigatório"}
 	}
 	if c.Context == nil {
-		return &ValidationError{Field: "context", Message: "context é obrigatório"}
+		return &ValidationError{Field: "context", Message: "Contexto da requisição é obrigatório"}
 	}
 	return nil
 }

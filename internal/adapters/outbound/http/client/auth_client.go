@@ -2,14 +2,12 @@ package client
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/go-resty/resty/v2"
 	inboundDto "github.com/keepguard/bff-auth/internal/adapters/inbound/http/dto"
 	outboundDto "github.com/keepguard/bff-auth/internal/adapters/outbound/http/dto"
-	appdto "github.com/keepguard/bff-auth/internal/application/dto"
 	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
 	"github.com/keepguard/bff-auth/internal/infrastructure/requestmeta"
 )
@@ -49,33 +47,7 @@ func NewAuthClient(baseURL string, timeout time.Duration) authclient.AuthClient 
 
 // handleHTTPError trata erros HTTP e extrai informações do ms-auth
 func (c *AuthClient) handleHTTPError(resp *resty.Response, operation string) error {
-	// Se não é um erro HTTP, retorna o erro original
-	if resp.StatusCode() >= 200 && resp.StatusCode() < 300 {
-		return nil
-	}
-
-	// Tenta extrair erro do ms-auth (ProblemDetail)
-	var msError appdto.MSAuthErrorResponse
-	if err := json.Unmarshal(resp.Body(), &msError); err == nil && (msError.Title != "" || msError.Detail != "") {
-		message := msError.Detail
-		if message == "" {
-			message = msError.Title
-		}
-		return &appdto.HTTPError{
-			StatusCode: msError.Status,
-			Message:    message,
-			ErrorCode:  getErrorCodeFromProperties(msError.Properties),
-			Details:    msError.Properties,
-		}
-	}
-
-	// Fallback para erro genérico
-	return &appdto.HTTPError{
-		StatusCode: resp.StatusCode(),
-		Message:    fmt.Sprintf("erro de %s: status %d", operation, resp.StatusCode()),
-		ErrorCode:  "HTTP_ERROR",
-		Details:    map[string]interface{}{"body": string(resp.Body())},
-	}
+	return buildHTTPErrorFromResponse(resp, operation)
 }
 
 // getErrorCodeFromProperties extrai o código de erro das propriedades

@@ -44,28 +44,28 @@ func NewChangePasswordCommand(
 // Validate valida os dados do comando de alteração de senha
 func (c *ChangePasswordCommand) Validate() error {
 	if c.Token == "" {
-		return &ValidationError{Field: "token", Message: "token é obrigatório"}
+		return &ValidationError{Field: "token", Message: "Token é obrigatório"}
 	}
 	if c.CurrentPassword == "" {
-		return &ValidationError{Field: "currentPassword", Message: "currentPassword é obrigatório"}
+		return &ValidationError{Field: "currentPassword", Message: "Senha atual é obrigatória"}
 	}
 	if c.NewPassword == "" {
-		return &ValidationError{Field: "newPassword", Message: "newPassword é obrigatório"}
+		return &ValidationError{Field: "newPassword", Message: "Nova senha é obrigatória"}
 	}
 	if c.ConfirmNewPassword == "" {
-		return &ValidationError{Field: "confirmNewPassword", Message: "confirmNewPassword é obrigatório"}
+		return &ValidationError{Field: "confirmNewPassword", Message: "Confirmação da nova senha é obrigatória"}
 	}
 	if c.NewPassword != c.ConfirmNewPassword {
-		return &ValidationError{Field: "confirmNewPassword", Message: "newPassword e confirmNewPassword devem ser iguais"}
+		return &ValidationError{Field: "confirmNewPassword", Message: "Nova senha e confirmação devem ser iguais"}
 	}
 	if c.TenantId == "" {
-		return &ValidationError{Field: "tenantId", Message: "tenantId é obrigatório"}
+		return &ValidationError{Field: "tenantId", Message: "Tenant é obrigatório"}
 	}
 	if c.CorrelationID == "" {
-		return &ValidationError{Field: "correlationID", Message: "correlationID é obrigatório"}
+		return &ValidationError{Field: "correlationID", Message: "Identificador de correlação é obrigatório"}
 	}
 	if c.Context == nil {
-		return &ValidationError{Field: "context", Message: "context é obrigatório"}
+		return &ValidationError{Field: "context", Message: "Contexto da requisição é obrigatório"}
 	}
 	return nil
 }

@@ -2,13 +2,11 @@ package client
 
 import (
 	"context"
-	"encoding/json"
 	"fmt"
 	"time"
 
 	"github.com/go-resty/resty/v2"
 	outboundDto "github.com/keepguard/bff-auth/internal/adapters/outbound/http/dto"
-	appdto "github.com/keepguard/bff-auth/internal/application/dto"
 	commclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
 	"github.com/keepguard/bff-auth/internal/infrastructure/config"
 	"github.com/keepguard/bff-auth/internal/infrastructure/logger"
@@ -44,34 +42,7 @@ func NewCommunicationClientWithLogger(config *config.Config, log logger.Logger) 
 
 // handleHTTPError trata erros HTTP e extrai informações do ms-communication
 func (c *communicationClient) handleHTTPError(resp *resty.Response, operation string) error {
-	// Se não é um erro HTTP, retorna o erro original
-	if resp.StatusCode() >= 200 && resp.StatusCode() < 300 {
-		return nil
-	}
-
-	// Tenta extrair erro do ms-communication (ProblemDetail)
-	var msError appdto.MSAuthErrorResponse
-	if err := json.Unmarshal(resp.Body(), &msError); err == nil && msError.Title != "" {
-		errorCode := "UNKNOWN_ERROR"
-		if code, ok := msError.Properties["errorCode"].(string); ok {
-			errorCode = code
-		}
-		// Erro estruturado do ms-communication
-		return &appdto.HTTPError{
-			StatusCode: msError.Status,
-			Message:    msError.Detail,
-			ErrorCode:  errorCode,
-			Details:    msError.Properties,
-		}
-	}
-
-	// Fallback para erro genérico
-	return &appdto.HTTPError{
-		StatusCode: resp.StatusCode(),
-		Message:    fmt.Sprintf("erro de %s: status %d", operation, resp.StatusCode()),
-		ErrorCode:  "HTTP_ERROR",
-		Details:    map[string]interface{}{"body": string(resp.Body())},
-	}
+	return buildHTTPErrorFromResponse(resp, operation)
 }
 
 // SendMessage envia uma mensagem através do ms-communication

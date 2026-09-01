@@ -142,7 +142,7 @@ type ValidationErrors struct {
 // Error implementa a interface error
 func (ve ValidationErrors) Error() string {
 	if len(ve.Errors) == 0 {
-		return "validation failed"
+		return "falha na validação"
 	}
 
 	var messages []string

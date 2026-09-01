@@ -12,6 +12,7 @@ import (
 	"github.com/keepguard/bff-auth/internal/domain/ports/client"
 	"github.com/keepguard/bff-auth/internal/infrastructure/config"
 	"github.com/keepguard/bff-auth/internal/infrastructure/logger"
+	"github.com/keepguard/bff-auth/internal/pkg"
 	"go.uber.org/zap"
 )
 
@@ -53,25 +54,44 @@ func (c *companyClient) GetByTenantId(ctx context.Context, tenantId, correlation
 		Get(url)
 
 	if err != nil {
-		return client.CompanySimpleResponseDTO{}, fmt.Errorf("erro ao comunicar com company service: %w", err)
+		return client.CompanySimpleResponseDTO{}, fmt.Errorf("erro ao comunicar com o serviço de empresas: %w", err)
 	}
 
 	if resp.StatusCode() != http.StatusOK {
-		var errorMsg string
+		var rawMessage string
+		errorCode := companyErrorCodeForStatus(resp.StatusCode())
+
 		var msError appdto.MSAuthErrorResponse
 		if jsonErr := json.Unmarshal(resp.Body(), &msError); jsonErr == nil && (msError.Detail != "" || msError.Title != "") {
-			errorMsg = msError.Detail
-			if errorMsg == "" {
-				errorMsg = msError.Title
+			rawMessage = msError.Detail
+			if rawMessage == "" {
+				rawMessage = msError.Title
+			}
+			if code, ok := msError.Properties["errorCode"].(string); ok && code != "" {
+				errorCode = code
 			}
 		} else {
-			errorMsg = "company service retornou erro"
+			var simple struct {
+				Error   string `json:"error"`
+				Message string `json:"message"`
+			}
+			if jsonErr := json.Unmarshal(resp.Body(), &simple); jsonErr == nil {
+				rawMessage = simple.Message
+				if rawMessage == "" {
+					rawMessage = simple.Error
+				}
+			}
+		}
+
+		errorMsg := pkg.ResolveUserMessage(errorCode, rawMessage)
+		if errorMsg == "" {
+			errorMsg = companyDefaultMessageForStatus(resp.StatusCode())
 		}
 
 		return client.CompanySimpleResponseDTO{}, &appdto.HTTPError{
 			StatusCode: resp.StatusCode(),
 			Message:    errorMsg,
-			ErrorCode:  "COMPANY_NOT_FOUND",
+			ErrorCode:  errorCode,
 			Details:    map[string]interface{}{"body": string(resp.Body())},
 		}
 	}
@@ -82,4 +102,26 @@ func (c *companyClient) GetByTenantId(ctx context.Context, tenantId, correlation
 	}
 
 	return company, nil
+}
+
+func companyErrorCodeForStatus(statusCode int) string {
+	switch statusCode {
+	case http.StatusNotFound:
+		return "COMPANY_NOT_FOUND"
+	case http.StatusInternalServerError:
+		return "INTERNAL_ERROR"
+	default:
+		return "HTTP_ERROR"
+	}
+}
+
+func companyDefaultMessageForStatus(statusCode int) string {
+	switch statusCode {
+	case http.StatusNotFound:
+		return "Empresa não encontrada"
+	case http.StatusInternalServerError:
+		return "Erro interno do servidor"
+	default:
+		return "Não foi possível consultar a empresa"
+	}
 }

@@ -226,7 +226,7 @@ func TestCommunicationClient_SendMessage_GenericError(t *testing.T) {
 	httpErr, ok := err.(*appdto.HTTPError)
 	assert.True(t, ok)
 	assert.Equal(t, 500, httpErr.StatusCode)
-	assert.Equal(t, "erro de send message: status 500", httpErr.Message)
+	assert.Equal(t, "Erro ao comunicar com o serviço de autenticação (operação: send message)", httpErr.Message)
 	assert.Equal(t, "HTTP_ERROR", httpErr.ErrorCode)
 }
 
@@ -411,7 +411,7 @@ func TestCommunicationClient_HandleHTTPError_GenericError(t *testing.T) {
 	httpErr, ok := err.(*appdto.HTTPError)
 	assert.True(t, ok)
 	assert.Equal(t, 500, httpErr.StatusCode)
-	assert.Equal(t, "erro de test: status 500", httpErr.Message)
+	assert.Equal(t, "Erro ao comunicar com o serviço de autenticação (operação: test)", httpErr.Message)
 	assert.Equal(t, "HTTP_ERROR", httpErr.ErrorCode)
 	assert.Equal(t, "Internal Server Error", httpErr.Details["body"])
 }
@@ -442,7 +442,7 @@ func TestCommunicationClient_HandleHTTPError_InvalidJSON(t *testing.T) {
 	httpErr, ok := err.(*appdto.HTTPError)
 	assert.True(t, ok)
 	assert.Equal(t, 400, httpErr.StatusCode)
-	assert.Equal(t, "erro de test: status 400", httpErr.Message)
+	assert.Equal(t, "Erro ao comunicar com o serviço de autenticação (operação: test)", httpErr.Message)
 	assert.Equal(t, "HTTP_ERROR", httpErr.ErrorCode)
 }
 
@@ -481,6 +481,6 @@ func TestCommunicationClient_HandleHTTPError_EmptyTitle(t *testing.T) {
 	httpErr, ok := err.(*appdto.HTTPError)
 	assert.True(t, ok)
 	assert.Equal(t, 400, httpErr.StatusCode)
-	assert.Equal(t, "erro de test: status 400", httpErr.Message)
-	assert.Equal(t, "HTTP_ERROR", httpErr.ErrorCode)
+	assert.Equal(t, "Dados de entrada inválidos", httpErr.Message)
+	assert.Equal(t, "UNKNOWN_ERROR", httpErr.ErrorCode)
 }

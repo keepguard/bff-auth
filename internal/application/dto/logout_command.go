@@ -24,16 +24,16 @@ func NewLogoutCommand(token, tenantId, correlationID string, ctx context.Context
 // Validate valida os dados do comando de logout
 func (c *LogoutCommand) Validate() error {
 	if c.Token == "" {
-		return &ValidationError{Field: "token", Message: "token é obrigatório"}
+		return &ValidationError{Field: "token", Message: "Token é obrigatório"}
 	}
 	if c.TenantId == "" {
-		return &ValidationError{Field: "tenantId", Message: "tenantId é obrigatório"}
+		return &ValidationError{Field: "tenantId", Message: "Tenant é obrigatório"}
 	}
 	if c.CorrelationID == "" {
-		return &ValidationError{Field: "correlationID", Message: "correlationID é obrigatório"}
+		return &ValidationError{Field: "correlationID", Message: "Identificador de correlação é obrigatório"}
 	}
 	if c.Context == nil {
-		return &ValidationError{Field: "context", Message: "context é obrigatório"}
+		return &ValidationError{Field: "context", Message: "Contexto da requisição é obrigatório"}
 	}
 	return nil
 }

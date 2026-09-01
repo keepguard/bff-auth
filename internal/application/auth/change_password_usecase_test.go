@@ -299,7 +299,7 @@ func TestChangePasswordUseCase_Execute_PasswordMismatch(t *testing.T) {
 
 	// Assert
 	assert.Error(t, err)
-	assert.Contains(t, err.Error(), "newPassword e confirmNewPassword devem ser iguais")
+	assert.Contains(t, err.Error(), "Nova senha e confirmação devem ser iguais")
 	// CompanyClient e AuthClient NÃO devem ser chamados se a validação falhar
 	mockCompanyClient.AssertNotCalled(t, "GetByTenantId", mock.Anything, mock.Anything, mock.Anything)
 	mockAuthClient.AssertNotCalled(t, "ChangePassword", mock.Anything, mock.Anything, mock.Anything, mock.Anything)

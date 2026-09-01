@@ -8,7 +8,7 @@ type ValidationError struct {
 
 // Error implementa a interface error
 func (e *ValidationError) Error() string {
-	return e.Field + ": " + e.Message
+	return e.Message
 }
 
 // IsValidationError verifica se o erro é do tipo ValidationError

@@ -26,16 +26,16 @@ func NewRefreshTokenCommand(refreshToken, tenantId, correlationID, clientId stri
 // Validate valida os dados do comando de refresh token
 func (c *RefreshTokenCommand) Validate() error {
 	if c.RefreshToken == "" {
-		return &ValidationError{Field: "refreshToken", Message: "refreshToken é obrigatório"}
+		return &ValidationError{Field: "refreshToken", Message: "Token de refresh é obrigatório"}
 	}
 	if c.TenantId == "" {
-		return &ValidationError{Field: "tenantId", Message: "tenantId é obrigatório"}
+		return &ValidationError{Field: "tenantId", Message: "Tenant é obrigatório"}
 	}
 	if c.CorrelationID == "" {
-		return &ValidationError{Field: "correlationID", Message: "correlationID é obrigatório"}
+		return &ValidationError{Field: "correlationID", Message: "Identificador de correlação é obrigatório"}
 	}
 	if c.Context == nil {
-		return &ValidationError{Field: "context", Message: "context é obrigatório"}
+		return &ValidationError{Field: "context", Message: "Contexto da requisição é obrigatório"}
 	}
 	return nil
 }
