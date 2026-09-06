@@ -6,8 +6,8 @@ import (
 	"time"
 
 	middlewarePkg "github.com/keepguard/bff-auth/internal/adapters/inbound/http/middleware"
-	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
 	auditport "github.com/keepguard/bff-auth/internal/domain/ports/audit"
+	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
 	"github.com/keepguard/bff-auth/internal/infrastructure/clientip"
 	"github.com/keepguard/bff-auth/internal/infrastructure/config"
 	"github.com/keepguard/bff-auth/internal/infrastructure/logger"
@@ -101,7 +101,8 @@ func (s *serverImpl) SetupRoutes(handlers Handler) {
 	zapLogger, _ := zap.NewDevelopment()
 	tokenRevocationMiddleware := middlewarePkg.TokenRevocationMiddleware(s.redisClient, zapLogger)
 	requireBearer := middlewarePkg.RequireBearer()
-	tenantRoles := middlewarePkg.RequireAnyRole("ADMIN", "SYSTEM", "MANAGER")
+	sessionRead := []echo.MiddlewareFunc{requireBearer, tokenRevocationMiddleware, middlewarePkg.RequireSessionRead()}
+	sessionWrite := []echo.MiddlewareFunc{requireBearer, tokenRevocationMiddleware, middlewarePkg.RequireSessionWrite()}
 
 	// Auth routes
 	authGroup := s.echo.Group("/api/v1/auth")
@@ -128,21 +129,24 @@ func (s *serverImpl) SetupRoutes(handlers Handler) {
 	userGroup.POST("/devices/blacklist", handlers.AddDeviceBlacklistHandler, rl.Limit("device_blacklist", rules.DeviceBlacklist))
 	userGroup.DELETE("/devices/blacklist/:deviceId", handlers.RemoveDeviceBlacklistHandler)
 
-	tenantAuth := []echo.MiddlewareFunc{requireBearer, tokenRevocationMiddleware, tenantRoles}
-	tenantUserGroup := s.echo.Group("/api/v1/users/:userId", tenantAuth...)
-	tenantUserGroup.GET("/sessions", handlers.ListTenantUserSessionsHandler)
-	tenantUserGroup.DELETE("/sessions/:deviceId", handlers.RevokeTenantUserSessionHandler)
-	tenantUserGroup.GET("/devices/blacklist", handlers.ListTenantUserBlacklistHandler)
-	tenantUserGroup.POST("/devices/blacklist", handlers.AddTenantUserBlacklistHandler, rl.Limit("device_blacklist", rules.DeviceBlacklist))
-	tenantUserGroup.DELETE("/devices/blacklist/:deviceId", handlers.RemoveTenantUserBlacklistHandler)
+	tenantUserRead := s.echo.Group("/api/v1/users/:userId", sessionRead...)
+	tenantUserRead.GET("/sessions", handlers.ListTenantUserSessionsHandler)
+	tenantUserRead.GET("/devices/blacklist", handlers.ListTenantUserBlacklistHandler)
 
-	s.echo.GET("/api/v1/sessions", handlers.SearchTenantSessionsHandler, tenantAuth...)
-	s.echo.GET("/api/v1/devices/blacklist", handlers.SearchAdminDeviceBlacklistHandler, tenantAuth...)
+	tenantUserWrite := s.echo.Group("/api/v1/users/:userId", sessionWrite...)
+	tenantUserWrite.DELETE("/sessions/:deviceId", handlers.RevokeTenantUserSessionHandler)
+	tenantUserWrite.POST("/devices/blacklist", handlers.AddTenantUserBlacklistHandler, rl.Limit("device_blacklist", rules.DeviceBlacklist))
+	tenantUserWrite.DELETE("/devices/blacklist/:deviceId", handlers.RemoveTenantUserBlacklistHandler)
 
-	adminGroup := s.echo.Group("/api/v1/admin/devices/blacklist", requireBearer, tokenRevocationMiddleware, tenantRoles)
-	adminGroup.GET("", handlers.SearchAdminDeviceBlacklistHandler)
-	adminGroup.POST("", handlers.AdminAddDeviceBlacklistHandler, rl.Limit("admin_device_blacklist", rules.DeviceBlacklist))
-	adminGroup.DELETE("/:deviceId", handlers.AdminRemoveDeviceBlacklistHandler)
+	s.echo.GET("/api/v1/sessions", handlers.SearchTenantSessionsHandler, sessionRead...)
+	s.echo.GET("/api/v1/devices/blacklist", handlers.SearchAdminDeviceBlacklistHandler, sessionRead...)
+
+	adminRead := s.echo.Group("/api/v1/admin/devices/blacklist", sessionRead...)
+	adminRead.GET("", handlers.SearchAdminDeviceBlacklistHandler)
+
+	adminWrite := s.echo.Group("/api/v1/admin/devices/blacklist", sessionWrite...)
+	adminWrite.POST("", handlers.AdminAddDeviceBlacklistHandler, rl.Limit("admin_device_blacklist", rules.DeviceBlacklist))
+	adminWrite.DELETE("/:deviceId", handlers.AdminRemoveDeviceBlacklistHandler)
 
 	s.logger.Info("Rotas configuradas com sucesso com proteção de Rate Limit",
 		zap.String("port", s.config.Server.Port),
