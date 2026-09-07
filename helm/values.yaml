@@ -5,6 +5,7 @@ image:
 
 service:
   port: 8381
+  metricsPort: 9092
 
 resources:
   limits:

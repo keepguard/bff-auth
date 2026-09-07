@@ -31,6 +31,7 @@ func TestShouldSkipValidateGetAndRefresh(t *testing.T) {
 	require.True(t, shouldSkipAudit(http.MethodGet, "/api/v1/users/me/sessions"))
 	require.True(t, shouldSkipAudit(http.MethodPost, "/api/v1/auth/refresh"))
 	require.False(t, shouldSkipAudit(http.MethodPost, "/api/v1/auth/login"))
+	require.False(t, shouldSkipAudit(http.MethodGet, "/api/v1/users/:userId/sessions"))
 }
 
 func TestAuditMiddlewareSkipsLoginSuccess(t *testing.T) {
@@ -65,4 +66,24 @@ func TestAuditMiddlewareSkipsLoginDenied(t *testing.T) {
 	})(c)
 	require.NoError(t, err)
 	require.Empty(t, rec.events)
+}
+
+func TestAuditMiddlewareTenantSessionListPublishes(t *testing.T) {
+	rec := &recPub{}
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodGet, "/api/v1/users/target-1/sessions", nil)
+	rr := httptest.NewRecorder()
+	c := e.NewContext(req, rr)
+	c.SetPath("/api/v1/users/:userId/sessions")
+	c.SetParamNames("userId")
+	c.SetParamValues("target-1")
+
+	mw := AuditMiddleware(rec, "bff-auth")
+	err := mw(func(c echo.Context) error {
+		return c.NoContent(http.StatusOK)
+	})(c)
+	require.NoError(t, err)
+	require.Len(t, rec.events, 1)
+	require.Equal(t, "SESSION_LIST_TENANT", rec.events[0].Action)
+	require.Equal(t, "target-1", rec.events[0].Resource.ID)
 }
