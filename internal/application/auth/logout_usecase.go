@@ -1,17 +1,17 @@
 package auth
 
 import (
+	"context"
+
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
-	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	authclient "github.com/keepguard/bff-auth/internal/application/port"
 )
 
-// logoutUseCaseImpl implementa o caso de uso de logout
 type logoutUseCaseImpl struct {
 	authClient    authclient.AuthClient
 	companyClient authclient.CompanyClient
 }
 
-// NewLogoutUseCase cria um novo caso de uso de logout
 func NewLogoutUseCase(authClient authclient.AuthClient, companyClient authclient.CompanyClient) LogoutUseCase {
 	return &logoutUseCaseImpl{
 		authClient:    authClient,
@@ -19,19 +19,11 @@ func NewLogoutUseCase(authClient authclient.AuthClient, companyClient authclient
 	}
 }
 
-// Execute executa o caso de uso de logout
-func (uc *logoutUseCaseImpl) Execute(command appdto.LogoutCommand) error {
-	// Primeiro, verifica se a empresa existe consultando o Company Service
-	_, err := uc.companyClient.GetByTenantId(command.Context, command.TenantId, command.CorrelationID)
+func (uc *logoutUseCaseImpl) Execute(ctx context.Context, command appdto.LogoutCommand) error {
+	_, err := uc.companyClient.GetByTenantId(ctx, command.TenantId, command.CorrelationID)
 	if err != nil {
 		return err
 	}
 
-	// Chama o cliente de autenticação
-	err = uc.authClient.Logout(command.Context, command.Token, command.TenantId, command.CorrelationID)
-	if err != nil {
-		return err
-	}
-
-	return nil
+	return uc.authClient.Logout(ctx, command.Token, command.TenantId, command.CorrelationID)
 }

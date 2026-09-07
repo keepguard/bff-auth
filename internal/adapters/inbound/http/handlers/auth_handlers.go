@@ -10,9 +10,13 @@ import (
 	"time"
 
 	"github.com/keepguard/bff-auth/internal/adapters/inbound/http/dto"
+	"github.com/keepguard/bff-auth/internal/adapters/inbound/http/mapper"
 	"github.com/keepguard/bff-auth/internal/application/auth"
+	"github.com/keepguard/bff-auth/internal/application/blacklist"
+	"github.com/keepguard/bff-auth/internal/application/device"
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
-	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	"github.com/keepguard/bff-auth/internal/application/lifecycle"
+	"github.com/keepguard/bff-auth/internal/application/session"
 	"github.com/keepguard/bff-auth/internal/infrastructure/clientip"
 	"github.com/keepguard/bff-auth/internal/infrastructure/logger"
 	"github.com/keepguard/bff-auth/internal/infrastructure/requestmeta"
@@ -29,8 +33,10 @@ type AuthHandlers struct {
 	validateTokenUseCase  auth.ValidateTokenUseCase
 	changePasswordUseCase auth.ChangePasswordUseCase
 	resetPasswordUseCase  auth.ResetPasswordUseCase
-	authClient            authclient.AuthClient
-	companyClient         authclient.CompanyClient
+	devicePort            device.DevicePort
+	sessionPort           session.SessionPort
+	blacklistPort         blacklist.BlacklistPort
+	lifecyclePort         lifecycle.LifecyclePort
 	logger                *zap.Logger
 }
 
@@ -42,8 +48,10 @@ func NewAuthHandlers(
 	validateTokenUseCase auth.ValidateTokenUseCase,
 	changePasswordUseCase auth.ChangePasswordUseCase,
 	resetPasswordUseCase auth.ResetPasswordUseCase,
-	authClient authclient.AuthClient,
-	companyClient authclient.CompanyClient,
+	devicePort device.DevicePort,
+	sessionPort session.SessionPort,
+	blacklistPort blacklist.BlacklistPort,
+	lifecyclePort lifecycle.LifecyclePort,
 	logger *zap.Logger,
 ) *AuthHandlers {
 	return &AuthHandlers{
@@ -53,8 +61,10 @@ func NewAuthHandlers(
 		validateTokenUseCase:  validateTokenUseCase,
 		changePasswordUseCase: changePasswordUseCase,
 		resetPasswordUseCase:  resetPasswordUseCase,
-		authClient:            authClient,
-		companyClient:         companyClient,
+		devicePort:            devicePort,
+		sessionPort:           sessionPort,
+		blacklistPort:         blacklistPort,
+		lifecyclePort:         lifecyclePort,
 		logger:                logger,
 	}
 }
@@ -67,8 +77,10 @@ func NewAuthHandlersWithLogger(
 	validateTokenUseCase auth.ValidateTokenUseCase,
 	changePasswordUseCase auth.ChangePasswordUseCase,
 	resetPasswordUseCase auth.ResetPasswordUseCase,
-	authClient authclient.AuthClient,
-	companyClient authclient.CompanyClient,
+	devicePort device.DevicePort,
+	sessionPort session.SessionPort,
+	blacklistPort blacklist.BlacklistPort,
+	lifecyclePort lifecycle.LifecyclePort,
 	log logger.Logger,
 ) *AuthHandlers {
 	zapLogger, _ := zap.NewDevelopment()
@@ -79,8 +91,10 @@ func NewAuthHandlersWithLogger(
 		validateTokenUseCase:  validateTokenUseCase,
 		changePasswordUseCase: changePasswordUseCase,
 		resetPasswordUseCase:  resetPasswordUseCase,
-		authClient:            authClient,
-		companyClient:         companyClient,
+		devicePort:            devicePort,
+		sessionPort:           sessionPort,
+		blacklistPort:         blacklistPort,
+		lifecyclePort:         lifecyclePort,
 		logger:                zapLogger,
 	}
 }
@@ -159,7 +173,6 @@ func (h *AuthHandlers) LoginHandler(c echo.Context) error {
 		deviceType,
 		ipAddress,
 		userAgent,
-		withClientNetwork(c),
 	)
 
 	// Validar comando
@@ -177,7 +190,7 @@ func (h *AuthHandlers) LoginHandler(c echo.Context) error {
 	}
 
 	// Executar caso de uso com comando encapsulado
-	response, err := h.loginUseCase.Execute(command)
+	response, err := h.loginUseCase.Execute(withClientNetwork(c), command)
 	if err != nil {
 		h.logger.Error("Erro no caso de uso de login",
 			zap.String("correlationId", correlationID),
@@ -193,7 +206,7 @@ func (h *AuthHandlers) LoginHandler(c echo.Context) error {
 		zap.String("username", req.Username),
 	)
 
-	return c.JSON(http.StatusOK, response)
+	return c.JSON(http.StatusOK, mapper.ToAuthResponse(response))
 }
 
 // RefreshHandler trata requisições de refresh de token
@@ -243,7 +256,6 @@ func (h *AuthHandlers) RefreshHandler(c echo.Context) error {
 		tenantId,
 		correlationID,
 		clientId,
-		c.Request().Context(),
 	)
 
 	// Validar comando
@@ -261,7 +273,7 @@ func (h *AuthHandlers) RefreshHandler(c echo.Context) error {
 	}
 
 	// Executar caso de uso com comando encapsulado
-	response, err := h.refreshTokenUseCase.Execute(command)
+	response, err := h.refreshTokenUseCase.Execute(c.Request().Context(), command)
 	if err != nil {
 		h.logger.Error("Erro no caso de uso de refresh",
 			zap.String("correlationId", correlationID),
@@ -276,7 +288,7 @@ func (h *AuthHandlers) RefreshHandler(c echo.Context) error {
 		zap.String("applicationId", tenantId),
 	)
 
-	return c.JSON(http.StatusOK, response)
+	return c.JSON(http.StatusOK, mapper.ToRefreshTokenResponse(response))
 }
 
 // LogoutHandler trata requisições de logout
@@ -331,7 +343,6 @@ func (h *AuthHandlers) LogoutHandler(c echo.Context) error {
 		token,
 		tenantId,
 		correlationID,
-		c.Request().Context(),
 	)
 
 	// Validar comando
@@ -349,7 +360,7 @@ func (h *AuthHandlers) LogoutHandler(c echo.Context) error {
 	}
 
 	// Executar caso de uso com comando encapsulado
-	err = h.logoutUseCase.Execute(command)
+	err = h.logoutUseCase.Execute(c.Request().Context(), command)
 	if err != nil {
 		h.logger.Error("Erro no caso de uso de logout",
 			zap.String("correlationId", correlationID),
@@ -489,7 +500,6 @@ func (h *AuthHandlers) ValidateTokenHandler(c echo.Context) error {
 		req.Token,
 		tenantId,
 		correlationID,
-		c.Request().Context(),
 	)
 
 	// Validar comando
@@ -507,7 +517,7 @@ func (h *AuthHandlers) ValidateTokenHandler(c echo.Context) error {
 	}
 
 	// Executar caso de uso com comando encapsulado
-	err = h.validateTokenUseCase.Execute(command)
+	err = h.validateTokenUseCase.Execute(c.Request().Context(), command)
 	if err != nil {
 		h.logger.Error("Erro no caso de uso de validação de token",
 			zap.String("correlationId", correlationID),
@@ -606,7 +616,6 @@ func (h *AuthHandlers) ChangePasswordHandler(c echo.Context) error {
 		deviceType,
 		ipAddress,
 		userAgent,
-		withClientNetwork(c),
 	)
 
 	// Validar comando
@@ -624,7 +633,7 @@ func (h *AuthHandlers) ChangePasswordHandler(c echo.Context) error {
 	}
 
 	// Executar caso de uso com comando encapsulado
-	err = h.changePasswordUseCase.Execute(command)
+	err = h.changePasswordUseCase.Execute(withClientNetwork(c), command)
 	if err != nil {
 		h.logger.Error("Erro no caso de uso de alteração de senha",
 			zap.String("correlationId", correlationID),
@@ -702,7 +711,6 @@ func (h *AuthHandlers) ResetPasswordHandler(c echo.Context) error {
 		deviceType,
 		ipAddress,
 		userAgent,
-		withClientNetwork(c),
 	)
 
 	// Validar comando
@@ -720,7 +728,7 @@ func (h *AuthHandlers) ResetPasswordHandler(c echo.Context) error {
 	}
 
 	// Executar caso de uso com comando encapsulado
-	err = h.resetPasswordUseCase.Execute(command)
+	err = h.resetPasswordUseCase.Execute(withClientNetwork(c), command)
 	if err != nil {
 		h.logger.Error("Erro no caso de uso de reset de senha",
 			zap.String("correlationId", correlationID),
@@ -760,7 +768,7 @@ func (h *AuthHandlers) SendDeviceChallengeHandler(c echo.Context) error {
 		})
 	}
 
-	res, err := h.authClient.SendDeviceChallenge(c.Request().Context(), req, tenantId, correlationID)
+	res, err := h.devicePort.SendChallenge(c.Request().Context(), mapper.ToSendDeviceChallengeCommand(req, tenantId, correlationID))
 	if err != nil {
 		return handleError(c, err, correlationID)
 	}
@@ -790,12 +798,12 @@ func (h *AuthHandlers) VerifyDeviceChallengeHandler(c echo.Context) error {
 		})
 	}
 
-	res, err := h.authClient.VerifyDeviceChallenge(c.Request().Context(), req, tenantId, correlationID)
+	res, err := h.devicePort.VerifyChallenge(c.Request().Context(), mapper.ToVerifyDeviceChallengeCommand(req, tenantId, correlationID))
 	if err != nil {
 		return handleError(c, err, correlationID)
 	}
 
-	return c.JSON(http.StatusOK, res)
+	return c.JSON(http.StatusOK, mapper.ToAuthResponse(res))
 }
 
 // ListUserSessionsHandler lista sessões do usuário autenticado
@@ -815,7 +823,12 @@ func (h *AuthHandlers) ListUserSessionsHandler(c echo.Context) error {
 	deviceId := c.Request().Header.Get("X-Device-Id")
 	ctx := withClientNetwork(c)
 
-	sessions, err := h.authClient.ListUserSessions(ctx, token, deviceId, tenantId, correlationID)
+	sessions, err := h.sessionPort.ListMe(ctx, appdto.ListUserSessionsQuery{
+		TenantID:      tenantId,
+		CorrelationID: correlationID,
+		Token:         token,
+		DeviceID:      deviceId,
+	})
 	if err != nil {
 		return handleError(c, err, correlationID)
 	}
@@ -835,35 +848,33 @@ func (h *AuthHandlers) bindAccountLifecycleReason(c echo.Context) (string, error
 	return reason, nil
 }
 
-func (h *AuthHandlers) resolveSelfUserExternalID(c echo.Context, token, tenantId, correlationID string) (string, error) {
+func (h *AuthHandlers) accountLifecycleCommand(c echo.Context) (appdto.AccountLifecycleCommand, error) {
+	correlationID, tenantId, token, err := h.accountLifecycleHeaders(c)
+	if err != nil {
+		return appdto.AccountLifecycleCommand{CorrelationID: correlationID}, err
+	}
+
+	reason, err := h.bindAccountLifecycleReason(c)
+	if err != nil {
+		return appdto.AccountLifecycleCommand{CorrelationID: correlationID}, err
+	}
+
 	if strings.TrimSpace(token) == "" {
-		return "", pkg.NewAppError("UNAUTHORIZED", "Token de autorização não fornecido ou inválido", http.StatusUnauthorized)
+		return appdto.AccountLifecycleCommand{CorrelationID: correlationID}, pkg.NewAppError("UNAUTHORIZED", "Token de autorização não fornecido ou inválido", http.StatusUnauthorized)
 	}
 
 	codeUser, err := pkg.ExtractCodeUserFromToken(token)
 	if err != nil || codeUser == "" {
-		return "", pkg.NewAppError("UNAUTHORIZED", "Token JWT sem identificador de usuário", http.StatusUnauthorized)
+		return appdto.AccountLifecycleCommand{CorrelationID: correlationID}, pkg.NewAppError("UNAUTHORIZED", "Token JWT sem identificador de usuário", http.StatusUnauthorized)
 	}
 
-	company, err := h.companyClient.GetByTenantId(c.Request().Context(), tenantId, correlationID)
-	if err != nil {
-		return "", err
-	}
-	if company.ID == "" {
-		return "", pkg.NewAppError("COMPANY_NOT_FOUND", "Empresa não encontrada para o tenant informado", http.StatusNotFound)
-	}
-
-	ctx := authclient.WithCompanyID(c.Request().Context(), company.ID)
-	user, err := h.authClient.GetUserByCodeUser(ctx, codeUser, token, tenantId, correlationID)
-	if err != nil {
-		return "", err
-	}
-
-	idUserExternal := user.ExternalID()
-	if idUserExternal == "" {
-		return "", pkg.NewAppError("USER_NOT_FOUND", "Usuário autenticado não encontrado", http.StatusNotFound)
-	}
-	return idUserExternal, nil
+	return appdto.AccountLifecycleCommand{
+		TenantID:      tenantId,
+		Token:         token,
+		CodeUser:      codeUser,
+		Reason:        reason,
+		CorrelationID: correlationID,
+	}, nil
 }
 
 func (h *AuthHandlers) accountLifecycleHeaders(c echo.Context) (correlationID, tenantId, token string, err error) {
@@ -880,23 +891,13 @@ func (h *AuthHandlers) accountLifecycleHeaders(c echo.Context) (correlationID, t
 
 // BlockMeHandler bloqueia a própria conta do usuário autenticado.
 func (h *AuthHandlers) BlockMeHandler(c echo.Context) error {
-	correlationID, tenantId, token, err := h.accountLifecycleHeaders(c)
+	cmd, err := h.accountLifecycleCommand(c)
 	if err != nil {
-		return handleError(c, err, correlationID)
+		return handleError(c, err, cmd.CorrelationID)
 	}
 
-	reason, err := h.bindAccountLifecycleReason(c)
-	if err != nil {
-		return handleError(c, err, correlationID)
-	}
-
-	idUserExternal, err := h.resolveSelfUserExternalID(c, token, tenantId, correlationID)
-	if err != nil {
-		return handleError(c, err, correlationID)
-	}
-
-	if err := h.authClient.BlockUser(c.Request().Context(), idUserExternal, reason, token, tenantId, correlationID); err != nil {
-		return handleError(c, err, correlationID)
+	if err := h.lifecyclePort.BlockMe(c.Request().Context(), cmd); err != nil {
+		return handleError(c, err, cmd.CorrelationID)
 	}
 
 	return c.NoContent(http.StatusNoContent)
@@ -904,23 +905,13 @@ func (h *AuthHandlers) BlockMeHandler(c echo.Context) error {
 
 // DeleteMeHandler exclui a própria conta do usuário autenticado.
 func (h *AuthHandlers) DeleteMeHandler(c echo.Context) error {
-	correlationID, tenantId, token, err := h.accountLifecycleHeaders(c)
+	cmd, err := h.accountLifecycleCommand(c)
 	if err != nil {
-		return handleError(c, err, correlationID)
+		return handleError(c, err, cmd.CorrelationID)
 	}
 
-	reason, err := h.bindAccountLifecycleReason(c)
-	if err != nil {
-		return handleError(c, err, correlationID)
-	}
-
-	idUserExternal, err := h.resolveSelfUserExternalID(c, token, tenantId, correlationID)
-	if err != nil {
-		return handleError(c, err, correlationID)
-	}
-
-	if err := h.authClient.DeleteUser(c.Request().Context(), idUserExternal, reason, token, tenantId, correlationID); err != nil {
-		return handleError(c, err, correlationID)
+	if err := h.lifecyclePort.DeleteMe(c.Request().Context(), cmd); err != nil {
+		return handleError(c, err, cmd.CorrelationID)
 	}
 
 	return c.NoContent(http.StatusNoContent)
@@ -942,7 +933,12 @@ func (h *AuthHandlers) RevokeSessionHandler(c echo.Context) error {
 	token := strings.TrimPrefix(c.Request().Header.Get("Authorization"), "Bearer ")
 	deviceIdToRevoke := c.Param("deviceId")
 
-	if err := h.authClient.RevokeSession(c.Request().Context(), deviceIdToRevoke, token, tenantId, correlationID); err != nil {
+	if err := h.sessionPort.Revoke(c.Request().Context(), appdto.RevokeSessionCommand{
+		TenantID:      tenantId,
+		CorrelationID: correlationID,
+		Token:         token,
+		DeviceID:      deviceIdToRevoke,
+	}); err != nil {
 		return handleError(c, err, correlationID)
 	}
 
@@ -965,7 +961,12 @@ func (h *AuthHandlers) RevokeAllOtherSessionsHandler(c echo.Context) error {
 	token := strings.TrimPrefix(c.Request().Header.Get("Authorization"), "Bearer ")
 	currentDeviceId := c.Request().Header.Get("X-Device-Id")
 
-	if err := h.authClient.RevokeAllOtherSessions(c.Request().Context(), token, currentDeviceId, tenantId, correlationID); err != nil {
+	if err := h.sessionPort.RevokeOthers(c.Request().Context(), appdto.RevokeAllOtherSessionsCommand{
+		TenantID:        tenantId,
+		CorrelationID:   correlationID,
+		Token:           token,
+		CurrentDeviceID: currentDeviceId,
+	}); err != nil {
 		return handleError(c, err, correlationID)
 	}
 
@@ -993,45 +994,16 @@ func (h *AuthHandlers) QuickRevokeHandler(c echo.Context) error {
 	blacklistParam := c.QueryParam("blacklist")
 	blacklist := blacklistParam != "false"
 
-	res, err := h.authClient.QuickRevoke(c.Request().Context(), token, blacklist, tenantId, correlationID)
+	view, err := h.devicePort.QuickRevoke(c.Request().Context(), mapper.ToQuickRevokeCommand(token, tenantId, correlationID, blacklist))
 	if err != nil {
 		return handleError(c, err, correlationID)
 	}
 
 	if strings.Contains(c.Request().Header.Get("Accept"), "text/html") {
-		msg, _ := res["message"].(string)
-		if msg == "" {
-			msg = "Sessão revogada com sucesso."
-		}
-		html := fmt.Sprintf(`<!DOCTYPE html>
-<html lang="pt-BR">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>KeepGuard - Dispositivo Revogado</title>
-    <style>
-        body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif; background-color: #0f172a; color: #f8fafc; display: flex; align-items: center; justify-content: center; height: 100vh; margin: 0; }
-        .card { background: #1e293b; padding: 2.5rem; border-radius: 12px; box-shadow: 0 10px 25px -5px rgba(0,0,0,0.5); max-width: 480px; text-align: center; border: 1px solid #334155; }
-        .icon { font-size: 3.5rem; margin-bottom: 1rem; color: #ef4444; }
-        h1 { font-size: 1.5rem; margin-bottom: 0.75rem; color: #ffffff; }
-        p { color: #94a3b8; line-height: 1.5; font-size: 0.95rem; margin-bottom: 1.5rem; }
-        .badge { display: inline-block; padding: 0.35rem 0.75rem; background: #334155; color: #38bdf8; border-radius: 9999px; font-size: 0.85rem; font-weight: 600; margin-bottom: 1.5rem; }
-    </style>
-</head>
-<body>
-    <div class="card">
-        <div class="icon">&#128737;</div>
-        <h1>Acesso Revogado com Sucesso</h1>
-        <div class="badge">Dispositivo Bloqueado</div>
-        <p>%s O acesso desta sessão foi encerrado e este dispositivo foi adicionado à sua lista de bloqueios.</p>
-        <p style="font-size:0.85rem; color:#64748b;">Sua conta permanece protegida.</p>
-    </div>
-</body>
-</html>`, msg)
-		return c.HTML(http.StatusOK, html)
+		return c.HTML(http.StatusOK, renderQuickRevokeHTML(view.Message))
 	}
 
-	return c.JSON(http.StatusOK, res)
+	return c.JSON(http.StatusOK, mapper.QuickRevokeJSON(view))
 }
 
 // ListDeviceBlacklistHandler lista dispositivos bloqueados na blacklist
@@ -1049,7 +1021,11 @@ func (h *AuthHandlers) ListDeviceBlacklistHandler(c echo.Context) error {
 
 	token := strings.TrimPrefix(c.Request().Header.Get("Authorization"), "Bearer ")
 
-	blacklist, err := h.authClient.ListDeviceBlacklist(c.Request().Context(), token, tenantId, correlationID)
+	blacklist, err := h.blacklistPort.ListMe(c.Request().Context(), appdto.ListDeviceBlacklistQuery{
+		TenantID:      tenantId,
+		CorrelationID: correlationID,
+		Token:         token,
+	})
 	if err != nil {
 		return handleError(c, err, correlationID)
 	}
@@ -1081,7 +1057,7 @@ func (h *AuthHandlers) AddDeviceBlacklistHandler(c echo.Context) error {
 		})
 	}
 
-	if err := h.authClient.AddDeviceToBlacklist(c.Request().Context(), req, token, tenantId, correlationID); err != nil {
+	if err := h.blacklistPort.AddMe(c.Request().Context(), mapper.ToAddDeviceBlacklistCommand(req, token, tenantId, correlationID)); err != nil {
 		return handleError(c, err, correlationID)
 	}
 
@@ -1104,7 +1080,12 @@ func (h *AuthHandlers) RemoveDeviceBlacklistHandler(c echo.Context) error {
 	token := strings.TrimPrefix(c.Request().Header.Get("Authorization"), "Bearer ")
 	deviceId := c.Param("deviceId")
 
-	if err := h.authClient.RemoveDeviceFromBlacklist(c.Request().Context(), deviceId, token, tenantId, correlationID); err != nil {
+	if err := h.blacklistPort.RemoveMe(c.Request().Context(), appdto.RemoveDeviceBlacklistCommand{
+		TenantID:      tenantId,
+		CorrelationID: correlationID,
+		Token:         token,
+		DeviceID:      deviceId,
+	}); err != nil {
 		return handleError(c, err, correlationID)
 	}
 
@@ -1138,7 +1119,12 @@ func (h *AuthHandlers) SearchAdminDeviceBlacklistHandler(c echo.Context) error {
 		"sort":       c.QueryParam("sort"),
 	}
 
-	blacklist, err := h.authClient.SearchAdminDeviceBlacklist(c.Request().Context(), queryParams, token, tenantId, correlationID)
+	blacklist, err := h.blacklistPort.SearchAdmin(c.Request().Context(), appdto.SearchAdminDeviceBlacklistQuery{
+		TenantID:      tenantId,
+		CorrelationID: correlationID,
+		Token:         token,
+		QueryParams:   queryParams,
+	})
 	if err != nil {
 		return handleError(c, err, correlationID)
 	}
@@ -1170,7 +1156,7 @@ func (h *AuthHandlers) AdminAddDeviceBlacklistHandler(c echo.Context) error {
 		})
 	}
 
-	if err := h.authClient.AdminAddDeviceToBlacklist(c.Request().Context(), req, token, tenantId, correlationID); err != nil {
+	if err := h.blacklistPort.AdminAdd(c.Request().Context(), mapper.ToAdminAddDeviceBlacklistCommand(req, token, tenantId, correlationID)); err != nil {
 		return handleError(c, err, correlationID)
 	}
 
@@ -1202,7 +1188,13 @@ func (h *AuthHandlers) AdminRemoveDeviceBlacklistHandler(c echo.Context) error {
 		})
 	}
 
-	if err := h.authClient.AdminRemoveDeviceFromBlacklist(c.Request().Context(), deviceId, userId, token, tenantId, correlationID); err != nil {
+	if err := h.blacklistPort.AdminRemove(c.Request().Context(), appdto.AdminRemoveDeviceBlacklistCommand{
+		TenantID:      tenantId,
+		CorrelationID: correlationID,
+		Token:         token,
+		DeviceID:      deviceId,
+		UserID:        userId,
+	}); err != nil {
 		return handleError(c, err, correlationID)
 	}
 
@@ -1228,7 +1220,12 @@ func (h *AuthHandlers) ListTenantUserSessionsHandler(c echo.Context) error {
 		return handleError(c, err, correlationID)
 	}
 	userId := c.Param("userId")
-	sessions, err := h.authClient.ListTenantUserSessions(c.Request().Context(), userId, token, tenantId, correlationID)
+	sessions, err := h.sessionPort.ListTenantUser(c.Request().Context(), appdto.ListTenantUserSessionsQuery{
+		TenantID:      tenantId,
+		CorrelationID: correlationID,
+		Token:         token,
+		UserID:        userId,
+	})
 	if err != nil {
 		return handleError(c, err, correlationID)
 	}
@@ -1240,7 +1237,13 @@ func (h *AuthHandlers) RevokeTenantUserSessionHandler(c echo.Context) error {
 	if err != nil {
 		return handleError(c, err, correlationID)
 	}
-	if err := h.authClient.RevokeTenantUserSession(c.Request().Context(), c.Param("userId"), c.Param("deviceId"), token, tenantId, correlationID); err != nil {
+	if err := h.sessionPort.RevokeTenantUser(c.Request().Context(), appdto.RevokeTenantUserSessionCommand{
+		TenantID:      tenantId,
+		CorrelationID: correlationID,
+		Token:         token,
+		UserID:        c.Param("userId"),
+		DeviceID:      c.Param("deviceId"),
+	}); err != nil {
 		return handleError(c, err, correlationID)
 	}
 	return c.NoContent(http.StatusNoContent)
@@ -1251,7 +1254,12 @@ func (h *AuthHandlers) ListTenantUserBlacklistHandler(c echo.Context) error {
 	if err != nil {
 		return handleError(c, err, correlationID)
 	}
-	blacklist, err := h.authClient.ListTenantUserBlacklist(c.Request().Context(), c.Param("userId"), token, tenantId, correlationID)
+	blacklist, err := h.blacklistPort.ListTenantUser(c.Request().Context(), appdto.ListTenantUserBlacklistQuery{
+		TenantID:      tenantId,
+		CorrelationID: correlationID,
+		Token:         token,
+		UserID:        c.Param("userId"),
+	})
 	if err != nil {
 		return handleError(c, err, correlationID)
 	}
@@ -1271,13 +1279,7 @@ func (h *AuthHandlers) AddTenantUserBlacklistHandler(c echo.Context) error {
 			CorrelationID: correlationID,
 		})
 	}
-	adminReq := dto.AdminAddDeviceBlacklistRequestDTO{
-		UserID:     c.Param("userId"),
-		DeviceID:   req.DeviceID,
-		DeviceName: req.DeviceName,
-		Reason:     req.Reason,
-	}
-	if err := h.authClient.AdminAddDeviceToBlacklist(c.Request().Context(), adminReq, token, tenantId, correlationID); err != nil {
+	if err := h.blacklistPort.AdminAdd(c.Request().Context(), mapper.ToTenantAddDeviceBlacklistCommand(req, c.Param("userId"), token, tenantId, correlationID)); err != nil {
 		return handleError(c, err, correlationID)
 	}
 	return c.NoContent(http.StatusNoContent)
@@ -1288,7 +1290,13 @@ func (h *AuthHandlers) RemoveTenantUserBlacklistHandler(c echo.Context) error {
 	if err != nil {
 		return handleError(c, err, correlationID)
 	}
-	if err := h.authClient.AdminRemoveDeviceFromBlacklist(c.Request().Context(), c.Param("deviceId"), c.Param("userId"), token, tenantId, correlationID); err != nil {
+	if err := h.blacklistPort.AdminRemove(c.Request().Context(), appdto.AdminRemoveDeviceBlacklistCommand{
+		TenantID:      tenantId,
+		CorrelationID: correlationID,
+		Token:         token,
+		DeviceID:      c.Param("deviceId"),
+		UserID:        c.Param("userId"),
+	}); err != nil {
 		return handleError(c, err, correlationID)
 	}
 	return c.NoContent(http.StatusNoContent)
@@ -1306,7 +1314,12 @@ func (h *AuthHandlers) SearchTenantSessionsHandler(c echo.Context) error {
 		"size":     c.QueryParam("size"),
 		"sort":     c.QueryParam("sort"),
 	}
-	sessions, err := h.authClient.SearchTenantSessions(c.Request().Context(), queryParams, token, tenantId, correlationID)
+	sessions, err := h.sessionPort.SearchTenant(c.Request().Context(), appdto.SearchTenantSessionsQuery{
+		TenantID:      tenantId,
+		CorrelationID: correlationID,
+		Token:         token,
+		QueryParams:   queryParams,
+	})
 	if err != nil {
 		return handleError(c, err, correlationID)
 	}

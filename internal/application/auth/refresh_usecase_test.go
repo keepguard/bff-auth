@@ -4,9 +4,8 @@ import (
 	"context"
 	"testing"
 
-	"github.com/keepguard/bff-auth/internal/adapters/inbound/http/dto"
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
-	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	authclient "github.com/keepguard/bff-auth/internal/application/port"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -26,25 +25,24 @@ func TestRefreshUseCase_Execute_Success(t *testing.T) {
 		tenantId,
 		correlationID,
 		"keepguard-default-client",
-		ctx,
 	)
 
 	// Configurar mocks
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
 
-	expectedResponse := dto.RefreshTokenResponseDTO{
+	expectedResponse := appdto.RefreshTokenResponseDTO{
 		Token:     "new_access_token",
 		ExpiresIn: 3600,
 	}
 
-	expectedReq := dto.RefreshTokenRequestDTO{
+	expectedReq := appdto.RefreshTokenRequestDTO{
 		Token: "valid_refresh_token",
 	}
 
 	mockAuthClient.On("RefreshToken", ctx, expectedReq, tenantId, correlationID).Return(expectedResponse, nil)
 
 	// Act
-	result, err := useCase.Execute(command)
+	result, err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.NoError(t, err)
@@ -69,7 +67,6 @@ func TestRefreshUseCase_Execute_EmptyRefreshToken(t *testing.T) {
 		tenantId,
 		correlationID,
 		"keepguard-default-client",
-		ctx,
 	)
 
 	// Configurar mocks
@@ -77,18 +74,18 @@ func TestRefreshUseCase_Execute_EmptyRefreshToken(t *testing.T) {
 
 	// Como a validação é feita no handler, o use case sempre chama o cliente
 	// Vamos simular um erro
-	expectedReq := dto.RefreshTokenRequestDTO{
+	expectedReq := appdto.RefreshTokenRequestDTO{
 		Token: "",
 	}
 
-	mockAuthClient.On("RefreshToken", ctx, expectedReq, tenantId, correlationID).Return(dto.RefreshTokenResponseDTO{}, assert.AnError)
+	mockAuthClient.On("RefreshToken", ctx, expectedReq, tenantId, correlationID).Return(appdto.RefreshTokenResponseDTO{}, assert.AnError)
 
 	// Act
-	result, err := useCase.Execute(command)
+	result, err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.Error(t, err)
-	assert.Equal(t, dto.RefreshTokenResponseDTO{}, result)
+	assert.Equal(t, appdto.RefreshTokenResponseDTO{}, result)
 	mockCompanyClient.AssertExpectations(t)
 	mockAuthClient.AssertExpectations(t)
 }
@@ -108,24 +105,23 @@ func TestRefreshUseCase_Execute_AuthServiceError(t *testing.T) {
 		tenantId,
 		correlationID,
 		"keepguard-default-client",
-		ctx,
 	)
 
 	// Configurar mocks
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
 
-	expectedReq := dto.RefreshTokenRequestDTO{
+	expectedReq := appdto.RefreshTokenRequestDTO{
 		Token: "invalid_refresh_token",
 	}
 
-	mockAuthClient.On("RefreshToken", ctx, expectedReq, tenantId, correlationID).Return(dto.RefreshTokenResponseDTO{}, assert.AnError)
+	mockAuthClient.On("RefreshToken", ctx, expectedReq, tenantId, correlationID).Return(appdto.RefreshTokenResponseDTO{}, assert.AnError)
 
 	// Act
-	result, err := useCase.Execute(command)
+	result, err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.Error(t, err)
-	assert.Equal(t, dto.RefreshTokenResponseDTO{}, result)
+	assert.Equal(t, appdto.RefreshTokenResponseDTO{}, result)
 	mockCompanyClient.AssertExpectations(t)
 	mockAuthClient.AssertExpectations(t)
 }
@@ -147,25 +143,24 @@ func TestRefreshUseCase_Execute_ContextCancelled(t *testing.T) {
 		tenantId,
 		correlationID,
 		"keepguard-default-client",
-		ctx,
 	)
 
 	// Configurar mocks
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
 
-	expectedReq := dto.RefreshTokenRequestDTO{
+	expectedReq := appdto.RefreshTokenRequestDTO{
 		Token: "valid_refresh_token",
 	}
 
-	mockAuthClient.On("RefreshToken", ctx, expectedReq, tenantId, correlationID).Return(dto.RefreshTokenResponseDTO{}, context.Canceled)
+	mockAuthClient.On("RefreshToken", ctx, expectedReq, tenantId, correlationID).Return(appdto.RefreshTokenResponseDTO{}, context.Canceled)
 
 	// Act
-	result, err := useCase.Execute(command)
+	result, err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.Error(t, err)
 	assert.Equal(t, context.Canceled, err)
-	assert.Equal(t, dto.RefreshTokenResponseDTO{}, result)
+	assert.Equal(t, appdto.RefreshTokenResponseDTO{}, result)
 	mockCompanyClient.AssertExpectations(t)
 	mockAuthClient.AssertExpectations(t)
 }
@@ -185,7 +180,6 @@ func TestRefreshUseCase_Execute_CompanyNotFound(t *testing.T) {
 		tenantId,
 		correlationID,
 		"keepguard-default-client",
-		ctx,
 	)
 
 	// Configurar mock do CompanyClient para retornar erro
@@ -198,12 +192,12 @@ func TestRefreshUseCase_Execute_CompanyNotFound(t *testing.T) {
 	mockCompanyClient.On("GetByTenantId", ctx, tenantId, correlationID).Return(authclient.CompanySimpleResponseDTO{}, companyError)
 
 	// Act
-	result, err := useCase.Execute(command)
+	result, err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.Error(t, err)
 	assert.IsType(t, &appdto.HTTPError{}, err)
-	assert.Equal(t, dto.RefreshTokenResponseDTO{}, result)
+	assert.Equal(t, appdto.RefreshTokenResponseDTO{}, result)
 	mockCompanyClient.AssertExpectations(t)
 	// AuthClient NÃO deve ser chamado se CompanyClient falhar
 	mockAuthClient.AssertNotCalled(t, "RefreshToken", mock.Anything, mock.Anything, mock.Anything, mock.Anything)

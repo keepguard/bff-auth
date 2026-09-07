@@ -7,7 +7,7 @@ import (
 	"testing"
 
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
-	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	authclient "github.com/keepguard/bff-auth/internal/application/port"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap"
@@ -43,12 +43,12 @@ func TestValidateTokenUseCase_Execute_Success(t *testing.T) {
 	ctx := context.Background()
 	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
-	command := appdto.NewValidateTokenCommand(token, tenantId, correlationID, ctx)
+	command := appdto.NewValidateTokenCommand(token, tenantId, correlationID)
 
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
 	mockAuthClient.On("ValidateToken", ctx, token, tenantId, correlationID).Return(nil)
 
-	err := useCase.Execute(command)
+	err := useCase.Execute(ctx, command)
 
 	assert.NoError(t, err)
 	mockCompanyClient.AssertExpectations(t)
@@ -66,12 +66,12 @@ func TestValidateTokenUseCase_Execute_InvalidToken(t *testing.T) {
 	ctx := context.Background()
 	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
-	command := appdto.NewValidateTokenCommand(token, tenantId, correlationID, ctx)
+	command := appdto.NewValidateTokenCommand(token, tenantId, correlationID)
 
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
 	mockAuthClient.On("ValidateToken", ctx, token, tenantId, correlationID).Return(assert.AnError)
 
-	err := useCase.Execute(command)
+	err := useCase.Execute(ctx, command)
 
 	assert.Error(t, err)
 	assert.Equal(t, assert.AnError, err)
@@ -90,11 +90,11 @@ func TestValidateTokenUseCase_Execute_RevokedInRedis(t *testing.T) {
 	ctx := context.Background()
 	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
-	command := appdto.NewValidateTokenCommand(token, tenantId, correlationID, ctx)
+	command := appdto.NewValidateTokenCommand(token, tenantId, correlationID)
 
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
 
-	err := useCase.Execute(command)
+	err := useCase.Execute(ctx, command)
 
 	assert.Error(t, err)
 	httpErr, ok := err.(*appdto.HTTPError)
@@ -116,12 +116,12 @@ func TestValidateTokenUseCase_Execute_RedisErrorFallsBackToMSAuth(t *testing.T) 
 	ctx := context.Background()
 	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
-	command := appdto.NewValidateTokenCommand(token, tenantId, correlationID, ctx)
+	command := appdto.NewValidateTokenCommand(token, tenantId, correlationID)
 
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
 	mockAuthClient.On("ValidateToken", ctx, token, tenantId, correlationID).Return(nil)
 
-	err := useCase.Execute(command)
+	err := useCase.Execute(ctx, command)
 
 	assert.NoError(t, err)
 	mockAuthClient.AssertExpectations(t)
@@ -138,7 +138,7 @@ func TestValidateTokenUseCase_Execute_CompanyNotFound(t *testing.T) {
 	token := "valid_token"
 	tenantId := "invalid-app-id"
 	correlationID := "test-correlation-id"
-	command := appdto.NewValidateTokenCommand(token, tenantId, correlationID, ctx)
+	command := appdto.NewValidateTokenCommand(token, tenantId, correlationID)
 
 	companyError := &appdto.HTTPError{
 		StatusCode: 404,
@@ -147,7 +147,7 @@ func TestValidateTokenUseCase_Execute_CompanyNotFound(t *testing.T) {
 	}
 	mockCompanyClient.On("GetByTenantId", ctx, tenantId, correlationID).Return(authclient.CompanySimpleResponseDTO{}, companyError)
 
-	err := useCase.Execute(command)
+	err := useCase.Execute(ctx, command)
 
 	assert.Error(t, err)
 	assert.IsType(t, &appdto.HTTPError{}, err)
@@ -166,12 +166,12 @@ func TestValidateTokenUseCase_Execute_EmptyToken(t *testing.T) {
 	ctx := context.Background()
 	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
-	command := appdto.NewValidateTokenCommand(token, tenantId, correlationID, ctx)
+	command := appdto.NewValidateTokenCommand(token, tenantId, correlationID)
 
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
 	mockAuthClient.On("ValidateToken", ctx, token, tenantId, correlationID).Return(nil)
 
-	err := useCase.Execute(command)
+	err := useCase.Execute(ctx, command)
 
 	assert.NoError(t, err)
 	mockCompanyClient.AssertExpectations(t)
@@ -190,12 +190,12 @@ func TestValidateTokenUseCase_Execute_ContextCancelled(t *testing.T) {
 
 	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
-	command := appdto.NewValidateTokenCommand(token, tenantId, correlationID, ctx)
+	command := appdto.NewValidateTokenCommand(token, tenantId, correlationID)
 
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
 	mockAuthClient.On("ValidateToken", ctx, token, tenantId, correlationID).Return(context.Canceled)
 
-	err := useCase.Execute(command)
+	err := useCase.Execute(ctx, command)
 
 	assert.Error(t, err)
 	assert.Equal(t, context.Canceled, err)

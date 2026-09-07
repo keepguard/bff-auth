@@ -6,7 +6,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/keepguard/bff-auth/internal/domain/ports/client"
+	client "github.com/keepguard/bff-auth/internal/application/port"
 	"github.com/keepguard/bff-auth/internal/pkg"
 	"github.com/redis/go-redis/v9"
 )

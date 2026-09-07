@@ -3,7 +3,7 @@ package company
 import (
 	"context"
 
-	portsclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	portsclient "github.com/keepguard/bff-auth/internal/application/port"
 	"github.com/keepguard/bff-auth/internal/infrastructure/resilience"
 )
 

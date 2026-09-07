@@ -9,7 +9,7 @@ import (
 
 	"github.com/go-resty/resty/v2"
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
-	"github.com/keepguard/bff-auth/internal/domain/ports/client"
+	client "github.com/keepguard/bff-auth/internal/application/port"
 	"github.com/keepguard/bff-auth/internal/infrastructure/config"
 	"github.com/keepguard/bff-auth/internal/infrastructure/logger"
 	"github.com/keepguard/bff-auth/internal/pkg"

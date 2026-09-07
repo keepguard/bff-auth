@@ -25,11 +25,15 @@ import (
 	communicationdecorator "github.com/keepguard/bff-auth/internal/adapters/outbound/http/decorator/communication"
 	companydecorator "github.com/keepguard/bff-auth/internal/adapters/outbound/http/decorator/company"
 	userdecorator "github.com/keepguard/bff-auth/internal/adapters/outbound/http/decorator/user"
+	auditPublisher "github.com/keepguard/bff-auth/internal/adapters/outbound/messaging/audit"
 	messagingDecorator "github.com/keepguard/bff-auth/internal/adapters/outbound/messaging/decorator"
 	rabbitmqPublisher "github.com/keepguard/bff-auth/internal/adapters/outbound/messaging/rabbitmq"
-	auditPublisher "github.com/keepguard/bff-auth/internal/adapters/outbound/messaging/audit"
 	"github.com/keepguard/bff-auth/internal/application/auth"
+	"github.com/keepguard/bff-auth/internal/application/blacklist"
+	"github.com/keepguard/bff-auth/internal/application/device"
+	"github.com/keepguard/bff-auth/internal/application/lifecycle"
 	"github.com/keepguard/bff-auth/internal/application/message"
+	"github.com/keepguard/bff-auth/internal/application/session"
 	"github.com/keepguard/bff-auth/internal/infrastructure/cache"
 	"github.com/keepguard/bff-auth/internal/infrastructure/config"
 	"github.com/keepguard/bff-auth/internal/infrastructure/logger"
@@ -334,8 +338,10 @@ func main() {
 		validateTokenUseCase,
 		changePasswordUseCase,
 		resetPasswordUseCase,
-		authClient,
-		companyClient,
+		device.NewDevicePort(authClient),
+		session.NewSessionPort(authClient),
+		blacklist.NewBlacklistPort(authClient),
+		lifecycle.NewLifecyclePort(authClient, companyClient),
 		appLogger,
 	)
 

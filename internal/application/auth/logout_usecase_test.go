@@ -5,7 +5,7 @@ import (
 	"testing"
 
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
-	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	authclient "github.com/keepguard/bff-auth/internal/application/port"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 )
@@ -25,7 +25,6 @@ func TestLogoutUseCase_Execute_Success(t *testing.T) {
 		token,
 		tenantId,
 		correlationID,
-		ctx,
 	)
 
 	// Configurar mocks
@@ -33,7 +32,7 @@ func TestLogoutUseCase_Execute_Success(t *testing.T) {
 	mockAuthClient.On("Logout", ctx, token, tenantId, correlationID).Return(nil)
 
 	// Act
-	err := useCase.Execute(command)
+	err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.NoError(t, err)
@@ -56,7 +55,6 @@ func TestLogoutUseCase_Execute_AuthServiceError(t *testing.T) {
 		token,
 		tenantId,
 		correlationID,
-		ctx,
 	)
 
 	// Configurar mocks
@@ -64,7 +62,7 @@ func TestLogoutUseCase_Execute_AuthServiceError(t *testing.T) {
 	mockAuthClient.On("Logout", ctx, token, tenantId, correlationID).Return(assert.AnError)
 
 	// Act
-	err := useCase.Execute(command)
+	err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.Error(t, err)
@@ -90,7 +88,6 @@ func TestLogoutUseCase_Execute_ContextCancelled(t *testing.T) {
 		token,
 		tenantId,
 		correlationID,
-		ctx,
 	)
 
 	// Configurar mocks
@@ -98,7 +95,7 @@ func TestLogoutUseCase_Execute_ContextCancelled(t *testing.T) {
 	mockAuthClient.On("Logout", ctx, token, tenantId, correlationID).Return(context.Canceled)
 
 	// Act
-	err := useCase.Execute(command)
+	err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.Error(t, err)
@@ -122,7 +119,6 @@ func TestLogoutUseCase_Execute_EmptyToken(t *testing.T) {
 		token,
 		tenantId,
 		correlationID,
-		ctx,
 	)
 
 	// Configurar mocks
@@ -130,7 +126,7 @@ func TestLogoutUseCase_Execute_EmptyToken(t *testing.T) {
 	mockAuthClient.On("Logout", ctx, token, tenantId, correlationID).Return(nil)
 
 	// Act
-	err := useCase.Execute(command)
+	err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.NoError(t, err) // LogoutUseCase não valida token vazio, apenas repassa para o cliente
@@ -153,7 +149,6 @@ func TestLogoutUseCase_Execute_CompanyNotFound(t *testing.T) {
 		token,
 		tenantId,
 		correlationID,
-		ctx,
 	)
 
 	// Configurar mock do CompanyClient para retornar erro
@@ -166,7 +161,7 @@ func TestLogoutUseCase_Execute_CompanyNotFound(t *testing.T) {
 	mockCompanyClient.On("GetByTenantId", ctx, tenantId, correlationID).Return(authclient.CompanySimpleResponseDTO{}, companyError)
 
 	// Act
-	err := useCase.Execute(command)
+	err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.Error(t, err)

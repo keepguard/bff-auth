@@ -1,21 +1,20 @@
 package auth
 
 import (
-	outboundDto "github.com/keepguard/bff-auth/internal/adapters/outbound/http/dto"
+	"context"
+
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
-	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	authclient "github.com/keepguard/bff-auth/internal/application/port"
 	"github.com/keepguard/bff-auth/internal/pkg"
 	"go.uber.org/zap"
 )
 
-// changePasswordUseCaseImpl implementa o caso de uso de alteração de senha
 type changePasswordUseCaseImpl struct {
 	authClient    authclient.AuthClient
 	companyClient authclient.CompanyClient
 	logger        *zap.Logger
 }
 
-// NewChangePasswordUseCase cria um novo caso de uso de alteração de senha
 func NewChangePasswordUseCase(authClient authclient.AuthClient, companyClient authclient.CompanyClient, logger *zap.Logger) ChangePasswordUseCase {
 	return &changePasswordUseCaseImpl{
 		authClient:    authClient,
@@ -24,31 +23,26 @@ func NewChangePasswordUseCase(authClient authclient.AuthClient, companyClient au
 	}
 }
 
-// Execute executa o caso de uso de alteração de senha
-func (uc *changePasswordUseCaseImpl) Execute(command appdto.ChangePasswordCommand) error {
-	// Primeiro, verifica se a empresa existe consultando o Company Service
-	_, err := uc.companyClient.GetByTenantId(command.Context, command.TenantId, command.CorrelationID)
+func (uc *changePasswordUseCaseImpl) Execute(ctx context.Context, command appdto.ChangePasswordCommand) error {
+	_, err := uc.companyClient.GetByTenantId(ctx, command.TenantId, command.CorrelationID)
 	if err != nil {
 		return err
 	}
 
-	// Extrai o codeUser do token
 	codeUser, err := pkg.ExtractCodeUserFromToken(command.Token)
 	if err != nil {
 		return err
 	}
 
-	// Criar DTO de requisição para o cliente (para enviar ao ms-auth)
-	req := outboundDto.ChangePasswordMSRequestDTO{
+	req := appdto.ChangePasswordMSRequestDTO{
 		CodeUser:           codeUser,
 		CurrentPassword:    command.CurrentPassword,
 		NewPassword:        command.NewPassword,
 		ConfirmNewPassword: command.ConfirmNewPassword,
 	}
 
-	// Chama o cliente de autenticação para alterar a senha
-	err = uc.authClient.ChangePassword(
-		command.Context,
+	return uc.authClient.ChangePassword(
+		ctx,
 		req,
 		command.TenantId,
 		command.CorrelationID,
@@ -58,9 +52,4 @@ func (uc *changePasswordUseCaseImpl) Execute(command appdto.ChangePasswordComman
 		command.IpAddress,
 		command.UserAgent,
 	)
-	if err != nil {
-		return err
-	}
-
-	return nil
 }

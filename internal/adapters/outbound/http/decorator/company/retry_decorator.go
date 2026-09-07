@@ -8,7 +8,7 @@ import (
 	"time"
 
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
-	portsclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	portsclient "github.com/keepguard/bff-auth/internal/application/port"
 )
 
 // RetryConfig configuração para retry

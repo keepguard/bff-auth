@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	"github.com/keepguard/bff-auth/internal/domain/ports/client"
+	client "github.com/keepguard/bff-auth/internal/application/port"
 	"github.com/stretchr/testify/assert"
 )
 

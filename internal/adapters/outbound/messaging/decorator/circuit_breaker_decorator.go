@@ -6,7 +6,7 @@ import (
 	"time"
 
 	"github.com/keepguard/bff-auth/internal/adapters/outbound/http/dto"
-	"github.com/keepguard/bff-auth/internal/domain/ports/client"
+	client "github.com/keepguard/bff-auth/internal/application/port"
 	"github.com/keepguard/bff-auth/internal/domain/ports/messaging"
 	"github.com/keepguard/bff-auth/internal/infrastructure/resilience"
 	"github.com/sony/gobreaker"

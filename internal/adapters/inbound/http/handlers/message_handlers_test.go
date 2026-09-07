@@ -2,6 +2,7 @@ package http
 
 import (
 	"bytes"
+	"context"
 	"encoding/json"
 	"net/http"
 	"net/http/httptest"
@@ -21,9 +22,9 @@ type MockSendResetPasswordMessageUseCase struct {
 	mock.Mock
 }
 
-func (m *MockSendResetPasswordMessageUseCase) Execute(command appdto.SendResetPasswordMessageCommand) (inboundDto.SendResetPasswordMessageResponseDTO, error) {
+func (m *MockSendResetPasswordMessageUseCase) Execute(ctx context.Context, command appdto.SendResetPasswordMessageCommand) (appdto.SendResetPasswordMessageViewDTO, error) {
 	args := m.Called(command)
-	return args.Get(0).(inboundDto.SendResetPasswordMessageResponseDTO), args.Error(1)
+	return args.Get(0).(appdto.SendResetPasswordMessageViewDTO), args.Error(1)
 }
 
 // setupTestMessageHandlers configura handlers para testes
@@ -56,12 +57,12 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_Success(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	expectedResponse := inboundDto.SendResetPasswordMessageResponseDTO{
+	expectedResponse := appdto.SendResetPasswordMessageViewDTO{
 		Success: true,
 		Message: "Mensagem enviada com sucesso",
 	}
 
-	mockUseCase.On("Execute", mock.Anything).Return(expectedResponse, nil)
+	mockUseCase.On("Execute", mock.Anything, mock.Anything).Return(expectedResponse, nil)
 
 	// Act
 	err := handlers.SendResetPasswordMessageHandler(c)
@@ -70,7 +71,7 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_Success(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusOK, rec.Code)
 
-	var response inboundDto.SendResetPasswordMessageResponseDTO
+	var response appdto.SendResetPasswordMessageViewDTO
 	err = json.Unmarshal(rec.Body.Bytes(), &response)
 	assert.NoError(t, err)
 	assert.Equal(t, expectedResponse, response)
@@ -94,11 +95,11 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_MissingCorrelationID(t 
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	expectedResponse := inboundDto.SendResetPasswordMessageResponseDTO{
+	expectedResponse := appdto.SendResetPasswordMessageViewDTO{
 		Success: true,
 		Message: "Mensagem enviada com sucesso",
 	}
-	mockUseCase.On("Execute", mock.Anything).Return(expectedResponse, nil)
+	mockUseCase.On("Execute", mock.Anything, mock.Anything).Return(expectedResponse, nil)
 
 	err := handlers.SendResetPasswordMessageHandler(c)
 
@@ -219,7 +220,7 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_UseCaseHTTPError(t *tes
 		ErrorCode:  "USER_NOT_FOUND",
 	}
 
-	mockUseCase.On("Execute", mock.Anything).Return(inboundDto.SendResetPasswordMessageResponseDTO{}, httpError)
+	mockUseCase.On("Execute", mock.Anything, mock.Anything).Return(appdto.SendResetPasswordMessageViewDTO{}, httpError)
 
 	// Act
 	err := handlers.SendResetPasswordMessageHandler(c)
@@ -260,7 +261,7 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_UseCaseAppError(t *test
 		Message:    "Usuário não está ativo",
 	}
 
-	mockUseCase.On("Execute", mock.Anything).Return(inboundDto.SendResetPasswordMessageResponseDTO{}, appError)
+	mockUseCase.On("Execute", mock.Anything, mock.Anything).Return(appdto.SendResetPasswordMessageViewDTO{}, appError)
 
 	// Act
 	err := handlers.SendResetPasswordMessageHandler(c)
@@ -297,7 +298,7 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_GenericError(t *testing
 
 	genericError := assert.AnError
 
-	mockUseCase.On("Execute", mock.Anything).Return(inboundDto.SendResetPasswordMessageResponseDTO{}, genericError)
+	mockUseCase.On("Execute", mock.Anything, mock.Anything).Return(appdto.SendResetPasswordMessageViewDTO{}, genericError)
 
 	// Act
 	err := handlers.SendResetPasswordMessageHandler(c)

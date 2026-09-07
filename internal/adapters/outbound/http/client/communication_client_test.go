@@ -11,7 +11,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	outboundDto "github.com/keepguard/bff-auth/internal/adapters/outbound/http/dto"
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
-	authctx "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	authctx "github.com/keepguard/bff-auth/internal/application/port"
 	"github.com/keepguard/bff-auth/internal/infrastructure/config"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap"

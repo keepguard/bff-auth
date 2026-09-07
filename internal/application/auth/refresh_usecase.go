@@ -1,18 +1,17 @@
 package auth
 
 import (
-	"github.com/keepguard/bff-auth/internal/adapters/inbound/http/dto"
+	"context"
+
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
-	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	authclient "github.com/keepguard/bff-auth/internal/application/port"
 )
 
-// refreshUseCaseImpl implementa o caso de uso de refresh
 type refreshUseCaseImpl struct {
 	authClient    authclient.AuthClient
 	companyClient authclient.CompanyClient
 }
 
-// NewRefreshUseCase cria um novo caso de uso de refresh
 func NewRefreshUseCase(authClient authclient.AuthClient, companyClient authclient.CompanyClient) RefreshUseCase {
 	return &refreshUseCaseImpl{
 		authClient:    authClient,
@@ -20,24 +19,19 @@ func NewRefreshUseCase(authClient authclient.AuthClient, companyClient authclien
 	}
 }
 
-// Execute executa o caso de uso de refresh
-func (uc *refreshUseCaseImpl) Execute(command appdto.RefreshTokenCommand) (dto.RefreshTokenResponseDTO, error) {
-
-	// Primeiro, verifica se a empresa existe consultando o Company Service
-	_, err := uc.companyClient.GetByTenantId(command.Context, command.TenantId, command.CorrelationID)
+func (uc *refreshUseCaseImpl) Execute(ctx context.Context, command appdto.RefreshTokenCommand) (appdto.RefreshTokenResponseDTO, error) {
+	_, err := uc.companyClient.GetByTenantId(ctx, command.TenantId, command.CorrelationID)
 	if err != nil {
-		return dto.RefreshTokenResponseDTO{}, err
+		return appdto.RefreshTokenResponseDTO{}, err
 	}
 
-	// Criar DTO de requisição para o cliente
-	req := dto.RefreshTokenRequestDTO{
+	req := appdto.RefreshTokenRequestDTO{
 		Token: command.RefreshToken,
 	}
 
-	// Chama o cliente de autenticação
-	response, err := uc.authClient.RefreshToken(command.Context, req, command.TenantId, command.CorrelationID, command.ClientId)
+	response, err := uc.authClient.RefreshToken(ctx, req, command.TenantId, command.CorrelationID, command.ClientId)
 	if err != nil {
-		return dto.RefreshTokenResponseDTO{}, err
+		return appdto.RefreshTokenResponseDTO{}, err
 	}
 
 	return response, nil

@@ -1,10 +1,11 @@
 package auth
 
 import (
+	"context"
 	"net/http"
 
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
-	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	authclient "github.com/keepguard/bff-auth/internal/application/port"
 	"go.uber.org/zap"
 )
 
@@ -29,14 +30,14 @@ func NewValidateTokenUseCase(
 	}
 }
 
-func (uc *validateTokenUseCaseImpl) Execute(command appdto.ValidateTokenCommand) error {
-	_, err := uc.companyClient.GetByTenantId(command.Context, command.TenantId, command.CorrelationID)
+func (uc *validateTokenUseCaseImpl) Execute(ctx context.Context, command appdto.ValidateTokenCommand) error {
+	_, err := uc.companyClient.GetByTenantId(ctx, command.TenantId, command.CorrelationID)
 	if err != nil {
 		return err
 	}
 
 	if uc.tokenChecker != nil {
-		presence, codeUser, checkErr := uc.tokenChecker.Check(command.Context, command.Token)
+		presence, codeUser, checkErr := uc.tokenChecker.Check(ctx, command.Token)
 		if checkErr != nil {
 			uc.logger.Warn("Falha ao consultar tokenlogin no Redis; validando no ms-auth",
 				zap.String("correlationId", command.CorrelationID),
@@ -56,5 +57,5 @@ func (uc *validateTokenUseCaseImpl) Execute(command appdto.ValidateTokenCommand)
 		}
 	}
 
-	return uc.authClient.ValidateToken(command.Context, command.Token, command.TenantId, command.CorrelationID)
+	return uc.authClient.ValidateToken(ctx, command.Token, command.TenantId, command.CorrelationID)
 }

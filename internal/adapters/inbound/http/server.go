@@ -7,7 +7,7 @@ import (
 
 	middlewarePkg "github.com/keepguard/bff-auth/internal/adapters/inbound/http/middleware"
 	auditport "github.com/keepguard/bff-auth/internal/domain/ports/audit"
-	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	authclient "github.com/keepguard/bff-auth/internal/application/port"
 	"github.com/keepguard/bff-auth/internal/infrastructure/clientip"
 	"github.com/keepguard/bff-auth/internal/infrastructure/config"
 	"github.com/keepguard/bff-auth/internal/infrastructure/logger"

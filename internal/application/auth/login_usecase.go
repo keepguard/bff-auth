@@ -1,19 +1,18 @@
 package auth
 
 import (
-	"github.com/keepguard/bff-auth/internal/adapters/inbound/http/dto"
+	"context"
+
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
-	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	authclient "github.com/keepguard/bff-auth/internal/application/port"
 	"go.uber.org/zap"
 )
 
-// loginUseCaseImpl implementa o caso de uso de login
 type loginUseCaseImpl struct {
 	authClient    authclient.AuthClient
 	companyClient authclient.CompanyClient
 }
 
-// Logger interface para logging
 type Logger interface {
 	Info(msg string, fields ...zap.Field)
 	Error(msg string, fields ...zap.Field)
@@ -21,7 +20,6 @@ type Logger interface {
 	Debug(msg string, fields ...zap.Field)
 }
 
-// NewLoginUseCase cria um novo caso de uso de login
 func NewLoginUseCase(authClient authclient.AuthClient, companyClient authclient.CompanyClient) LoginUseCase {
 	return &loginUseCaseImpl{
 		authClient:    authClient,
@@ -29,26 +27,22 @@ func NewLoginUseCase(authClient authclient.AuthClient, companyClient authclient.
 	}
 }
 
-// Execute executa o caso de uso de login
-func (uc *loginUseCaseImpl) Execute(command appdto.LoginCommand) (dto.AuthResponseDTO, error) {
-	// Primeiro, verifica se a empresa existe consultando o Company Service
-	company, err := uc.companyClient.GetByTenantId(command.Context, command.TenantId, command.CorrelationID)
+func (uc *loginUseCaseImpl) Execute(ctx context.Context, command appdto.LoginCommand) (appdto.AuthResponseDTO, error) {
+	company, err := uc.companyClient.GetByTenantId(ctx, command.TenantId, command.CorrelationID)
 	if err != nil {
-		return dto.AuthResponseDTO{}, err
+		return appdto.AuthResponseDTO{}, err
 	}
 
-	command.Context = authclient.WithCompanyID(command.Context, company.ID)
+	ctx = authclient.WithCompanyID(ctx, company.ID)
 
-	// Criar DTO de requisição para o cliente
-	req := dto.AuthRequestDTO{
+	req := appdto.AuthRequestDTO{
 		Username:  command.Username,
 		Password:  command.Password,
 		CompanyID: company.ID,
 	}
 
-	// Chama o cliente de autenticação com metadados de dispositivo
 	response, err := uc.authClient.Login(
-		command.Context,
+		ctx,
 		req,
 		command.TenantId,
 		command.CorrelationID,
@@ -60,13 +54,12 @@ func (uc *loginUseCaseImpl) Execute(command appdto.LoginCommand) (dto.AuthRespon
 		command.UserAgent,
 	)
 	if err != nil {
-		return dto.AuthResponseDTO{}, err
+		return appdto.AuthResponseDTO{}, err
 	}
 
 	return response, nil
 }
 
-// ValidationError representa um erro de validação
 type ValidationError struct {
 	Field   string
 	Message string
@@ -76,7 +69,6 @@ func (e *ValidationError) Error() string {
 	return e.Message
 }
 
-// ServiceUnavailableError representa um erro de serviço indisponível
 type ServiceUnavailableError struct {
 	Service string
 	Message string

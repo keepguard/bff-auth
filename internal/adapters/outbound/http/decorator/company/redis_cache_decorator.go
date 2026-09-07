@@ -6,7 +6,7 @@ import (
 	"errors"
 	"strings"
 
-	portsclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	portsclient "github.com/keepguard/bff-auth/internal/application/port"
 	"github.com/keepguard/bff-auth/internal/infrastructure/metrics"
 	"github.com/redis/go-redis/v9"
 	"go.uber.org/zap"

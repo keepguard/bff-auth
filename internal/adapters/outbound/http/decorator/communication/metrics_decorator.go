@@ -7,7 +7,7 @@ import (
 
 	outboundDto "github.com/keepguard/bff-auth/internal/adapters/outbound/http/dto"
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
-	portsclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	portsclient "github.com/keepguard/bff-auth/internal/application/port"
 	"github.com/keepguard/bff-auth/internal/infrastructure/metrics"
 )
 

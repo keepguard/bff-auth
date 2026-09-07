@@ -1,9 +1,5 @@
 package dto
 
-import "context"
-
-// ChangePasswordCommand representa o comando de alteração de senha no domínio
-// Encapsula todos os parâmetros necessários para executar o caso de uso de alteração de senha
 type ChangePasswordCommand struct {
 	Token              string
 	CurrentPassword    string
@@ -16,14 +12,11 @@ type ChangePasswordCommand struct {
 	DeviceType         string
 	IpAddress          string
 	UserAgent          string
-	Context            context.Context
 }
 
-// NewChangePasswordCommand cria uma nova instância do ChangePasswordCommand
 func NewChangePasswordCommand(
 	token, currentPassword, newPassword, confirmNewPassword, tenantId, correlationID,
 	deviceId, deviceName, deviceType, ipAddress, userAgent string,
-	ctx context.Context,
 ) ChangePasswordCommand {
 	return ChangePasswordCommand{
 		Token:              token,
@@ -37,11 +30,9 @@ func NewChangePasswordCommand(
 		DeviceType:         deviceType,
 		IpAddress:          ipAddress,
 		UserAgent:          userAgent,
-		Context:            ctx,
 	}
 }
 
-// Validate valida os dados do comando de alteração de senha
 func (c *ChangePasswordCommand) Validate() error {
 	if c.Token == "" {
 		return &ValidationError{Field: "token", Message: "Token é obrigatório"}
@@ -63,9 +54,6 @@ func (c *ChangePasswordCommand) Validate() error {
 	}
 	if c.CorrelationID == "" {
 		return &ValidationError{Field: "correlationID", Message: "Identificador de correlação é obrigatório"}
-	}
-	if c.Context == nil {
-		return &ValidationError{Field: "context", Message: "Contexto da requisição é obrigatório"}
 	}
 	return nil
 }

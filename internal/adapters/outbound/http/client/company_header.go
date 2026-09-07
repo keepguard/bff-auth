@@ -3,7 +3,7 @@ package client
 import (
 	"context"
 
-	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	authclient "github.com/keepguard/bff-auth/internal/application/port"
 )
 
 func companyHeader(ctx context.Context) string {

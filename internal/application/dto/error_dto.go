@@ -2,11 +2,11 @@ package dto
 
 // MSAuthErrorResponse representa a resposta de erro do ms-auth (ProblemDetail)
 type MSAuthErrorResponse struct {
-	Type    string                 `json:"type"`
-	Title   string                 `json:"title"`
-	Status  int                    `json:"status"`
-	Detail  string                 `json:"detail"`
-	Path    string                 `json:"path,omitempty"`
+	Type       string                 `json:"type"`
+	Title      string                 `json:"title"`
+	Status     int                    `json:"status"`
+	Detail     string                 `json:"detail"`
+	Path       string                 `json:"path,omitempty"`
 	Properties map[string]interface{} `json:"properties,omitempty"`
 }
 

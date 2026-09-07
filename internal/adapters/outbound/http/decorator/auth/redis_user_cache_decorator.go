@@ -7,7 +7,7 @@ import (
 
 	companydecorator "github.com/keepguard/bff-auth/internal/adapters/outbound/http/decorator/company"
 	outboundDto "github.com/keepguard/bff-auth/internal/adapters/outbound/http/dto"
-	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	authclient "github.com/keepguard/bff-auth/internal/application/port"
 	"github.com/keepguard/bff-auth/internal/infrastructure/metrics"
 	"go.uber.org/zap"
 )

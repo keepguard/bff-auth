@@ -1,9 +1,5 @@
 package dto
 
-import "context"
-
-// ResetPasswordCommand representa o comando de reset de senha no domínio
-// Encapsula todos os parâmetros necessários para executar o caso de uso de reset de senha
 type ResetPasswordCommand struct {
 	Email              string
 	ResetToken         string
@@ -16,14 +12,11 @@ type ResetPasswordCommand struct {
 	DeviceType         string
 	IpAddress          string
 	UserAgent          string
-	Context            context.Context
 }
 
-// NewResetPasswordCommand cria uma nova instância do ResetPasswordCommand
 func NewResetPasswordCommand(
 	email, resetToken, newPassword, confirmNewPassword, tenantId, correlationID,
 	deviceId, deviceName, deviceType, ipAddress, userAgent string,
-	ctx context.Context,
 ) ResetPasswordCommand {
 	return ResetPasswordCommand{
 		Email:              email,
@@ -37,11 +30,9 @@ func NewResetPasswordCommand(
 		DeviceType:         deviceType,
 		IpAddress:          ipAddress,
 		UserAgent:          userAgent,
-		Context:            ctx,
 	}
 }
 
-// Validate valida os dados do comando de reset de senha
 func (c *ResetPasswordCommand) Validate() error {
 	if c.Email == "" {
 		return &ValidationError{Field: "email", Message: "E-mail é obrigatório"}
@@ -63,9 +54,6 @@ func (c *ResetPasswordCommand) Validate() error {
 	}
 	if c.CorrelationID == "" {
 		return &ValidationError{Field: "correlationID", Message: "Identificador de correlação é obrigatório"}
-	}
-	if c.Context == nil {
-		return &ValidationError{Field: "context", Message: "Contexto da requisição é obrigatório"}
 	}
 	return nil
 }

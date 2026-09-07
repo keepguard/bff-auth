@@ -6,7 +6,7 @@ import (
 
 	outboundDto "github.com/keepguard/bff-auth/internal/adapters/outbound/http/dto"
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
-	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	authclient "github.com/keepguard/bff-auth/internal/application/port"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap"
@@ -40,7 +40,6 @@ func TestChangePasswordUseCase_Execute_Success(t *testing.T) {
 		"",
 		"",
 		"",
-		ctx,
 	)
 
 	expectedReq := outboundDto.ChangePasswordMSRequestDTO{
@@ -55,7 +54,7 @@ func TestChangePasswordUseCase_Execute_Success(t *testing.T) {
 	mockAuthClient.On("ChangePassword", ctx, expectedReq, tenantId, correlationID, "", "", "", "", "").Return(nil)
 
 	// Act
-	err := useCase.Execute(command)
+	err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.NoError(t, err)
@@ -90,14 +89,13 @@ func TestChangePasswordUseCase_Execute_InvalidToken(t *testing.T) {
 		"",
 		"",
 		"",
-		ctx,
 	)
 
 	// Configurar mocks
 	setupCompanyMock(mockCompanyClient, ctx, tenantId, correlationID)
 
 	// Act
-	err := useCase.Execute(command)
+	err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.Error(t, err)
@@ -133,7 +131,6 @@ func TestChangePasswordUseCase_Execute_AuthServiceError(t *testing.T) {
 		"",
 		"",
 		"",
-		ctx,
 	)
 
 	expectedReq := outboundDto.ChangePasswordMSRequestDTO{
@@ -154,7 +151,7 @@ func TestChangePasswordUseCase_Execute_AuthServiceError(t *testing.T) {
 	mockAuthClient.On("ChangePassword", ctx, expectedReq, tenantId, correlationID, "", "", "", "", "").Return(authError)
 
 	// Act
-	err := useCase.Execute(command)
+	err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.Error(t, err)
@@ -190,7 +187,6 @@ func TestChangePasswordUseCase_Execute_CompanyNotFound(t *testing.T) {
 		"",
 		"",
 		"",
-		ctx,
 	)
 
 	// Configurar mock do CompanyClient para retornar erro
@@ -203,7 +199,7 @@ func TestChangePasswordUseCase_Execute_CompanyNotFound(t *testing.T) {
 	mockCompanyClient.On("GetByTenantId", ctx, tenantId, correlationID).Return(authclient.CompanySimpleResponseDTO{}, companyError)
 
 	// Act
-	err := useCase.Execute(command)
+	err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.Error(t, err)
@@ -242,7 +238,6 @@ func TestChangePasswordUseCase_Execute_ContextCancelled(t *testing.T) {
 		"",
 		"",
 		"",
-		ctx,
 	)
 
 	expectedReq := outboundDto.ChangePasswordMSRequestDTO{
@@ -257,7 +252,7 @@ func TestChangePasswordUseCase_Execute_ContextCancelled(t *testing.T) {
 	mockAuthClient.On("ChangePassword", ctx, expectedReq, tenantId, correlationID, "", "", "", "", "").Return(context.Canceled)
 
 	// Act
-	err := useCase.Execute(command)
+	err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.Error(t, err)
@@ -271,7 +266,6 @@ func TestChangePasswordUseCase_Execute_PasswordMismatch(t *testing.T) {
 	mockAuthClient := new(MockAuthClient)
 	mockCompanyClient := new(MockCompanyClient)
 
-	ctx := context.Background()
 	token := "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJjb2RlVXNlciI6InVzZXItMTIzIiwic3ViIjoidXNlci0xMjMiLCJ1c2VybmFtZSI6InRlc3R1c2VyIn0.test"
 	tenantId := "test-app-id"
 	correlationID := "test-correlation-id"
@@ -291,7 +285,6 @@ func TestChangePasswordUseCase_Execute_PasswordMismatch(t *testing.T) {
 		"",
 		"",
 		"",
-		ctx,
 	)
 
 	// Validação no comando detecta a diferença

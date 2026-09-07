@@ -4,7 +4,7 @@ import (
 	"net/http"
 	"strings"
 
-	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	authclient "github.com/keepguard/bff-auth/internal/application/port"
 	"github.com/keepguard/bff-auth/internal/pkg"
 	"github.com/labstack/echo/v4"
 )

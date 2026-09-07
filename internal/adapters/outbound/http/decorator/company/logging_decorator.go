@@ -4,7 +4,7 @@ import (
 	"context"
 	"time"
 
-	portsclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	portsclient "github.com/keepguard/bff-auth/internal/application/port"
 	"go.uber.org/zap"
 )
 

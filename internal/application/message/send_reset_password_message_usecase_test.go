@@ -5,10 +5,9 @@ import (
 	"errors"
 	"testing"
 
-	inboundDto "github.com/keepguard/bff-auth/internal/adapters/inbound/http/dto"
 	outboundDto "github.com/keepguard/bff-auth/internal/adapters/outbound/http/dto"
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
-	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	authclient "github.com/keepguard/bff-auth/internal/application/port"
 	"github.com/keepguard/bff-auth/internal/domain/ports/messaging"
 	"github.com/keepguard/bff-auth/internal/pkg"
 	"github.com/stretchr/testify/assert"
@@ -21,14 +20,14 @@ type MockAuthClient struct {
 	mock.Mock
 }
 
-func (m *MockAuthClient) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId, deviceId, deviceName, deviceType, ipAddress, userAgent string) (inboundDto.AuthResponseDTO, error) {
+func (m *MockAuthClient) Login(ctx context.Context, req appdto.AuthRequestDTO, tenantId, correlationID, clientId, deviceId, deviceName, deviceType, ipAddress, userAgent string) (appdto.AuthResponseDTO, error) {
 	args := m.Called(ctx, req, tenantId, correlationID)
-	return args.Get(0).(inboundDto.AuthResponseDTO), args.Error(1)
+	return args.Get(0).(appdto.AuthResponseDTO), args.Error(1)
 }
 
-func (m *MockAuthClient) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID, clientId string) (inboundDto.RefreshTokenResponseDTO, error) {
+func (m *MockAuthClient) RefreshToken(ctx context.Context, req appdto.RefreshTokenRequestDTO, tenantId, correlationID, clientId string) (appdto.RefreshTokenResponseDTO, error) {
 	args := m.Called(ctx, req, tenantId, correlationID)
-	return args.Get(0).(inboundDto.RefreshTokenResponseDTO), args.Error(1)
+	return args.Get(0).(appdto.RefreshTokenResponseDTO), args.Error(1)
 }
 
 func (m *MockAuthClient) Logout(ctx context.Context, token, tenantId, correlationID string) error {
@@ -56,19 +55,19 @@ func (m *MockAuthClient) GenerateResetToken(ctx context.Context, req map[string]
 	return args.Get(0).(outboundDto.GenerateResetTokenMSResponseDTO), args.Error(1)
 }
 
-func (m *MockAuthClient) SendDeviceChallenge(ctx context.Context, req inboundDto.DeviceChallengeSendRequestDTO, tenantId, correlationID string) (map[string]interface{}, error) {
+func (m *MockAuthClient) SendDeviceChallenge(ctx context.Context, req appdto.DeviceChallengeSendRequestDTO, tenantId, correlationID string) (map[string]interface{}, error) {
 	args := m.Called(ctx, req, tenantId, correlationID)
 	return args.Get(0).(map[string]interface{}), args.Error(1)
 }
 
-func (m *MockAuthClient) VerifyDeviceChallenge(ctx context.Context, req inboundDto.DeviceChallengeVerifyRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
+func (m *MockAuthClient) VerifyDeviceChallenge(ctx context.Context, req appdto.DeviceChallengeVerifyRequestDTO, tenantId, correlationID string) (appdto.AuthResponseDTO, error) {
 	args := m.Called(ctx, req, tenantId, correlationID)
-	return args.Get(0).(inboundDto.AuthResponseDTO), args.Error(1)
+	return args.Get(0).(appdto.AuthResponseDTO), args.Error(1)
 }
 
-func (m *MockAuthClient) ListUserSessions(ctx context.Context, token, deviceId, tenantId, correlationID string) ([]inboundDto.DeviceSessionDTO, error) {
+func (m *MockAuthClient) ListUserSessions(ctx context.Context, token, deviceId, tenantId, correlationID string) ([]appdto.DeviceSessionDTO, error) {
 	args := m.Called(ctx, token, deviceId, tenantId, correlationID)
-	return args.Get(0).([]inboundDto.DeviceSessionDTO), args.Error(1)
+	return args.Get(0).([]appdto.DeviceSessionDTO), args.Error(1)
 }
 
 func (m *MockAuthClient) RevokeSession(ctx context.Context, deviceIdToRevoke, token, tenantId, correlationID string) error {
@@ -86,12 +85,12 @@ func (m *MockAuthClient) QuickRevoke(ctx context.Context, token string, blacklis
 	return args.Get(0).(map[string]interface{}), args.Error(1)
 }
 
-func (m *MockAuthClient) ListDeviceBlacklist(ctx context.Context, token, tenantId, correlationID string) ([]inboundDto.DeviceBlacklistDTO, error) {
+func (m *MockAuthClient) ListDeviceBlacklist(ctx context.Context, token, tenantId, correlationID string) ([]appdto.DeviceBlacklistDTO, error) {
 	args := m.Called(ctx, token, tenantId, correlationID)
-	return args.Get(0).([]inboundDto.DeviceBlacklistDTO), args.Error(1)
+	return args.Get(0).([]appdto.DeviceBlacklistDTO), args.Error(1)
 }
 
-func (m *MockAuthClient) AddDeviceToBlacklist(ctx context.Context, req inboundDto.AddDeviceBlacklistRequestDTO, token, tenantId, correlationID string) error {
+func (m *MockAuthClient) AddDeviceToBlacklist(ctx context.Context, req appdto.AddDeviceBlacklistRequestDTO, token, tenantId, correlationID string) error {
 	args := m.Called(ctx, req, token, tenantId, correlationID)
 	return args.Error(0)
 }
@@ -101,12 +100,12 @@ func (m *MockAuthClient) RemoveDeviceFromBlacklist(ctx context.Context, deviceId
 	return args.Error(0)
 }
 
-func (m *MockAuthClient) SearchAdminDeviceBlacklist(ctx context.Context, queryParams map[string]string, token, tenantId, correlationID string) (inboundDto.PaginatedDeviceBlacklistResponseDTO, error) {
+func (m *MockAuthClient) SearchAdminDeviceBlacklist(ctx context.Context, queryParams map[string]string, token, tenantId, correlationID string) (appdto.PaginatedDeviceBlacklistResponseDTO, error) {
 	args := m.Called(ctx, queryParams, token, tenantId, correlationID)
-	return args.Get(0).(inboundDto.PaginatedDeviceBlacklistResponseDTO), args.Error(1)
+	return args.Get(0).(appdto.PaginatedDeviceBlacklistResponseDTO), args.Error(1)
 }
 
-func (m *MockAuthClient) AdminAddDeviceToBlacklist(ctx context.Context, req inboundDto.AdminAddDeviceBlacklistRequestDTO, token, tenantId, correlationID string) error {
+func (m *MockAuthClient) AdminAddDeviceToBlacklist(ctx context.Context, req appdto.AdminAddDeviceBlacklistRequestDTO, token, tenantId, correlationID string) error {
 	args := m.Called(ctx, req, token, tenantId, correlationID)
 	return args.Error(0)
 }
@@ -116,12 +115,12 @@ func (m *MockAuthClient) AdminRemoveDeviceFromBlacklist(ctx context.Context, dev
 	return args.Error(0)
 }
 
-func (m *MockAuthClient) ListTenantUserSessions(ctx context.Context, userId, token, tenantId, correlationID string) ([]inboundDto.DeviceSessionDTO, error) {
+func (m *MockAuthClient) ListTenantUserSessions(ctx context.Context, userId, token, tenantId, correlationID string) ([]appdto.DeviceSessionDTO, error) {
 	args := m.Called(ctx, userId, token, tenantId, correlationID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]inboundDto.DeviceSessionDTO), args.Error(1)
+	return args.Get(0).([]appdto.DeviceSessionDTO), args.Error(1)
 }
 
 func (m *MockAuthClient) RevokeTenantUserSession(ctx context.Context, userId, deviceId, token, tenantId, correlationID string) error {
@@ -129,17 +128,17 @@ func (m *MockAuthClient) RevokeTenantUserSession(ctx context.Context, userId, de
 	return args.Error(0)
 }
 
-func (m *MockAuthClient) ListTenantUserBlacklist(ctx context.Context, userId, token, tenantId, correlationID string) ([]inboundDto.AdminDeviceBlacklistEntryDTO, error) {
+func (m *MockAuthClient) ListTenantUserBlacklist(ctx context.Context, userId, token, tenantId, correlationID string) ([]appdto.AdminDeviceBlacklistEntryDTO, error) {
 	args := m.Called(ctx, userId, token, tenantId, correlationID)
 	if args.Get(0) == nil {
 		return nil, args.Error(1)
 	}
-	return args.Get(0).([]inboundDto.AdminDeviceBlacklistEntryDTO), args.Error(1)
+	return args.Get(0).([]appdto.AdminDeviceBlacklistEntryDTO), args.Error(1)
 }
 
-func (m *MockAuthClient) SearchTenantSessions(ctx context.Context, queryParams map[string]string, token, tenantId, correlationID string) (inboundDto.PaginatedDeviceSessionResponseDTO, error) {
+func (m *MockAuthClient) SearchTenantSessions(ctx context.Context, queryParams map[string]string, token, tenantId, correlationID string) (appdto.PaginatedDeviceSessionResponseDTO, error) {
 	args := m.Called(ctx, queryParams, token, tenantId, correlationID)
-	return args.Get(0).(inboundDto.PaginatedDeviceSessionResponseDTO), args.Error(1)
+	return args.Get(0).(appdto.PaginatedDeviceSessionResponseDTO), args.Error(1)
 }
 
 func (m *MockAuthClient) GetUserByCodeUser(ctx context.Context, codeUser, token, tenantId, correlationID string) (outboundDto.UserByCodeResponseDTO, error) {
@@ -211,7 +210,6 @@ func TestSendResetPasswordMessageUseCase_Execute_Success(t *testing.T) {
 		email,
 		tenantId,
 		correlationID,
-		ctx,
 	)
 
 	expectedCompany := authclient.CompanySimpleResponseDTO{
@@ -266,7 +264,7 @@ func TestSendResetPasswordMessageUseCase_Execute_Success(t *testing.T) {
 	mockMessagePublisher.On("PublishMessage", ctx, expectedMessageReq).Return(nil)
 
 	// Act
-	result, err := useCase.Execute(command)
+	result, err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.NoError(t, err)
@@ -297,7 +295,6 @@ func TestSendResetPasswordMessageUseCase_Execute_CompanyNotFound(t *testing.T) {
 		email,
 		tenantId,
 		correlationID,
-		ctx,
 	)
 
 	companyError := &appdto.HTTPError{
@@ -310,11 +307,11 @@ func TestSendResetPasswordMessageUseCase_Execute_CompanyNotFound(t *testing.T) {
 	mockCompanyClient.On("GetByTenantId", ctx, tenantId, correlationID).Return(authclient.CompanySimpleResponseDTO{}, companyError)
 
 	// Act
-	result, err := useCase.Execute(command)
+	result, err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.Error(t, err)
-	assert.Equal(t, inboundDto.SendResetPasswordMessageResponseDTO{}, result)
+	assert.Equal(t, appdto.SendResetPasswordMessageViewDTO{}, result)
 	assert.IsType(t, &appdto.HTTPError{}, err)
 	mockCompanyClient.AssertExpectations(t)
 	// UserClient e MessagePublisher não devem ser chamados
@@ -341,7 +338,6 @@ func TestSendResetPasswordMessageUseCase_Execute_UserNotFound(t *testing.T) {
 		email,
 		tenantId,
 		correlationID,
-		ctx,
 	)
 
 	expectedCompany := authclient.CompanySimpleResponseDTO{
@@ -360,11 +356,11 @@ func TestSendResetPasswordMessageUseCase_Execute_UserNotFound(t *testing.T) {
 	mockUserClient.On("GetByEmail", ctx, email, tenantId, "company-123", correlationID).Return(outboundDto.UserByEmailResponseDTO{}, userError)
 
 	// Act
-	result, err := useCase.Execute(command)
+	result, err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.Error(t, err)
-	assert.Equal(t, inboundDto.SendResetPasswordMessageResponseDTO{}, result)
+	assert.Equal(t, appdto.SendResetPasswordMessageViewDTO{}, result)
 	assert.IsType(t, &appdto.HTTPError{}, err)
 	mockCompanyClient.AssertExpectations(t)
 	mockUserClient.AssertExpectations(t)
@@ -391,7 +387,6 @@ func TestSendResetPasswordMessageUseCase_Execute_UserNotActive(t *testing.T) {
 		email,
 		tenantId,
 		correlationID,
-		ctx,
 	)
 
 	expectedCompany := authclient.CompanySimpleResponseDTO{
@@ -413,11 +408,11 @@ func TestSendResetPasswordMessageUseCase_Execute_UserNotActive(t *testing.T) {
 	mockUserClient.On("GetByEmail", ctx, email, tenantId, "company-123", correlationID).Return(inactiveUser, nil)
 
 	// Act
-	result, err := useCase.Execute(command)
+	result, err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.Error(t, err)
-	assert.Equal(t, inboundDto.SendResetPasswordMessageResponseDTO{}, result)
+	assert.Equal(t, appdto.SendResetPasswordMessageViewDTO{}, result)
 
 	appErr, ok := err.(*pkg.AppError)
 	assert.True(t, ok)
@@ -451,7 +446,6 @@ func TestSendResetPasswordMessageUseCase_Execute_UserStatusPending(t *testing.T)
 		email,
 		tenantId,
 		correlationID,
-		ctx,
 	)
 
 	expectedCompany := authclient.CompanySimpleResponseDTO{
@@ -473,11 +467,11 @@ func TestSendResetPasswordMessageUseCase_Execute_UserStatusPending(t *testing.T)
 	mockUserClient.On("GetByEmail", ctx, email, tenantId, "company-123", correlationID).Return(pendingUser, nil)
 
 	// Act
-	result, err := useCase.Execute(command)
+	result, err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.Error(t, err)
-	assert.Equal(t, inboundDto.SendResetPasswordMessageResponseDTO{}, result)
+	assert.Equal(t, appdto.SendResetPasswordMessageViewDTO{}, result)
 
 	appErr, ok := err.(*pkg.AppError)
 	assert.True(t, ok)
@@ -508,7 +502,6 @@ func TestSendResetPasswordMessageUseCase_Execute_GenerateTokenError(t *testing.T
 		email,
 		tenantId,
 		correlationID,
-		ctx,
 	)
 
 	expectedCompany := authclient.CompanySimpleResponseDTO{
@@ -544,11 +537,11 @@ func TestSendResetPasswordMessageUseCase_Execute_GenerateTokenError(t *testing.T
 	mockAuthClient.On("GenerateResetToken", ctx, expectedGenerateTokenReq, tenantId, correlationID).Return(outboundDto.GenerateResetTokenMSResponseDTO{}, generateTokenError)
 
 	// Act
-	result, err := useCase.Execute(command)
+	result, err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.Error(t, err)
-	assert.Equal(t, inboundDto.SendResetPasswordMessageResponseDTO{}, result)
+	assert.Equal(t, appdto.SendResetPasswordMessageViewDTO{}, result)
 	assert.IsType(t, &appdto.HTTPError{}, err)
 	mockCompanyClient.AssertExpectations(t)
 	mockUserClient.AssertExpectations(t)
@@ -575,7 +568,6 @@ func TestSendResetPasswordMessageUseCase_Execute_MessagePublisherError(t *testin
 		email,
 		tenantId,
 		correlationID,
-		ctx,
 	)
 
 	expectedCompany := authclient.CompanySimpleResponseDTO{
@@ -615,7 +607,7 @@ func TestSendResetPasswordMessageUseCase_Execute_MessagePublisherError(t *testin
 	mockMessagePublisher.On("PublishMessage", ctx, mock.AnythingOfType("messaging.MessageDTO")).Return(errors.New("rabbitmq connection failed"))
 
 	// Act
-	result, err := useCase.Execute(command)
+	result, err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.NoError(t, err) // Não deve falhar se o email não for enviado (melhor UX)
@@ -646,7 +638,6 @@ func TestSendResetPasswordMessageUseCase_Execute_SendMessageFailure(t *testing.T
 		email,
 		tenantId,
 		correlationID,
-		ctx,
 	)
 
 	expectedCompany := authclient.CompanySimpleResponseDTO{
@@ -686,7 +677,7 @@ func TestSendResetPasswordMessageUseCase_Execute_SendMessageFailure(t *testing.T
 	mockMessagePublisher.On("PublishMessage", ctx, mock.AnythingOfType("messaging.MessageDTO")).Return(nil)
 
 	// Act
-	result, err := useCase.Execute(command)
+	result, err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.NoError(t, err)
@@ -717,7 +708,6 @@ func TestSendResetPasswordMessageUseCase_Execute_CompanyGenericError(t *testing.
 		email,
 		tenantId,
 		correlationID,
-		ctx,
 	)
 
 	genericError := errors.New("erro de conexão")
@@ -726,11 +716,11 @@ func TestSendResetPasswordMessageUseCase_Execute_CompanyGenericError(t *testing.
 	mockCompanyClient.On("GetByTenantId", ctx, tenantId, correlationID).Return(authclient.CompanySimpleResponseDTO{}, genericError)
 
 	// Act
-	result, err := useCase.Execute(command)
+	result, err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.Error(t, err)
-	assert.Equal(t, inboundDto.SendResetPasswordMessageResponseDTO{}, result)
+	assert.Equal(t, appdto.SendResetPasswordMessageViewDTO{}, result)
 	assert.Equal(t, genericError, err)
 	mockCompanyClient.AssertExpectations(t)
 	mockUserClient.AssertNotCalled(t, "GetByEmail", mock.Anything, mock.Anything, mock.Anything, mock.Anything)
@@ -756,7 +746,6 @@ func TestSendResetPasswordMessageUseCase_Execute_UserGenericError(t *testing.T) 
 		email,
 		tenantId,
 		correlationID,
-		ctx,
 	)
 
 	expectedCompany := authclient.CompanySimpleResponseDTO{
@@ -771,11 +760,11 @@ func TestSendResetPasswordMessageUseCase_Execute_UserGenericError(t *testing.T) 
 	mockUserClient.On("GetByEmail", ctx, email, tenantId, "company-123", correlationID).Return(outboundDto.UserByEmailResponseDTO{}, genericError)
 
 	// Act
-	result, err := useCase.Execute(command)
+	result, err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.Error(t, err)
-	assert.Equal(t, inboundDto.SendResetPasswordMessageResponseDTO{}, result)
+	assert.Equal(t, appdto.SendResetPasswordMessageViewDTO{}, result)
 	assert.Equal(t, genericError, err)
 	mockCompanyClient.AssertExpectations(t)
 	mockUserClient.AssertExpectations(t)

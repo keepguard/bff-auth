@@ -8,7 +8,7 @@ import (
 	"github.com/go-resty/resty/v2"
 	inboundDto "github.com/keepguard/bff-auth/internal/adapters/inbound/http/dto"
 	outboundDto "github.com/keepguard/bff-auth/internal/adapters/outbound/http/dto"
-	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	authclient "github.com/keepguard/bff-auth/internal/application/port"
 	"github.com/keepguard/bff-auth/internal/infrastructure/requestmeta"
 )
 

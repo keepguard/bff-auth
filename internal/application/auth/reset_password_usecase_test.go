@@ -7,7 +7,7 @@ import (
 
 	outboundDto "github.com/keepguard/bff-auth/internal/adapters/outbound/http/dto"
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
-	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	authclient "github.com/keepguard/bff-auth/internal/application/port"
 	"github.com/keepguard/bff-auth/internal/domain/ports/messaging"
 	"github.com/keepguard/bff-auth/internal/pkg"
 	"github.com/stretchr/testify/assert"
@@ -69,7 +69,6 @@ func TestResetPasswordUseCase_Execute_Success(t *testing.T) {
 		"",
 		"",
 		"",
-		ctx,
 	)
 
 	expectedUser := outboundDto.UserByEmailResponseDTO{
@@ -96,7 +95,7 @@ func TestResetPasswordUseCase_Execute_Success(t *testing.T) {
 	mockAuthClient.On("ResetPassword", ctx, expectedReq, tenantId, correlationID, "", "", "", "", "").Return(nil)
 
 	// Act
-	err := useCase.Execute(command)
+	err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.NoError(t, err)
@@ -135,7 +134,6 @@ func TestResetPasswordUseCase_Execute_UserNotFound(t *testing.T) {
 		"",
 		"",
 		"",
-		ctx,
 	)
 
 	userError := &appdto.HTTPError{
@@ -149,7 +147,7 @@ func TestResetPasswordUseCase_Execute_UserNotFound(t *testing.T) {
 	mockUserClient.On("GetByEmail", ctx, email, tenantId, "550e8400-e29b-41d4-a716-446655440000", correlationID).Return(outboundDto.UserByEmailResponseDTO{}, userError)
 
 	// Act
-	err := useCase.Execute(command)
+	err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.Error(t, err)
@@ -189,7 +187,6 @@ func TestResetPasswordUseCase_Execute_UserNotActive(t *testing.T) {
 		"",
 		"",
 		"",
-		ctx,
 	)
 
 	expectedUser := outboundDto.UserByEmailResponseDTO{
@@ -206,7 +203,7 @@ func TestResetPasswordUseCase_Execute_UserNotActive(t *testing.T) {
 	mockUserClient.On("GetByEmail", ctx, email, tenantId, "550e8400-e29b-41d4-a716-446655440000", correlationID).Return(expectedUser, nil)
 
 	// Act
-	err := useCase.Execute(command)
+	err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.Error(t, err)
@@ -249,7 +246,6 @@ func TestResetPasswordUseCase_Execute_InvalidResetToken(t *testing.T) {
 		"",
 		"",
 		"",
-		ctx,
 	)
 
 	expectedUser := outboundDto.UserByEmailResponseDTO{
@@ -282,7 +278,7 @@ func TestResetPasswordUseCase_Execute_InvalidResetToken(t *testing.T) {
 	mockAuthClient.On("ResetPassword", ctx, expectedReq, tenantId, correlationID, "", "", "", "", "").Return(authError)
 
 	// Act
-	err := useCase.Execute(command)
+	err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.Error(t, err)
@@ -321,7 +317,6 @@ func TestResetPasswordUseCase_Execute_CompanyNotFound(t *testing.T) {
 		"",
 		"",
 		"",
-		ctx,
 	)
 
 	// Configurar mock do CompanyClient para retornar erro
@@ -334,7 +329,7 @@ func TestResetPasswordUseCase_Execute_CompanyNotFound(t *testing.T) {
 	mockCompanyClient.On("GetByTenantId", ctx, tenantId, correlationID).Return(authclient.CompanySimpleResponseDTO{}, companyError)
 
 	// Act
-	err := useCase.Execute(command)
+	err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.Error(t, err)
@@ -351,7 +346,6 @@ func TestResetPasswordUseCase_Execute_PasswordMismatch(t *testing.T) {
 	mockUserClient := new(MockUserClient)
 	mockCompanyClient := new(MockCompanyClient)
 
-	ctx := context.Background()
 	email := "user@example.com"
 	resetToken := "valid-reset-token"
 	newPassword := "newpass123"
@@ -371,7 +365,6 @@ func TestResetPasswordUseCase_Execute_PasswordMismatch(t *testing.T) {
 		"",
 		"",
 		"",
-		ctx,
 	)
 
 	// Validação no comando detecta a diferença
@@ -417,7 +410,6 @@ func TestResetPasswordUseCase_Execute_ContextCancelled(t *testing.T) {
 		"",
 		"",
 		"",
-		ctx,
 	)
 
 	expectedUser := outboundDto.UserByEmailResponseDTO{
@@ -444,7 +436,7 @@ func TestResetPasswordUseCase_Execute_ContextCancelled(t *testing.T) {
 	mockAuthClient.On("ResetPassword", ctx, expectedReq, tenantId, correlationID, "", "", "", "", "").Return(context.Canceled)
 
 	// Act
-	err := useCase.Execute(command)
+	err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.Error(t, err)
@@ -483,7 +475,6 @@ func TestResetPasswordUseCase_Execute_AuthServiceError(t *testing.T) {
 		"",
 		"",
 		"",
-		ctx,
 	)
 
 	expectedUser := outboundDto.UserByEmailResponseDTO{
@@ -512,7 +503,7 @@ func TestResetPasswordUseCase_Execute_AuthServiceError(t *testing.T) {
 	mockAuthClient.On("ResetPassword", ctx, expectedReq, tenantId, correlationID, "", "", "", "", "").Return(authError)
 
 	// Act
-	err := useCase.Execute(command)
+	err := useCase.Execute(ctx, command)
 
 	// Assert
 	assert.Error(t, err)

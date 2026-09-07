@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	portsclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
+	portsclient "github.com/keepguard/bff-auth/internal/application/port"
 	"github.com/keepguard/bff-auth/internal/infrastructure/resilience"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"

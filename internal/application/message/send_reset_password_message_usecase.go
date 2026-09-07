@@ -1,23 +1,21 @@
 package message
 
 import (
+	"context"
 	"fmt"
 
-	inboundDto "github.com/keepguard/bff-auth/internal/adapters/inbound/http/dto"
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
+	authclient "github.com/keepguard/bff-auth/internal/application/port"
 	"github.com/keepguard/bff-auth/internal/domain/enums"
-	authclient "github.com/keepguard/bff-auth/internal/domain/ports/client"
 	"github.com/keepguard/bff-auth/internal/domain/ports/messaging"
 	"github.com/keepguard/bff-auth/internal/pkg"
 	"go.uber.org/zap"
 )
 
-// SendResetPasswordMessageUseCase define a interface do caso de uso
 type SendResetPasswordMessageUseCase interface {
-	Execute(command appdto.SendResetPasswordMessageCommand) (inboundDto.SendResetPasswordMessageResponseDTO, error)
+	Execute(ctx context.Context, command appdto.SendResetPasswordMessageCommand) (appdto.SendResetPasswordMessageViewDTO, error)
 }
 
-// sendResetPasswordMessageUseCaseImpl implementa o caso de uso de envio de mensagem de reset de senha
 type sendResetPasswordMessageUseCaseImpl struct {
 	authClient       authclient.AuthClient
 	userClient       authclient.UserClient
@@ -26,7 +24,6 @@ type sendResetPasswordMessageUseCaseImpl struct {
 	logger           *zap.Logger
 }
 
-// NewSendResetPasswordMessageUseCase cria um novo caso de uso de envio de mensagem de reset
 func NewSendResetPasswordMessageUseCase(
 	authClient authclient.AuthClient,
 	userClient authclient.UserClient,
@@ -43,30 +40,25 @@ func NewSendResetPasswordMessageUseCase(
 	}
 }
 
-// Execute executa o caso de uso de envio de mensagem de reset de senha
-func (uc *sendResetPasswordMessageUseCaseImpl) Execute(command appdto.SendResetPasswordMessageCommand) (inboundDto.SendResetPasswordMessageResponseDTO, error) {
-	// Passo 1: Verificar se a empresa existe consultando o Company Service
-	company, err := uc.companyClient.GetByTenantId(command.Context, command.TenantId, command.CorrelationID)
+func (uc *sendResetPasswordMessageUseCaseImpl) Execute(ctx context.Context, command appdto.SendResetPasswordMessageCommand) (appdto.SendResetPasswordMessageViewDTO, error) {
+	company, err := uc.companyClient.GetByTenantId(ctx, command.TenantId, command.CorrelationID)
 	if err != nil {
-		return inboundDto.SendResetPasswordMessageResponseDTO{}, err
+		return appdto.SendResetPasswordMessageViewDTO{}, err
 	}
 
-	// Passo 2: Buscar usuário por email no User Service
-	user, err := uc.userClient.GetByEmail(command.Context, command.Email, command.TenantId, company.ID, command.CorrelationID)
+	user, err := uc.userClient.GetByEmail(ctx, command.Email, command.TenantId, company.ID, command.CorrelationID)
 	if err != nil {
-		return inboundDto.SendResetPasswordMessageResponseDTO{}, err
+		return appdto.SendResetPasswordMessageViewDTO{}, err
 	}
 
-	// Passo 3: Verificar se o usuário está ACTIVE
 	if user.Status != "ACTIVE" {
-		return inboundDto.SendResetPasswordMessageResponseDTO{}, &pkg.AppError{
+		return appdto.SendResetPasswordMessageViewDTO{}, &pkg.AppError{
 			StatusCode: 400,
 			Code:       "USER_NOT_ACTIVE",
 			Message:    fmt.Sprintf("Usuário não está ativo. Status atual: %s", user.Status),
 		}
 	}
 
-	// Passo 4: Gerar token de reset através do Auth Service
 	generateTokenReq := map[string]interface{}{
 		"codeUser":          user.CodeUser,
 		"messageType":       enums.MessageTypeEmail.String(),
@@ -74,12 +66,11 @@ func (uc *sendResetPasswordMessageUseCaseImpl) Execute(command appdto.SendResetP
 		"templateType":      enums.TemplateTypeRecuperacaoSenha.String(),
 	}
 
-	tokenResponse, err := uc.authClient.GenerateResetToken(command.Context, generateTokenReq, command.TenantId, command.CorrelationID)
+	tokenResponse, err := uc.authClient.GenerateResetToken(ctx, generateTokenReq, command.TenantId, command.CorrelationID)
 	if err != nil {
-		return inboundDto.SendResetPasswordMessageResponseDTO{}, err
+		return appdto.SendResetPasswordMessageViewDTO{}, err
 	}
 
-	// Passo 5: Preparar mensagem para publicação na fila
 	variables := map[string]interface{}{
 		"userName": user.Username,
 		"token":    tokenResponse.Token,
@@ -97,10 +88,8 @@ func (uc *sendResetPasswordMessageUseCaseImpl) Execute(command appdto.SendResetP
 		Variables:         variables,
 	}
 
-	// Passo 6: Publicar mensagem na fila RabbitMQ (com fallback HTTP automático)
-	err = uc.messagePublisher.PublishMessage(command.Context, messageReq)
+	err = uc.messagePublisher.PublishMessage(ctx, messageReq)
 	if err != nil {
-		// Não falha se o email não for enviado (melhor UX)
 		uc.logger.Error("Erro ao publicar mensagem de reset de senha",
 			zap.String("email", command.Email),
 			zap.String("correlation_id", command.CorrelationID),
@@ -111,7 +100,7 @@ func (uc *sendResetPasswordMessageUseCaseImpl) Execute(command appdto.SendResetP
 			zap.String("correlation_id", command.CorrelationID))
 	}
 
-	return inboundDto.SendResetPasswordMessageResponseDTO{
+	return appdto.SendResetPasswordMessageViewDTO{
 		Success: true,
 		Message: "Token de reset de senha gerado e mensagem enviada com sucesso",
 	}, nil

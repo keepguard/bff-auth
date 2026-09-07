@@ -4,6 +4,7 @@ import (
 	"net/http"
 
 	"github.com/keepguard/bff-auth/internal/adapters/inbound/http/dto"
+	"github.com/keepguard/bff-auth/internal/adapters/inbound/http/mapper"
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
 	"github.com/keepguard/bff-auth/internal/application/message"
 	"github.com/keepguard/bff-auth/internal/infrastructure/logger"
@@ -88,7 +89,6 @@ func (h *MessageHandlers) SendResetPasswordMessageHandler(c echo.Context) error 
 		req.Email,
 		tenantId,
 		correlationID,
-		c.Request().Context(),
 	)
 
 	// Validar comando
@@ -106,7 +106,7 @@ func (h *MessageHandlers) SendResetPasswordMessageHandler(c echo.Context) error 
 	}
 
 	// Executar caso de uso com comando encapsulado
-	response, err := h.sendResetPasswordMessageUseCase.Execute(command)
+	response, err := h.sendResetPasswordMessageUseCase.Execute(c.Request().Context(), command)
 	if err != nil {
 		h.logger.Error("Erro no caso de uso de envio de mensagem de reset",
 			zap.String("correlationId", correlationID),
@@ -122,5 +122,5 @@ func (h *MessageHandlers) SendResetPasswordMessageHandler(c echo.Context) error 
 		zap.String("email", req.Email),
 	)
 
-	return c.JSON(http.StatusOK, response)
+	return c.JSON(http.StatusOK, mapper.ToSendResetPasswordMessageResponse(response))
 }
