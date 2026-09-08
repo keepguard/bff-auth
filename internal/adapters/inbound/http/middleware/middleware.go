@@ -161,11 +161,39 @@ func (m *middlewareImpl) RecoveryMiddleware() echo.MiddlewareFunc {
 	})
 }
 
-// CORSMiddleware configura CORS
+// CORSMiddleware configura CORS com suporte a credenciais (Cookies)
 func (m *middlewareImpl) CORSMiddleware() echo.MiddlewareFunc {
 	return middleware.CORSWithConfig(middleware.CORSConfig{
-		AllowOrigins: []string{"*"},
-		AllowMethods: []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodOptions},
+		AllowOriginFunc: func(origin string) (bool, error) {
+			if origin == "" {
+				return true, nil
+			}
+			// Permite origens de desenvolvimento local
+			if strings.HasPrefix(origin, "http://localhost:") ||
+				strings.HasPrefix(origin, "http://127.0.0.1:") ||
+				strings.HasPrefix(origin, "https://localhost:") ||
+				strings.HasPrefix(origin, "https://127.0.0.1:") {
+				return true, nil
+			}
+			// Permite domínios de produção do Keepguard
+			if strings.HasSuffix(origin, ".keepguard.com.br") ||
+				origin == "https://keepguard.com.br" ||
+				origin == "http://keepguard.com.br" ||
+				strings.Contains(origin, "31.97.175.92") {
+				return true, nil
+			}
+			// Permite origens customizadas via variável de ambiente
+			if allowed := os.Getenv("BFF_AUTH_CORS_ALLOWED_ORIGINS"); allowed != "" {
+				for _, o := range strings.Split(allowed, ",") {
+					if strings.TrimSpace(o) == origin {
+						return true, nil
+					}
+				}
+			}
+			return false, nil
+		},
+		AllowCredentials: true,
+		AllowMethods:     []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete, http.MethodOptions},
 		AllowHeaders: []string{
 			echo.HeaderOrigin,
 			echo.HeaderContentType,

@@ -263,6 +263,18 @@ func TestAuthHandlers_LoginHandler_Success(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expectedResponse, response)
 
+	cookies := rec.Result().Cookies()
+	var loginCookie *http.Cookie
+	for _, ck := range cookies {
+		if ck.Name == RefreshTokenCookieName {
+			loginCookie = ck
+			break
+		}
+	}
+	assert.NotNil(t, loginCookie)
+	assert.Equal(t, "access_token", loginCookie.Value)
+	assert.True(t, loginCookie.HttpOnly)
+
 	mockLoginUseCase.AssertExpectations(t)
 }
 
@@ -369,6 +381,70 @@ func TestAuthHandlers_RefreshHandler_Success(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, expectedResponse, response)
 
+	cookies := rec.Result().Cookies()
+	var rotatedCookie *http.Cookie
+	for _, ck := range cookies {
+		if ck.Name == RefreshTokenCookieName {
+			rotatedCookie = ck
+			break
+		}
+	}
+	assert.NotNil(t, rotatedCookie)
+	assert.Equal(t, "new_access_token", rotatedCookie.Value)
+	assert.True(t, rotatedCookie.HttpOnly)
+
+	mockRefreshUseCase.AssertExpectations(t)
+}
+
+func TestAuthHandlers_RefreshHandler_Success_WithCookieOnly(t *testing.T) {
+	// Arrange
+	handlers, _, mockRefreshUseCase, _ := setupTestHandlers()
+
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodPost, "/auth/refresh", bytes.NewReader([]byte("{}")))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Correlation-ID", "test-correlation-id")
+	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")
+	req.AddCookie(&http.Cookie{
+		Name:  RefreshTokenCookieName,
+		Value: "cookie_refresh_token",
+	})
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	expectedResponse := dto.RefreshTokenResponseDTO{
+		Token:     "rotated_from_cookie",
+		ExpiresIn: 3600,
+	}
+
+	mockRefreshUseCase.On("Execute", mock.MatchedBy(func(cmd appdto.RefreshTokenCommand) bool {
+		return cmd.RefreshToken == "cookie_refresh_token"
+	})).Return(expectedResponse, nil)
+
+	// Act
+	err := handlers.RefreshHandler(c)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, rec.Code)
+
+	var response dto.RefreshTokenResponseDTO
+	err = json.Unmarshal(rec.Body.Bytes(), &response)
+	assert.NoError(t, err)
+	assert.Equal(t, expectedResponse, response)
+
+	cookies := rec.Result().Cookies()
+	var rotatedCookie *http.Cookie
+	for _, ck := range cookies {
+		if ck.Name == RefreshTokenCookieName {
+			rotatedCookie = ck
+			break
+		}
+	}
+	assert.NotNil(t, rotatedCookie)
+	assert.Equal(t, "rotated_from_cookie", rotatedCookie.Value)
+	assert.True(t, rotatedCookie.HttpOnly)
+
 	mockRefreshUseCase.AssertExpectations(t)
 }
 
@@ -397,6 +473,17 @@ func TestAuthHandlers_LogoutHandler_Success(t *testing.T) {
 	err = json.Unmarshal(rec.Body.Bytes(), &response)
 	assert.NoError(t, err)
 	assert.Equal(t, "Logout realizado com sucesso", response["message"])
+
+	cookies := rec.Result().Cookies()
+	var logoutCookie *http.Cookie
+	for _, ck := range cookies {
+		if ck.Name == RefreshTokenCookieName {
+			logoutCookie = ck
+			break
+		}
+	}
+	assert.NotNil(t, logoutCookie)
+	assert.Equal(t, -1, logoutCookie.MaxAge)
 
 	mockLogoutUseCase.AssertExpectations(t)
 }

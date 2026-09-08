@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/http"
+	"os"
 	"strings"
 	"time"
 
@@ -111,6 +112,59 @@ func withClientNetwork(c echo.Context) context.Context {
 	return requestmeta.WithClientLocation(ctx, c.Request().Header.Get("X-Public-Location"))
 }
 
+const (
+	RefreshTokenCookieName = "keepguard_refresh_token"
+	DefaultCookieMaxAge    = 7 * 24 * 3600 // 7 dias em segundos
+)
+
+func (h *AuthHandlers) setRefreshTokenCookie(c echo.Context, token string) {
+	if token == "" {
+		return
+	}
+	cookie := new(http.Cookie)
+	cookie.Name = RefreshTokenCookieName
+	cookie.Value = token
+	cookie.Path = "/api/v1/auth"
+	cookie.HttpOnly = true
+	cookie.SameSite = http.SameSiteLaxMode
+	cookie.MaxAge = DefaultCookieMaxAge
+
+	if c.IsTLS() || c.Request().Header.Get("X-Forwarded-Proto") == "https" || os.Getenv("BFF_AUTH_COOKIE_SECURE") == "true" {
+		cookie.Secure = true
+	} else if os.Getenv("BFF_AUTH_COOKIE_SECURE") == "false" {
+		cookie.Secure = false
+	}
+
+	if domain := os.Getenv("BFF_AUTH_COOKIE_DOMAIN"); domain != "" {
+		cookie.Domain = domain
+	}
+
+	c.SetCookie(cookie)
+}
+
+func (h *AuthHandlers) clearRefreshTokenCookie(c echo.Context) {
+	cookie := new(http.Cookie)
+	cookie.Name = RefreshTokenCookieName
+	cookie.Value = ""
+	cookie.Path = "/api/v1/auth"
+	cookie.HttpOnly = true
+	cookie.SameSite = http.SameSiteLaxMode
+	cookie.MaxAge = -1
+	cookie.Expires = time.Unix(0, 0)
+
+	if c.IsTLS() || c.Request().Header.Get("X-Forwarded-Proto") == "https" || os.Getenv("BFF_AUTH_COOKIE_SECURE") == "true" {
+		cookie.Secure = true
+	} else if os.Getenv("BFF_AUTH_COOKIE_SECURE") == "false" {
+		cookie.Secure = false
+	}
+
+	if domain := os.Getenv("BFF_AUTH_COOKIE_DOMAIN"); domain != "" {
+		cookie.Domain = domain
+	}
+
+	c.SetCookie(cookie)
+}
+
 // LoginHandler trata requisições de login
 // @Summary Login
 // @Description Realiza login do usuário usando credenciais de username e password. Requer headers obrigatórios X-Correlation-ID e X-Tenant-Id.
@@ -206,6 +260,10 @@ func (h *AuthHandlers) LoginHandler(c echo.Context) error {
 		zap.String("username", req.Username),
 	)
 
+	if response.Token != "" {
+		h.setRefreshTokenCookie(c, response.Token)
+	}
+
 	return c.JSON(http.StatusOK, mapper.ToAuthResponse(response))
 }
 
@@ -237,22 +295,18 @@ func (h *AuthHandlers) RefreshHandler(c echo.Context) error {
 	}
 
 	var req dto.RefreshTokenRequestDTO
-	if err := c.Bind(&req); err != nil {
-		h.logger.Error("Erro ao fazer bind da requisição de refresh",
-			zap.String("correlationId", correlationID),
-			zap.String("applicationId", tenantId),
-			zap.Error(err),
-		)
-		return c.JSON(http.StatusBadRequest, pkg.ErrorResponse{
-			Error:         "INVALID_REQUEST",
-			Message:       "Requisição inválida",
-			CorrelationID: correlationID,
-		})
+	_ = c.Bind(&req)
+
+	tokenToUse := strings.TrimSpace(req.Token)
+	if tokenToUse == "" {
+		if cookie, err := c.Cookie(RefreshTokenCookieName); err == nil && cookie != nil && cookie.Value != "" {
+			tokenToUse = strings.TrimSpace(cookie.Value)
+		}
 	}
 
 	// Criar comando de domínio encapsulado
 	command := appdto.NewRefreshTokenCommand(
-		req.Token,
+		tokenToUse,
 		tenantId,
 		correlationID,
 		clientId,
@@ -281,6 +335,11 @@ func (h *AuthHandlers) RefreshHandler(c echo.Context) error {
 			zap.Error(err),
 		)
 		return handleError(c, err, correlationID)
+	}
+
+	// Rotacionar o cookie com novo token gerado
+	if response.Token != "" {
+		h.setRefreshTokenCookie(c, response.Token)
 	}
 
 	h.logger.Info("Refresh realizado com sucesso",
@@ -317,6 +376,9 @@ func (h *AuthHandlers) LogoutHandler(c echo.Context) error {
 			CorrelationID: correlationID,
 		})
 	}
+
+	// Limpa o cookie HttpOnly no logout
+	h.clearRefreshTokenCookie(c)
 
 	// Extrair token do header Authorization
 	authHeader := c.Request().Header.Get("Authorization")
@@ -801,6 +863,10 @@ func (h *AuthHandlers) VerifyDeviceChallengeHandler(c echo.Context) error {
 	res, err := h.devicePort.VerifyChallenge(c.Request().Context(), mapper.ToVerifyDeviceChallengeCommand(req, tenantId, correlationID))
 	if err != nil {
 		return handleError(c, err, correlationID)
+	}
+
+	if res.Token != "" {
+		h.setRefreshTokenCookie(c, res.Token)
 	}
 
 	return c.JSON(http.StatusOK, mapper.ToAuthResponse(res))
