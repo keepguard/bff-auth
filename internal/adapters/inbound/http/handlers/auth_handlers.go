@@ -118,46 +118,48 @@ const (
 )
 
 func (h *AuthHandlers) getCookieConfig(c echo.Context) (domain string, sameSite http.SameSite, secure bool, path string) {
-	path = "/api/v1/auth"
+	path = "/"
+
+	host := c.Request().Host
+	origin := c.Request().Header.Get("Origin")
+	referer := c.Request().Header.Get("Referer")
+	forwardedHost := c.Request().Header.Get("X-Forwarded-Host")
+
+	isKeepguard := strings.Contains(host, "keepguard.com.br") ||
+		strings.Contains(origin, "keepguard.com.br") ||
+		strings.Contains(referer, "keepguard.com.br") ||
+		strings.Contains(forwardedHost, "keepguard.com.br") ||
+		os.Getenv("BFF_AUTH_COOKIE_DOMAIN") != ""
+
+	if isKeepguard {
+		domain = ".keepguard.com.br"
+		secure = true
+		sameSite = http.SameSiteNoneMode
+	} else {
+		domain = ""
+		secure = false
+		sameSite = http.SameSiteLaxMode
+	}
+
+	if d := os.Getenv("BFF_AUTH_COOKIE_DOMAIN"); d != "" {
+		domain = d
+	}
 	if p := os.Getenv("BFF_AUTH_COOKIE_PATH"); p != "" {
 		path = p
 	}
-
-	// 1. Resolver Domain
-	if d := os.Getenv("BFF_AUTH_COOKIE_DOMAIN"); d != "" {
-		domain = d
-	} else {
-		host := c.Request().Host
-		origin := c.Request().Header.Get("Origin")
-		if strings.Contains(host, "keepguard.com.br") || strings.Contains(origin, "keepguard.com.br") {
-			domain = ".keepguard.com.br"
-		}
-	}
-
-	// 2. Resolver Secure
-	secure = c.IsTLS() || c.Request().Header.Get("X-Forwarded-Proto") == "https" || os.Getenv("BFF_AUTH_COOKIE_SECURE") == "true"
-	if os.Getenv("BFF_AUTH_COOKIE_SECURE") == "false" {
+	if s := os.Getenv("BFF_AUTH_COOKIE_SECURE"); s == "true" {
+		secure = true
+	} else if s == "false" {
 		secure = false
 	}
-
-	// 3. Resolver SameSite
-	sameSiteStr := strings.ToLower(strings.TrimSpace(os.Getenv("BFF_AUTH_COOKIE_SAMESITE")))
-	switch sameSiteStr {
-	case "none":
-		sameSite = http.SameSiteNoneMode
-		secure = true // Browsers exigem Secure=true para SameSite=None
-	case "strict":
-		sameSite = http.SameSiteStrictMode
-	case "lax":
-		sameSite = http.SameSiteLaxMode
-	default:
-		// Em produção HTTPS keepguard.com.br, SameSite=None é obrigatório para que
-		// requisições cross-subdomain (ex: app-core.keepguard.com.br -> api.keepguard.com.br)
-		// enviem cookies HttpOnly com credentials: 'include'.
-		if secure && (strings.Contains(c.Request().Host, "keepguard.com.br") || strings.Contains(c.Request().Header.Get("Origin"), "keepguard.com.br") || domain == ".keepguard.com.br") {
+	if ss := strings.ToLower(strings.TrimSpace(os.Getenv("BFF_AUTH_COOKIE_SAMESITE"))); ss != "" {
+		switch ss {
+		case "none":
 			sameSite = http.SameSiteNoneMode
 			secure = true
-		} else {
+		case "strict":
+			sameSite = http.SameSiteStrictMode
+		case "lax":
 			sameSite = http.SameSiteLaxMode
 		}
 	}
@@ -183,6 +185,13 @@ func (h *AuthHandlers) setRefreshTokenCookie(c echo.Context, token string) {
 	}
 
 	c.SetCookie(cookie)
+	h.logger.Info("Cookie de refresh configurado",
+		zap.String("cookieName", RefreshTokenCookieName),
+		zap.String("domain", domain),
+		zap.String("path", path),
+		zap.Bool("secure", secure),
+		zap.Int("sameSite", int(sameSite)),
+	)
 }
 
 func (h *AuthHandlers) clearRefreshTokenCookie(c echo.Context) {
@@ -201,6 +210,10 @@ func (h *AuthHandlers) clearRefreshTokenCookie(c echo.Context) {
 	}
 
 	c.SetCookie(cookie)
+	h.logger.Info("Cookie de refresh limpo",
+		zap.String("cookieName", RefreshTokenCookieName),
+		zap.String("domain", domain),
+	)
 }
 
 // LoginHandler trata requisições de login
@@ -339,7 +352,21 @@ func (h *AuthHandlers) RefreshHandler(c echo.Context) error {
 	if tokenToUse == "" {
 		if cookie, err := c.Cookie(RefreshTokenCookieName); err == nil && cookie != nil && cookie.Value != "" {
 			tokenToUse = strings.TrimSpace(cookie.Value)
+			h.logger.Info("Token de refresh extraído com sucesso do Cookie",
+				zap.String("correlationId", correlationID),
+			)
+		} else {
+			h.logger.Warn("Token de refresh ausente no Body e no Cookie",
+				zap.String("correlationId", correlationID),
+				zap.String("host", c.Request().Host),
+				zap.String("origin", c.Request().Header.Get("Origin")),
+				zap.Bool("hasCookieHeader", c.Request().Header.Get("Cookie") != ""),
+			)
 		}
+	} else {
+		h.logger.Info("Token de refresh recebido via Body",
+			zap.String("correlationId", correlationID),
+		)
 	}
 
 	// Criar comando de domínio encapsulado
