@@ -20,6 +20,9 @@ env:
   userServiceUrl: "http://ms-user:8085"
   authServiceUrl: "http://ms-auth:8081"
   communicationServiceUrl: "http://ms-communication:8082"
+  cookieDomain: ".keepguard.com.br"
+  cookieSameSite: "None"
+  cookieSecure: "true"
 
 imagePullSecrets:
   - name: ghcr-secret

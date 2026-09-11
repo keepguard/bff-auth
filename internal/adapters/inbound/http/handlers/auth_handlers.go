@@ -117,49 +117,87 @@ const (
 	DefaultCookieMaxAge    = 7 * 24 * 3600 // 7 dias em segundos
 )
 
+func (h *AuthHandlers) getCookieConfig(c echo.Context) (domain string, sameSite http.SameSite, secure bool, path string) {
+	path = "/api/v1/auth"
+	if p := os.Getenv("BFF_AUTH_COOKIE_PATH"); p != "" {
+		path = p
+	}
+
+	// 1. Resolver Domain
+	if d := os.Getenv("BFF_AUTH_COOKIE_DOMAIN"); d != "" {
+		domain = d
+	} else {
+		host := c.Request().Host
+		origin := c.Request().Header.Get("Origin")
+		if strings.Contains(host, "keepguard.com.br") || strings.Contains(origin, "keepguard.com.br") {
+			domain = ".keepguard.com.br"
+		}
+	}
+
+	// 2. Resolver Secure
+	secure = c.IsTLS() || c.Request().Header.Get("X-Forwarded-Proto") == "https" || os.Getenv("BFF_AUTH_COOKIE_SECURE") == "true"
+	if os.Getenv("BFF_AUTH_COOKIE_SECURE") == "false" {
+		secure = false
+	}
+
+	// 3. Resolver SameSite
+	sameSiteStr := strings.ToLower(strings.TrimSpace(os.Getenv("BFF_AUTH_COOKIE_SAMESITE")))
+	switch sameSiteStr {
+	case "none":
+		sameSite = http.SameSiteNoneMode
+		secure = true // Browsers exigem Secure=true para SameSite=None
+	case "strict":
+		sameSite = http.SameSiteStrictMode
+	case "lax":
+		sameSite = http.SameSiteLaxMode
+	default:
+		// Em produção HTTPS keepguard.com.br, SameSite=None é obrigatório para que
+		// requisições cross-subdomain (ex: app-core.keepguard.com.br -> api.keepguard.com.br)
+		// enviem cookies HttpOnly com credentials: 'include'.
+		if secure && (strings.Contains(c.Request().Host, "keepguard.com.br") || strings.Contains(c.Request().Header.Get("Origin"), "keepguard.com.br") || domain == ".keepguard.com.br") {
+			sameSite = http.SameSiteNoneMode
+			secure = true
+		} else {
+			sameSite = http.SameSiteLaxMode
+		}
+	}
+
+	return domain, sameSite, secure, path
+}
+
 func (h *AuthHandlers) setRefreshTokenCookie(c echo.Context, token string) {
 	if token == "" {
 		return
 	}
-	cookie := new(http.Cookie)
-	cookie.Name = RefreshTokenCookieName
-	cookie.Value = token
-	cookie.Path = "/api/v1/auth"
-	cookie.HttpOnly = true
-	cookie.SameSite = http.SameSiteLaxMode
-	cookie.MaxAge = DefaultCookieMaxAge
+	domain, sameSite, secure, path := h.getCookieConfig(c)
 
-	if c.IsTLS() || c.Request().Header.Get("X-Forwarded-Proto") == "https" || os.Getenv("BFF_AUTH_COOKIE_SECURE") == "true" {
-		cookie.Secure = true
-	} else if os.Getenv("BFF_AUTH_COOKIE_SECURE") == "false" {
-		cookie.Secure = false
-	}
-
-	if domain := os.Getenv("BFF_AUTH_COOKIE_DOMAIN"); domain != "" {
-		cookie.Domain = domain
+	cookie := &http.Cookie{
+		Name:     RefreshTokenCookieName,
+		Value:    token,
+		Path:     path,
+		Domain:   domain,
+		HttpOnly: true,
+		Secure:   secure,
+		SameSite: sameSite,
+		MaxAge:   DefaultCookieMaxAge,
 	}
 
 	c.SetCookie(cookie)
 }
 
 func (h *AuthHandlers) clearRefreshTokenCookie(c echo.Context) {
-	cookie := new(http.Cookie)
-	cookie.Name = RefreshTokenCookieName
-	cookie.Value = ""
-	cookie.Path = "/api/v1/auth"
-	cookie.HttpOnly = true
-	cookie.SameSite = http.SameSiteLaxMode
-	cookie.MaxAge = -1
-	cookie.Expires = time.Unix(0, 0)
+	domain, sameSite, secure, path := h.getCookieConfig(c)
 
-	if c.IsTLS() || c.Request().Header.Get("X-Forwarded-Proto") == "https" || os.Getenv("BFF_AUTH_COOKIE_SECURE") == "true" {
-		cookie.Secure = true
-	} else if os.Getenv("BFF_AUTH_COOKIE_SECURE") == "false" {
-		cookie.Secure = false
-	}
-
-	if domain := os.Getenv("BFF_AUTH_COOKIE_DOMAIN"); domain != "" {
-		cookie.Domain = domain
+	cookie := &http.Cookie{
+		Name:     RefreshTokenCookieName,
+		Value:    "",
+		Path:     path,
+		Domain:   domain,
+		HttpOnly: true,
+		Secure:   secure,
+		SameSite: sameSite,
+		MaxAge:   -1,
+		Expires:  time.Unix(0, 0),
 	}
 
 	c.SetCookie(cookie)

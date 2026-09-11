@@ -892,3 +892,83 @@ func TestListDeviceBlacklistHandler_Success(t *testing.T) {
 	assert.Equal(t, http.StatusOK, rec.Code)
 	blacklistPort.AssertExpectations(t)
 }
+
+func TestSetRefreshTokenCookie_Production(t *testing.T) {
+	handlers := newAuthHandlers(
+		new(MockLoginUseCase),
+		new(MockRefreshUseCase),
+		new(MockLogoutUseCase),
+		new(MockDevicePort),
+		new(MockSessionPort),
+		new(MockBlacklistPort),
+		new(MockLifecyclePort),
+	)
+
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", nil)
+	req.Host = "api.keepguard.com.br"
+	req.Header.Set("X-Forwarded-Proto", "https")
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	handlers.setRefreshTokenCookie(c, "test-refresh-token-xyz")
+
+	cookies := rec.Result().Cookies()
+	var refreshCookie *http.Cookie
+	for _, ck := range cookies {
+		if ck.Name == RefreshTokenCookieName {
+			refreshCookie = ck
+			break
+		}
+	}
+
+	assert.NotNil(t, refreshCookie)
+	assert.Equal(t, "test-refresh-token-xyz", refreshCookie.Value)
+	assert.Equal(t, "keepguard.com.br", refreshCookie.Domain)
+	assert.Contains(t, rec.Header().Get("Set-Cookie"), "Domain=keepguard.com.br")
+	assert.Equal(t, "/api/v1/auth", refreshCookie.Path)
+	assert.True(t, refreshCookie.HttpOnly)
+	assert.True(t, refreshCookie.Secure)
+	assert.Equal(t, http.SameSiteNoneMode, refreshCookie.SameSite)
+}
+
+func TestClearRefreshTokenCookie_Production(t *testing.T) {
+	handlers := newAuthHandlers(
+		new(MockLoginUseCase),
+		new(MockRefreshUseCase),
+		new(MockLogoutUseCase),
+		new(MockDevicePort),
+		new(MockSessionPort),
+		new(MockBlacklistPort),
+		new(MockLifecyclePort),
+	)
+
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/logout", nil)
+	req.Host = "api.keepguard.com.br"
+	req.Header.Set("X-Forwarded-Proto", "https")
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	handlers.clearRefreshTokenCookie(c)
+
+	cookies := rec.Result().Cookies()
+	var refreshCookie *http.Cookie
+	for _, ck := range cookies {
+		if ck.Name == RefreshTokenCookieName {
+			refreshCookie = ck
+			break
+		}
+	}
+
+	assert.NotNil(t, refreshCookie)
+	assert.Equal(t, "", refreshCookie.Value)
+	assert.Equal(t, "keepguard.com.br", refreshCookie.Domain)
+	assert.Contains(t, rec.Header().Get("Set-Cookie"), "Domain=keepguard.com.br")
+	assert.Equal(t, "/api/v1/auth", refreshCookie.Path)
+	assert.Equal(t, -1, refreshCookie.MaxAge)
+	assert.True(t, refreshCookie.HttpOnly)
+	assert.True(t, refreshCookie.Secure)
+	assert.Equal(t, http.SameSiteNoneMode, refreshCookie.SameSite)
+}
+

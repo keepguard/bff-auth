@@ -41,6 +41,12 @@ spec:
           value: {{ .Values.env.communicationServiceUrl | quote }}
         - name: KEEPGUARD_VALIDATION_MODERATION_ENABLED
           value: "false"
+        - name: BFF_AUTH_COOKIE_DOMAIN
+          value: {{ .Values.env.cookieDomain | default ".keepguard.com.br" | quote }}
+        - name: BFF_AUTH_COOKIE_SAMESITE
+          value: {{ .Values.env.cookieSameSite | default "None" | quote }}
+        - name: BFF_AUTH_COOKIE_SECURE
+          value: {{ .Values.env.cookieSecure | default "true" | quote }}
         ports:
         - name: http
           containerPort: {{ .Values.service.port }}
