@@ -231,6 +231,11 @@ func (m *middlewareImpl) SecurityMiddleware() echo.MiddlewareFunc {
 			// Remove header do servidor
 			c.Response().Header().Set(echo.HeaderServer, "")
 
+			// Sanitização de cabeçalhos não confiáveis da borda (RN-AUTH-01 / RN-RL-01)
+			c.Request().Header.Del("X-Caller-Admin")
+			c.Request().Header.Del("X-Client-IP")
+			c.Request().Header.Del("X-Public-IP")
+
 			// Adiciona headers de segurança
 			c.Response().Header().Set("X-Content-Type-Options", "nosniff")
 			c.Response().Header().Set("X-Frame-Options", "DENY")

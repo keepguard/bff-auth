@@ -7,11 +7,9 @@ import (
 )
 
 var headerCandidates = []string{
-	"X-Public-IP",
 	"CF-Connecting-IP",
 	"True-Client-IP",
 	"X-Real-IP",
-	"X-Client-IP",
 	"X-Forwarded-For",
 }
 
