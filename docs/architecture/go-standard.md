@@ -514,8 +514,11 @@ Aderência ao padrão após a atualização para Go 1.27.1:
 | 1 | Go 1.27.1 em todos + correção dos Dockerfiles divergentes | Baixo | ✅ **concluída** |
 | 0 | Este documento + `.gitignore` padrão | Nulo | ✅ **concluída** |
 | 2 | Higiene: destrackear binários (~30 MB) + `cmd/` dos achadinhos | Baixo | ✅ **concluída** |
-| 3 | Renomear arquivos genéricos (`usecase.go` → `<ação>_usecase.go` etc.) | Baixo | pendente |
-| 4 | Extrair DTOs de handlers; quebrar handlers monolíticos | Médio | pendente |
+| 3 | Renomear arquivos genéricos (`usecase.go` → `<ação>_usecase.go` etc.) | Baixo | ✅ **concluída** |
+| 4 | Extrair DTOs de handlers; quebrar handlers monolíticos | Médio | ✅ **concluída** |
+| 4b | `in/out` único; handler dependendo de `port/in`; `out/` por tecnologia | Médio | ✅ **concluída** |
+| 4c | `in/http` por contexto (fatia vertical) | Médio | 🔄 só `ms-analyst-finance` |
+| 9 | Cobertura: meta 80% na lógica | Médio | 🔄 3 de 11 na meta |
 | 5 | Migrar `domain/ports` → `application/port/out` (9 serviços) | Médio | ✅ **concluída** |
 | 5b | `in/out`/`core/` do mock-sms-gateway → inbound/outbound/domain | Médio | pendente |
 | 6 | Completar `infrastructure/` (logger, validation, resilience) | Médio | pendente |
