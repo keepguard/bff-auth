@@ -115,9 +115,9 @@ serviços passa a `prod` — mudança de runtime, não de estrutura.
 | `internal/adapters/in/` | `internal/adapters/inbound/` |
 | `internal/adapters/out/` | `internal/adapters/outbound/` |
 | `internal/core/domain/` | `internal/domain/entities/` |
-| `internal/core/ports/` | `internal/domain/ports/` |
+| `internal/core/ports/` | `internal/application/port/{in,out}/` |
 | `internal/core/service/` | `internal/application/<contexto>/` |
-| `internal/application/port/{in,out}/` | `internal/application/port/` + `internal/domain/ports/` |
+| `internal/domain/ports/` | `internal/application/port/{in,out}/` |
 | `internal/{auth,client,tools}/` na raiz | dentro da camada hexagonal correspondente |
 
 ---
@@ -140,6 +140,24 @@ Foi por violar isso que o padrão virou problema: um `usecase.go` dentro de
 | `repository.go` | `<entidade>_repository.go` | `product_repository.go` |
 | `service.go` | `<contexto>_service.go` ou vira `_usecase.go` | |
 | `mapper.go` genérico | `<entidade>_mapper.go` | `message_mapper.go` |
+
+### Portas: `application/port/{in,out}`
+
+Quem declara porta é a **aplicação**, não o domínio:
+
+- `port/in/` (package `inport`) — **driving**: o que o mundo pede ao app.
+  Implementado pelos use cases, chamado pelos handlers.
+- `port/out/` (package `outport`) — **driven**: o que o app pede ao mundo.
+  Implementado pelos adapters outbound, chamado pelos use cases.
+
+`domain/ports/` está **proibido em serviço novo**: porta é contrato da aplicação
+com o mundo externo, não regra de negócio. O domínio tem que poder ser lido sem
+saber que existe HTTP ou Postgres.
+
+Referência: `ms-analyst-finance` e `srv-news-ingestion`. Os outros 9 serviços
+ainda usam `domain/ports` (legado, fase 5).
+
+Um arquivo por tema — nunca um `ports.go` com 20 interfaces soltas.
 
 ### Onde fica o mapper (e por que não dentro do dto)
 
@@ -188,7 +206,7 @@ repetir o nome dele no arquivo só faz ruído — `alert/alert_port.go` não diz
 
 - `usecase.go` — o pacote diz o contexto (`curadoria`), mas não a ação. Quebrar por ação:
   `descobrir_usecase.go`, `buscas_usecase.go`, `candidatos_usecase.go`.
-- `ports.go` no nível de `domain/ports/` — o pacote é genérico e o arquivo acumula
+- `ports.go` em qualquer nível — o pacote é genérico e o arquivo acumula
   dezenas de interfaces de assuntos diferentes. Quebrar por tema.
 - `handler.go`, `dto.go`, `types.go`, `models.go` num pacote genérico como `http/`.
 
@@ -376,6 +394,10 @@ Ao criar ou revisar um serviço Go:
 - [ ] Healthcheck presente — `deploy/healthcheck/main.go` (obrigatório em imagem distroless) ou `curl` no `HEALTHCHECK`
 - [ ] `application{,-dev,-local,-prod}.yml` — os quatro
 - [ ] `internal/{adapters,application,domain,infrastructure}` — sem `in/`, `out/`, `core/`
+- [ ] Portas em `application/port/{in,out}` — sem `domain/ports` em serviço novo
+- [ ] `inbound/http/` com `dto/`, `mapper/`, `handlers/` como pacotes separados
+- [ ] Nenhuma função de conversão dentro de `dto/`
+- [ ] Todo arquivo que implementa caso de uso termina em `_usecase.go`
 - [ ] `infrastructure/`: `config`, `logger`, `metrics` sempre; `validation` e `resilience` quando aplicável
 - [ ] Nenhum arquivo `usecase.go`, `ports.go`, `handler.go`, `dto.go`, `types.go`, `models.go`
 - [ ] Nenhum struct de request/response declarado fora de `dto/`
@@ -394,9 +416,9 @@ Aderência ao padrão após a atualização para Go 1.27.1:
 | **bff-auth** | core/bff | 🟢 referência | versiona `docs.go` gerado |
 | bff-core | core/bff | 🟢 alta | — |
 | ms-achadinhos | achadinhos/ms | 🟡 média | 8 `usecase.go`, 6 `port.go`, `ports.go` (424 linhas), `dto.go`, nomes PT/EN |
-| bff-achadinhos | achadinhos/bff | 🟡 média | 4 `usecase.go`/`usecases.go`, sem `domain/ports` |
+| bff-achadinhos | achadinhos/bff | 🟡 média | sem `application/port/{in,out}` |
 | srv-data-collector | core/srv | 🟡 média | handlers sem subpasta `handlers/`, 3 `port.go`, build no host |
-| srv-news-ingestion | investbot/srv | 🟡 média | `handler.go` + `dto.go` inline, `port/{in,out}` |
+| srv-news-ingestion | investbot/srv | 🟢 alta | segue o padrão |
 | srv-audit | core/srv | 🟡 média | sem `application/port`, `mapper/`, `middleware/`; build no host |
 | srv-llm-gateway | core/srv | 🟠 baixa | `handlers.go` (317), `dto.go` (246), `ports.go`; build no host |
 | srv-email-sender | core/srv | 🟠 baixa | `ports.go` monolítico; sem `logger`/`validation`/`resilience`; build no host |
@@ -416,7 +438,7 @@ Aderência ao padrão após a atualização para Go 1.27.1:
 | 2 | Higiene: destrackear binários (~30 MB) + `cmd/` dos achadinhos | Baixo | ✅ **concluída** |
 | 3 | Renomear arquivos genéricos (`usecase.go` → `<ação>_usecase.go` etc.) | Baixo | pendente |
 | 4 | Extrair DTOs de handlers; quebrar handlers monolíticos | Médio | pendente |
-| 5 | Reestruturar diretórios divergentes (`in/out`, `core/`, `port/{in,out}`) | Médio | pendente |
+| 5 | Migrar `domain/ports` → `application/port/{in,out}` (9 serviços) e `in/out`/`core/` do mock-sms-gateway | Médio | pendente |
 | 6 | Completar `infrastructure/` (logger, validation, resilience) | Médio | pendente |
 | 7 | Migrar os 6 serviços que compilam no host para build multi-stage | Médio | pendente |
 | 8 | Refatoração estrutural: `application/` no bff-invest; quebrar o UseCase de 1.142 linhas | **Alto** | pendente |
