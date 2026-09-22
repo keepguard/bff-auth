@@ -160,6 +160,17 @@ portas de entrada foram declaradas explicitamente (`ms-analyst-finance`,
 
 Um arquivo por tema — nunca um `ports.go` com 20 interfaces soltas.
 
+### Entrada nunca chama saída
+
+`in/` não importa `out/`. Handler que fala com cliente HTTP ou repositório
+direto pulou a aplicação inteira. Caminho: `in/ → port/in → use case → port/out → out/`.
+
+Verificação: `grep -rn "adapters/out" internal/adapters/in --include="*.go"`
+tem que voltar vazio.
+
+Vale para **todo** adapter de entrada — handler HTTP, scheduler e consumer de
+fila. O scheduler é o que mais escapa por parecer "interno".
+
 ### O handler depende da porta, não do use case
 
 Receber `*analyze.UseCase` (struct concreto) no handler fura a inversão de
