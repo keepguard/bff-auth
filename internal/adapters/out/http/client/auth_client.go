@@ -1,0 +1,653 @@
+package client
+
+import (
+	"context"
+	"fmt"
+	"time"
+
+	"github.com/go-resty/resty/v2"
+	inboundDto "github.com/keepguard/bff-auth/internal/adapters/in/http/dto"
+	outboundDto "github.com/keepguard/bff-auth/internal/adapters/out/http/dto"
+	authclient "github.com/keepguard/bff-auth/internal/application/port"
+	"github.com/keepguard/bff-auth/internal/infrastructure/requestmeta"
+)
+
+func applyClientIP(req *resty.Request, ip string) {
+	if ip == "" {
+		return
+	}
+	req.SetHeader("X-Client-IP", ip)
+	req.SetHeader("X-Real-IP", ip)
+	req.SetHeader("X-Forwarded-For", ip)
+}
+
+func applyClientLocation(req *resty.Request, ctx context.Context) {
+	if loc := requestmeta.ClientLocation(ctx); loc != "" {
+		req.SetHeader("X-Public-Location", loc)
+	}
+}
+
+// AuthClient implementa o cliente HTTP para autenticação
+type AuthClient struct {
+	client  *resty.Client
+	baseURL string
+}
+
+// NewAuthClient cria uma nova instância do AuthClient
+func NewAuthClient(baseURL string, timeout time.Duration) authclient.AuthClient {
+	restyClient := resty.New()
+	restyClient.SetTimeout(timeout)
+	restyClient.SetRetryCount(1) // Reduzido para 1 retry apenas
+
+	return &AuthClient{
+		client:  restyClient,
+		baseURL: baseURL,
+	}
+}
+
+// handleHTTPError trata erros HTTP e extrai informações do ms-auth
+func (c *AuthClient) handleHTTPError(resp *resty.Response, operation string) error {
+	return buildHTTPErrorFromResponse(resp, operation)
+}
+
+// getErrorCodeFromProperties extrai o código de erro das propriedades
+func getErrorCodeFromProperties(properties map[string]interface{}) string {
+	if errorCode, ok := properties["errorCode"].(string); ok {
+		return errorCode
+	}
+	return "UNKNOWN_ERROR"
+}
+
+// Login realiza login no ms-auth
+func (c *AuthClient) Login(ctx context.Context, req inboundDto.AuthRequestDTO, tenantId, correlationID, clientId, deviceId, deviceName, deviceType, ipAddress, userAgent string) (inboundDto.AuthResponseDTO, error) {
+	var response inboundDto.AuthResponseDTO
+
+	reqBuilder := c.client.R().
+		SetContext(ctx).
+		SetBody(req).
+		SetResult(&response).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Client-ID", clientId)
+
+	if req.CompanyID != "" {
+		reqBuilder.SetHeader("X-Company-Id", req.CompanyID)
+	} else if id := companyHeader(ctx); id != "" {
+		reqBuilder.SetHeader("X-Company-Id", id)
+	}
+
+	if deviceId != "" {
+		reqBuilder.SetHeader("X-Device-Id", deviceId)
+	}
+	if deviceName != "" {
+		reqBuilder.SetHeader("X-Device-Name", deviceName)
+	}
+	if deviceType != "" {
+		reqBuilder.SetHeader("X-Device-Type", deviceType)
+	}
+	applyClientIP(reqBuilder, ipAddress)
+	applyClientLocation(reqBuilder, ctx)
+	if userAgent != "" {
+		reqBuilder.SetHeader("User-Agent", userAgent)
+	}
+
+	resp, err := reqBuilder.Post(c.baseURL + "/api/v1/auth/login")
+
+	if err != nil {
+		return inboundDto.AuthResponseDTO{}, fmt.Errorf("erro ao fazer requisição de login: %w", err)
+	}
+
+	// Trata erros HTTP do ms-auth
+	if httpErr := c.handleHTTPError(resp, "login"); httpErr != nil {
+		return inboundDto.AuthResponseDTO{}, httpErr
+	}
+
+	return response, nil
+}
+
+// SendDeviceChallenge envia código de desafio para novo dispositivo
+func (c *AuthClient) SendDeviceChallenge(ctx context.Context, req inboundDto.DeviceChallengeSendRequestDTO, tenantId, correlationID string) (map[string]interface{}, error) {
+	var response map[string]interface{}
+
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetBody(req).
+		SetResult(&response).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
+		Post(c.baseURL + "/api/v1/auth/device/challenge/send")
+
+	if err != nil {
+		return nil, fmt.Errorf("erro ao solicitar envio de código de dispositivo: %w", err)
+	}
+
+	if httpErr := c.handleHTTPError(resp, "device_challenge_send"); httpErr != nil {
+		return nil, httpErr
+	}
+
+	return response, nil
+}
+
+// VerifyDeviceChallenge valida código de desafio e emite JWT
+func (c *AuthClient) VerifyDeviceChallenge(ctx context.Context, req inboundDto.DeviceChallengeVerifyRequestDTO, tenantId, correlationID string) (inboundDto.AuthResponseDTO, error) {
+	var response inboundDto.AuthResponseDTO
+
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetBody(req).
+		SetResult(&response).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
+		Post(c.baseURL + "/api/v1/auth/device/challenge/verify")
+
+	if err != nil {
+		return inboundDto.AuthResponseDTO{}, fmt.Errorf("erro ao validar código de dispositivo: %w", err)
+	}
+
+	if httpErr := c.handleHTTPError(resp, "device_challenge_verify"); httpErr != nil {
+		return inboundDto.AuthResponseDTO{}, httpErr
+	}
+
+	return response, nil
+}
+
+// ListUserSessions lista sessões ativas do usuário
+func (c *AuthClient) ListUserSessions(ctx context.Context, token, deviceId, tenantId, correlationID string) ([]inboundDto.DeviceSessionDTO, error) {
+	var response []inboundDto.DeviceSessionDTO
+
+	reqBuilder := c.client.R().
+		SetContext(ctx).
+		SetResult(&response).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
+		SetAuthToken(token)
+
+	if deviceId != "" {
+		reqBuilder.SetHeader("X-Device-Id", deviceId)
+	}
+	if ip := requestmeta.ClientIP(ctx); ip != "" {
+		applyClientIP(reqBuilder, ip)
+	}
+	applyClientLocation(reqBuilder, ctx)
+
+	resp, err := reqBuilder.Get(c.baseURL + "/api/v1/users/me/sessions")
+
+	if err != nil {
+		return nil, fmt.Errorf("erro ao listar sessões de usuário: %w", err)
+	}
+
+	if httpErr := c.handleHTTPError(resp, "list_user_sessions"); httpErr != nil {
+		return nil, httpErr
+	}
+
+	return response, nil
+}
+
+// RevokeSession revoga sessão de dispositivo específico
+func (c *AuthClient) RevokeSession(ctx context.Context, deviceIdToRevoke, token, tenantId, correlationID string) error {
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
+		SetAuthToken(token).
+		Delete(fmt.Sprintf("%s/api/v1/users/me/sessions/%s", c.baseURL, deviceIdToRevoke))
+
+	if err != nil {
+		return fmt.Errorf("erro ao revogar sessão de dispositivo: %w", err)
+	}
+
+	return c.handleHTTPError(resp, "revoke_session")
+}
+
+// RevokeAllOtherSessions revoga todas as outras sessões exceto atual
+func (c *AuthClient) RevokeAllOtherSessions(ctx context.Context, token, currentDeviceId, tenantId, correlationID string) error {
+	reqBuilder := c.client.R().
+		SetContext(ctx).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
+		SetAuthToken(token)
+
+	if currentDeviceId != "" {
+		reqBuilder.SetHeader("X-Device-Id", currentDeviceId)
+	}
+
+	resp, err := reqBuilder.Delete(c.baseURL + "/api/v1/users/me/sessions")
+
+	if err != nil {
+		return fmt.Errorf("erro ao revogar outras sessões: %w", err)
+	}
+
+	return c.handleHTTPError(resp, "revoke_all_other_sessions")
+}
+
+// RefreshToken renova o token no ms-auth
+func (c *AuthClient) RefreshToken(ctx context.Context, req inboundDto.RefreshTokenRequestDTO, tenantId, correlationID, clientId string) (inboundDto.RefreshTokenResponseDTO, error) {
+	var response inboundDto.RefreshTokenResponseDTO
+
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetBody(req).
+		SetResult(&response).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
+		SetHeader("X-Client-ID", clientId).
+		Post(c.baseURL + "/api/v1/auth/refresh")
+
+	if err != nil {
+		return inboundDto.RefreshTokenResponseDTO{}, fmt.Errorf("erro ao fazer requisição de refresh: %w", err)
+	}
+
+	// Trata erros HTTP do ms-auth
+	if httpErr := c.handleHTTPError(resp, "refresh"); httpErr != nil {
+		return inboundDto.RefreshTokenResponseDTO{}, httpErr
+	}
+
+	return response, nil
+}
+
+// Logout realiza logout no ms-auth
+func (c *AuthClient) Logout(ctx context.Context, token, tenantId, correlationID string) error {
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetHeader("Authorization", "Bearer "+token).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
+		Post(c.baseURL + "/api/v1/auth/logout")
+
+	if err != nil {
+		return fmt.Errorf("erro ao fazer requisição de logout: %w", err)
+	}
+
+	// Trata erros HTTP do ms-auth
+	if httpErr := c.handleHTTPError(resp, "logout"); httpErr != nil {
+		return httpErr
+	}
+
+	return nil
+}
+
+// ValidateToken valida um token no ms-auth
+func (c *AuthClient) ValidateToken(ctx context.Context, token, tenantId, correlationID string) error {
+	req := map[string]string{
+		"token": token,
+	}
+
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetBody(req).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
+		Post(c.baseURL + "/api/v1/auth/validate")
+
+	if err != nil {
+		return fmt.Errorf("erro ao fazer requisição de validação de token: %w", err)
+	}
+
+	// Trata erros HTTP do ms-auth
+	if httpErr := c.handleHTTPError(resp, "validate token"); httpErr != nil {
+		return httpErr
+	}
+
+	return nil
+}
+
+// ChangePassword altera a senha do usuário no ms-auth
+func (c *AuthClient) ChangePassword(ctx context.Context, req outboundDto.ChangePasswordMSRequestDTO, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent string) error {
+	reqBuilder := c.client.R().
+		SetContext(ctx).
+		SetBody(req).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx))
+
+	if deviceId != "" {
+		reqBuilder.SetHeader("X-Device-Id", deviceId)
+	}
+	if deviceName != "" {
+		reqBuilder.SetHeader("X-Device-Name", deviceName)
+	}
+	if deviceType != "" {
+		reqBuilder.SetHeader("X-Device-Type", deviceType)
+	}
+	applyClientIP(reqBuilder, ipAddress)
+	applyClientLocation(reqBuilder, ctx)
+	if userAgent != "" {
+		reqBuilder.SetHeader("User-Agent", userAgent)
+	}
+
+	resp, err := reqBuilder.Post(c.baseURL + "/api/v1/auth/change-password")
+
+	if err != nil {
+		return fmt.Errorf("erro ao fazer requisição de alteração de senha: %w", err)
+	}
+
+	// Trata erros HTTP do ms-auth
+	if httpErr := c.handleHTTPError(resp, "change password"); httpErr != nil {
+		return httpErr
+	}
+
+	return nil
+}
+
+// ResetPassword reseta a senha do usuário no ms-auth
+func (c *AuthClient) ResetPassword(ctx context.Context, req outboundDto.ResetPasswordMSRequestDTO, tenantId, correlationID, deviceId, deviceName, deviceType, ipAddress, userAgent string) error {
+	reqBuilder := c.client.R().
+		SetContext(ctx).
+		SetBody(req).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx))
+
+	if deviceId != "" {
+		reqBuilder.SetHeader("X-Device-Id", deviceId)
+	}
+	if deviceName != "" {
+		reqBuilder.SetHeader("X-Device-Name", deviceName)
+	}
+	if deviceType != "" {
+		reqBuilder.SetHeader("X-Device-Type", deviceType)
+	}
+	applyClientIP(reqBuilder, ipAddress)
+	applyClientLocation(reqBuilder, ctx)
+	if userAgent != "" {
+		reqBuilder.SetHeader("User-Agent", userAgent)
+	}
+
+	resp, err := reqBuilder.Post(c.baseURL + "/api/v1/auth/reset-password")
+
+	if err != nil {
+		return fmt.Errorf("erro ao fazer requisição de reset de senha: %w", err)
+	}
+
+	// Trata erros HTTP do ms-auth
+	if httpErr := c.handleHTTPError(resp, "reset password"); httpErr != nil {
+		return httpErr
+	}
+
+	return nil
+}
+
+// GenerateResetToken gera um token de reset no ms-auth
+func (c *AuthClient) GenerateResetToken(ctx context.Context, req map[string]interface{}, tenantId, correlationID string) (outboundDto.GenerateResetTokenMSResponseDTO, error) {
+	var response outboundDto.GenerateResetTokenMSResponseDTO
+
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetBody(req).
+		SetResult(&response).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
+		Post(c.baseURL + "/api/v1/auth/generate-reset-token")
+
+	if err != nil {
+		return outboundDto.GenerateResetTokenMSResponseDTO{}, fmt.Errorf("erro ao fazer requisição de gerar reset token: %w", err)
+	}
+
+	if httpErr := c.handleHTTPError(resp, "generate_reset_token"); httpErr != nil {
+		return outboundDto.GenerateResetTokenMSResponseDTO{}, httpErr
+	}
+
+	return response, nil
+}
+
+// QuickRevoke realiza revogação rápida via token de e-mail
+func (c *AuthClient) QuickRevoke(ctx context.Context, token string, blacklist bool, tenantId, correlationID string) (map[string]interface{}, error) {
+	var response map[string]interface{}
+
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetResult(&response).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
+		SetQueryParam("token", token).
+		SetQueryParam("blacklist", fmt.Sprintf("%t", blacklist)).
+		Get(c.baseURL + "/api/v1/auth/device/quick-revoke")
+
+	if err != nil {
+		return nil, fmt.Errorf("erro ao fazer quick revoke: %w", err)
+	}
+
+	if httpErr := c.handleHTTPError(resp, "quick_revoke"); httpErr != nil {
+		return nil, httpErr
+	}
+
+	return response, nil
+}
+
+// ListDeviceBlacklist lista dispositivos na blacklist do usuário
+func (c *AuthClient) ListDeviceBlacklist(ctx context.Context, token, tenantId, correlationID string) ([]inboundDto.DeviceBlacklistDTO, error) {
+	var response []inboundDto.DeviceBlacklistDTO
+
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetResult(&response).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
+		SetAuthToken(token).
+		Get(c.baseURL + "/api/v1/users/me/devices/blacklist")
+
+	if err != nil {
+		return nil, fmt.Errorf("erro ao listar blacklist de dispositivos: %w", err)
+	}
+
+	if httpErr := c.handleHTTPError(resp, "list_device_blacklist"); httpErr != nil {
+		return nil, httpErr
+	}
+
+	return response, nil
+}
+
+// AddDeviceToBlacklist adiciona dispositivo à blacklist
+func (c *AuthClient) AddDeviceToBlacklist(ctx context.Context, req inboundDto.AddDeviceBlacklistRequestDTO, token, tenantId, correlationID string) error {
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetBody(req).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
+		SetAuthToken(token).
+		Post(c.baseURL + "/api/v1/users/me/devices/blacklist")
+
+	if err != nil {
+		return fmt.Errorf("erro ao adicionar dispositivo à blacklist: %w", err)
+	}
+
+	return c.handleHTTPError(resp, "add_device_blacklist")
+}
+
+// RemoveDeviceFromBlacklist remove dispositivo da blacklist
+func (c *AuthClient) RemoveDeviceFromBlacklist(ctx context.Context, deviceId, token, tenantId, correlationID string) error {
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
+		SetAuthToken(token).
+		Delete(fmt.Sprintf("%s/api/v1/users/me/devices/blacklist/%s", c.baseURL, deviceId))
+
+	if err != nil {
+		return fmt.Errorf("erro ao remover dispositivo da blacklist: %w", err)
+	}
+
+	return c.handleHTTPError(resp, "remove_device_blacklist")
+}
+
+// SearchAdminDeviceBlacklist busca e filtra a blacklist de dispositivos como Admin
+func (c *AuthClient) SearchAdminDeviceBlacklist(ctx context.Context, queryParams map[string]string, token, tenantId, correlationID string) (inboundDto.PaginatedDeviceBlacklistResponseDTO, error) {
+	var response inboundDto.PaginatedDeviceBlacklistResponseDTO
+
+	req := c.client.R().
+		SetContext(ctx).
+		SetResult(&response).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
+		SetAuthToken(token)
+
+	for k, v := range queryParams {
+		if v != "" {
+			req.SetQueryParam(k, v)
+		}
+	}
+
+	resp, err := req.Get(c.baseURL + "/api/v1/devices/blacklist")
+	if err != nil {
+		return response, fmt.Errorf("erro ao consultar blacklist de dispositivos: %w", err)
+	}
+
+	if httpErr := c.handleHTTPError(resp, "search_admin_device_blacklist"); httpErr != nil {
+		return response, httpErr
+	}
+
+	return response, nil
+}
+
+// AdminAddDeviceToBlacklist adiciona dispositivo à blacklist como Admin
+func (c *AuthClient) AdminAddDeviceToBlacklist(ctx context.Context, req inboundDto.AdminAddDeviceBlacklistRequestDTO, token, tenantId, correlationID string) error {
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetBody(req).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
+		SetAuthToken(token).
+		Post(fmt.Sprintf("%s/api/v1/users/%s/devices/blacklist", c.baseURL, req.UserID))
+
+	if err != nil {
+		return fmt.Errorf("erro ao adicionar dispositivo à blacklist administrativamente: %w", err)
+	}
+
+	return c.handleHTTPError(resp, "admin_add_device_blacklist")
+}
+
+// AdminRemoveDeviceFromBlacklist remove dispositivo da blacklist como Admin
+func (c *AuthClient) AdminRemoveDeviceFromBlacklist(ctx context.Context, deviceId, userId, token, tenantId, correlationID string) error {
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
+		SetAuthToken(token).
+		Delete(fmt.Sprintf("%s/api/v1/users/%s/devices/blacklist/%s", c.baseURL, userId, deviceId))
+
+	if err != nil {
+		return fmt.Errorf("erro ao remover dispositivo da blacklist administrativamente: %w", err)
+	}
+
+	return c.handleHTTPError(resp, "admin_remove_device_blacklist")
+}
+
+func (c *AuthClient) ListTenantUserSessions(ctx context.Context, userId, token, tenantId, correlationID string) ([]inboundDto.DeviceSessionDTO, error) {
+	var response []inboundDto.DeviceSessionDTO
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetResult(&response).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
+		SetAuthToken(token).
+		Get(fmt.Sprintf("%s/api/v1/users/%s/sessions", c.baseURL, userId))
+	if err != nil {
+		return nil, fmt.Errorf("erro ao listar sessões do usuário: %w", err)
+	}
+	if httpErr := c.handleHTTPError(resp, "list_tenant_user_sessions"); httpErr != nil {
+		return nil, httpErr
+	}
+	return response, nil
+}
+
+func (c *AuthClient) RevokeTenantUserSession(ctx context.Context, userId, deviceId, token, tenantId, correlationID string) error {
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
+		SetAuthToken(token).
+		Delete(fmt.Sprintf("%s/api/v1/users/%s/sessions/%s", c.baseURL, userId, deviceId))
+	if err != nil {
+		return fmt.Errorf("erro ao revogar sessão do usuário: %w", err)
+	}
+	return c.handleHTTPError(resp, "revoke_tenant_user_session")
+}
+
+func (c *AuthClient) ListTenantUserBlacklist(ctx context.Context, userId, token, tenantId, correlationID string) ([]inboundDto.AdminDeviceBlacklistEntryDTO, error) {
+	var response []inboundDto.AdminDeviceBlacklistEntryDTO
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetResult(&response).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
+		SetAuthToken(token).
+		Get(fmt.Sprintf("%s/api/v1/users/%s/devices/blacklist", c.baseURL, userId))
+	if err != nil {
+		return nil, fmt.Errorf("erro ao listar blacklist do usuário: %w", err)
+	}
+	if httpErr := c.handleHTTPError(resp, "list_tenant_user_blacklist"); httpErr != nil {
+		return nil, httpErr
+	}
+	return response, nil
+}
+
+func (c *AuthClient) SearchTenantSessions(ctx context.Context, queryParams map[string]string, token, tenantId, correlationID string) (inboundDto.PaginatedDeviceSessionResponseDTO, error) {
+	var response inboundDto.PaginatedDeviceSessionResponseDTO
+	req := c.client.R().
+		SetContext(ctx).
+		SetResult(&response).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
+		SetAuthToken(token)
+	for k, v := range queryParams {
+		if v != "" {
+			req.SetQueryParam(k, v)
+		}
+	}
+	resp, err := req.Get(c.baseURL + "/api/v1/sessions")
+	if err != nil {
+		return response, fmt.Errorf("erro ao consultar sessões do tenant: %w", err)
+	}
+	if httpErr := c.handleHTTPError(resp, "search_tenant_sessions"); httpErr != nil {
+		return response, httpErr
+	}
+	return response, nil
+}
+
+func (c *AuthClient) GetUserByCodeUser(ctx context.Context, codeUser, token, tenantId, correlationID string) (outboundDto.UserByCodeResponseDTO, error) {
+	companyID := authclient.CompanyIDFromContext(ctx)
+	if companyID == "" {
+		return outboundDto.UserByCodeResponseDTO{}, fmt.Errorf("companyId é obrigatório para buscar usuário")
+	}
+
+	var response outboundDto.UserByCodeResponseDTO
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetResult(&response).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyID).
+		SetAuthToken(token).
+		Get(fmt.Sprintf("%s/api/v1/users/code-user/%s", c.baseURL, codeUser))
+	if err != nil {
+		return outboundDto.UserByCodeResponseDTO{}, fmt.Errorf("erro ao buscar usuário por codeUser: %w", err)
+	}
+	if httpErr := c.handleHTTPError(resp, "get_user_by_code"); httpErr != nil {
+		return outboundDto.UserByCodeResponseDTO{}, httpErr
+	}
+	return response, nil
+}
+
+func (c *AuthClient) BlockUser(ctx context.Context, idUserExternal, reason, token, tenantId, correlationID string) error {
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetBody(map[string]string{"reason": reason}).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
+		SetAuthToken(token).
+		Post(fmt.Sprintf("%s/api/v1/users/block/%s", c.baseURL, idUserExternal))
+	if err != nil {
+		return fmt.Errorf("erro ao bloquear usuário: %w", err)
+	}
+	return c.handleHTTPError(resp, "block_user")
+}
+
+func (c *AuthClient) DeleteUser(ctx context.Context, idUserExternal, reason, token, tenantId, correlationID string) error {
+	resp, err := c.client.R().
+		SetContext(ctx).
+		SetBody(map[string]string{"reason": reason}).
+		SetHeader("X-Correlation-ID", correlationID).
+		SetHeader("X-Company-Id", companyHeader(ctx)).
+		SetAuthToken(token).
+		Delete(fmt.Sprintf("%s/api/v1/users/delete/%s", c.baseURL, idUserExternal))
+	if err != nil {
+		return fmt.Errorf("erro ao excluir usuário: %w", err)
+	}
+	return c.handleHTTPError(resp, "delete_user")
+}

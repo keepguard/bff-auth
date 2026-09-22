@@ -4,7 +4,7 @@ import (
 	"context"
 	"testing"
 
-	outboundDto "github.com/keepguard/bff-auth/internal/adapters/outbound/http/dto"
+	outboundDto "github.com/keepguard/bff-auth/internal/adapters/out/http/dto"
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
 	authclient "github.com/keepguard/bff-auth/internal/application/port"
 	"github.com/stretchr/testify/assert"
