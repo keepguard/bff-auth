@@ -6,7 +6,7 @@ import (
 	"testing"
 	"time"
 
-	"github.com/keepguard/bff-auth/internal/domain/ports/messaging"
+	outport "github.com/keepguard/bff-auth/internal/application/port/out"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap/zaptest"
@@ -17,7 +17,7 @@ type MockLoggingMessagePublisher struct {
 	mock.Mock
 }
 
-func (m *MockLoggingMessagePublisher) PublishMessage(ctx context.Context, message messaging.MessageDTO) error {
+func (m *MockLoggingMessagePublisher) PublishMessage(ctx context.Context, message outport.MessageDTO) error {
 	args := m.Called(ctx, message)
 	return args.Error(0)
 }
@@ -41,8 +41,8 @@ func TestLoggingDecorator_PublishMessage_Success(t *testing.T) {
 	logger := zaptest.NewLogger(t)
 	mockPublisher := &MockLoggingMessagePublisher{}
 
-	message := messaging.MessageDTO{
-		TenantId:      "test-app",
+	message := outport.MessageDTO{
+		TenantId:          "test-app",
 		XCorrelationID:    "test-correlation-id",
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",
@@ -69,8 +69,8 @@ func TestLoggingDecorator_PublishMessage_Error(t *testing.T) {
 	logger := zaptest.NewLogger(t)
 	mockPublisher := &MockLoggingMessagePublisher{}
 
-	message := messaging.MessageDTO{
-		TenantId:      "test-app",
+	message := outport.MessageDTO{
+		TenantId:          "test-app",
 		XCorrelationID:    "test-correlation-id",
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",
@@ -100,8 +100,8 @@ func TestLoggingDecorator_PublishMessage_WithAllFields(t *testing.T) {
 	logger := zaptest.NewLogger(t)
 	mockPublisher := &MockLoggingMessagePublisher{}
 
-	message := messaging.MessageDTO{
-		TenantId:      "test-app",
+	message := outport.MessageDTO{
+		TenantId:          "test-app",
 		XCorrelationID:    "test-correlation-id",
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",
@@ -131,8 +131,8 @@ func TestLoggingDecorator_PublishMessage_EmptyFields(t *testing.T) {
 	logger := zaptest.NewLogger(t)
 	mockPublisher := &MockLoggingMessagePublisher{}
 
-	message := messaging.MessageDTO{
-		TenantId:      "",
+	message := outport.MessageDTO{
+		TenantId:          "",
 		XCorrelationID:    "",
 		MessageType:       "",
 		CommunicationType: "",
@@ -190,8 +190,8 @@ func TestLoggingDecorator_ContextCancellation(t *testing.T) {
 	logger := zaptest.NewLogger(t)
 	mockPublisher := &MockLoggingMessagePublisher{}
 
-	message := messaging.MessageDTO{
-		TenantId:      "test-app",
+	message := outport.MessageDTO{
+		TenantId:          "test-app",
 		XCorrelationID:    "test-correlation-id",
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",
@@ -223,8 +223,8 @@ func TestLoggingDecorator_ContextTimeout(t *testing.T) {
 	logger := zaptest.NewLogger(t)
 	mockPublisher := &MockLoggingMessagePublisher{}
 
-	message := messaging.MessageDTO{
-		TenantId:      "test-app",
+	message := outport.MessageDTO{
+		TenantId:          "test-app",
 		XCorrelationID:    "test-correlation-id",
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",
@@ -259,8 +259,8 @@ func TestLoggingDecorator_MultipleMessages(t *testing.T) {
 	logger := zaptest.NewLogger(t)
 	mockPublisher := &MockLoggingMessagePublisher{}
 
-	message1 := messaging.MessageDTO{
-		TenantId:      "test-app",
+	message1 := outport.MessageDTO{
+		TenantId:          "test-app",
 		XCorrelationID:    "test-correlation-id-1",
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",
@@ -272,8 +272,8 @@ func TestLoggingDecorator_MultipleMessages(t *testing.T) {
 		},
 	}
 
-	message2 := messaging.MessageDTO{
-		TenantId:      "test-app",
+	message2 := outport.MessageDTO{
+		TenantId:          "test-app",
 		XCorrelationID:    "test-correlation-id-2",
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",

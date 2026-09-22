@@ -16,12 +16,12 @@ import (
 func TestCompanyClient_GetByTenantId_Success(t *testing.T) {
 	// Arrange
 	expectedResponse := client.CompanySimpleResponseDTO{
-		ID:           "550e8400-e29b-41d4-a716-446655440000",
-		TenantId: "550e8400-e29b-41d4-a716-446655440000",
-		Name:         "Empresa Teste",
-		LegalName:    "Empresa Teste LTDA",
-		CNPJ:         "12345678000199",
-		Status:       "ACTIVE",
+		ID:        "550e8400-e29b-41d4-a716-446655440000",
+		TenantId:  "550e8400-e29b-41d4-a716-446655440000",
+		Name:      "Empresa Teste",
+		LegalName: "Empresa Teste LTDA",
+		CNPJ:      "12345678000199",
+		Status:    "ACTIVE",
 	}
 
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {

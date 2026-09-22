@@ -6,16 +6,16 @@ import (
 	"net/http/httptest"
 	"testing"
 
-	auditport "github.com/keepguard/bff-auth/internal/domain/ports/audit"
+	outport "github.com/keepguard/bff-auth/internal/application/port/out"
 	"github.com/labstack/echo/v4"
 	"github.com/stretchr/testify/require"
 )
 
 type recPub struct {
-	events []auditport.Event
+	events []outport.Event
 }
 
-func (r *recPub) Publish(_ context.Context, event auditport.Event) {
+func (r *recPub) Publish(_ context.Context, event outport.Event) {
 	r.events = append(r.events, event)
 }
 

@@ -6,7 +6,7 @@ import (
 
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
 	authclient "github.com/keepguard/bff-auth/internal/application/port"
-	"github.com/keepguard/bff-auth/internal/domain/ports/messaging"
+	outport "github.com/keepguard/bff-auth/internal/application/port/out"
 	"github.com/keepguard/bff-auth/internal/pkg"
 	"go.uber.org/zap"
 )
@@ -15,7 +15,7 @@ type resetPasswordUseCaseImpl struct {
 	authClient       authclient.AuthClient
 	userClient       authclient.UserClient
 	companyClient    authclient.CompanyClient
-	messagePublisher messaging.MessagePublisher
+	messagePublisher outport.MessagePublisher
 	logger           *zap.Logger
 }
 
@@ -23,7 +23,7 @@ func NewResetPasswordUseCase(
 	authClient authclient.AuthClient,
 	userClient authclient.UserClient,
 	companyClient authclient.CompanyClient,
-	messagePublisher messaging.MessagePublisher,
+	messagePublisher outport.MessagePublisher,
 	logger *zap.Logger,
 ) ResetPasswordUseCase {
 	return &resetPasswordUseCaseImpl{

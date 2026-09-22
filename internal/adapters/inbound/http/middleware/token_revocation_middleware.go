@@ -85,4 +85,3 @@ func TokenRevocationMiddleware(redisClient *redis.Client, logger *zap.Logger) ec
 		}
 	}
 }
-

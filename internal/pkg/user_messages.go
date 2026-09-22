@@ -31,14 +31,14 @@ var errorCodeMessages = map[string]string{
 }
 
 var englishDetailMessages = map[string]string{
-	"User not found":                     "Usuário não encontrado",
-	"Invalid password":                   "Senha inválida",
-	"User is not active":                 "Usuário não está ativo",
-	"Email not verified":                 "E-mail não verificado",
-	"Invalid token":                      "Token inválido ou expirado",
-	"Invalid or expired reset token":     "Token de reset inválido ou expirado",
+	"User not found":                             "Usuário não encontrado",
+	"Invalid password":                           "Senha inválida",
+	"User is not active":                         "Usuário não está ativo",
+	"Email not verified":                         "E-mail não verificado",
+	"Invalid token":                              "Token inválido ou expirado",
+	"Invalid or expired reset token":             "Token de reset inválido ou expirado",
 	"New password and confirmation do not match": "A nova senha e a confirmação não coincidem",
-	"Current password is incorrect":      "Senha atual incorreta",
+	"Current password is incorrect":              "Senha atual incorreta",
 	"New password cannot be the same as one of the last 5 passwords": "A nova senha não pode ser igual a uma das últimas 5 senhas",
 	"Bad Request": "Dados de entrada inválidos",
 }

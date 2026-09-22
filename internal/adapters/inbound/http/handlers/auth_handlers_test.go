@@ -971,4 +971,3 @@ func TestClearRefreshTokenCookie_Production(t *testing.T) {
 	assert.True(t, refreshCookie.Secure)
 	assert.Equal(t, http.SameSiteNoneMode, refreshCookie.SameSite)
 }
-

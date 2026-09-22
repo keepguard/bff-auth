@@ -8,7 +8,7 @@ import (
 	outboundDto "github.com/keepguard/bff-auth/internal/adapters/outbound/http/dto"
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
 	authclient "github.com/keepguard/bff-auth/internal/application/port"
-	"github.com/keepguard/bff-auth/internal/domain/ports/messaging"
+	outport "github.com/keepguard/bff-auth/internal/application/port/out"
 	"github.com/keepguard/bff-auth/internal/pkg"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -30,7 +30,7 @@ type MockResetMessagePublisher struct {
 	mock.Mock
 }
 
-func (m *MockResetMessagePublisher) PublishMessage(ctx context.Context, message messaging.MessageDTO) error {
+func (m *MockResetMessagePublisher) PublishMessage(ctx context.Context, message outport.MessageDTO) error {
 	args := m.Called(ctx, message)
 	return args.Error(0)
 }

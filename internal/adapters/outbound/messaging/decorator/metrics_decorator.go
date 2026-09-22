@@ -4,20 +4,20 @@ import (
 	"context"
 	"time"
 
-	"github.com/keepguard/bff-auth/internal/domain/ports/messaging"
+	outport "github.com/keepguard/bff-auth/internal/application/port/out"
 	"github.com/keepguard/bff-auth/internal/infrastructure/metrics"
 	"go.uber.org/zap"
 )
 
 // metricsDecorator implementa MessagePublisher com métricas
 type metricsDecorator struct {
-	inner   messaging.MessagePublisher
+	inner   outport.MessagePublisher
 	metrics *metrics.Metrics
 	logger  *zap.Logger
 }
 
 // NewMetricsDecorator cria um novo decorator de métricas
-func NewMetricsDecorator(inner messaging.MessagePublisher, metrics *metrics.Metrics, logger *zap.Logger) messaging.MessagePublisher {
+func NewMetricsDecorator(inner outport.MessagePublisher, metrics *metrics.Metrics, logger *zap.Logger) outport.MessagePublisher {
 	return &metricsDecorator{
 		inner:   inner,
 		metrics: metrics,
@@ -26,7 +26,7 @@ func NewMetricsDecorator(inner messaging.MessagePublisher, metrics *metrics.Metr
 }
 
 // PublishMessage implementa PublishMessage com métricas
-func (d *metricsDecorator) PublishMessage(ctx context.Context, message messaging.MessageDTO) error {
+func (d *metricsDecorator) PublishMessage(ctx context.Context, message outport.MessageDTO) error {
 	start := time.Now()
 
 	err := d.inner.PublishMessage(ctx, message)

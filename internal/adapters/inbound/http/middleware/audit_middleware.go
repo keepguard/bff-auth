@@ -8,12 +8,12 @@ import (
 	"time"
 
 	authclient "github.com/keepguard/bff-auth/internal/application/port"
-	auditport "github.com/keepguard/bff-auth/internal/domain/ports/audit"
+	outport "github.com/keepguard/bff-auth/internal/application/port/out"
 	"github.com/keepguard/bff-auth/internal/pkg"
 	"github.com/labstack/echo/v4"
 )
 
-func AuditMiddleware(publisher auditport.EventPublisher, sourceService string) echo.MiddlewareFunc {
+func AuditMiddleware(publisher outport.EventPublisher, sourceService string) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			err := next(c)
@@ -41,11 +41,11 @@ func AuditMiddleware(publisher auditport.EventPublisher, sourceService string) e
 			}
 			codeUser, tenantID, companyID, deviceID := auditIdentity(c)
 			action := mapAuditAction(c.Request().Method, path)
-			resource := auditport.Resource{Type: "HTTP", ID: path}
+			resource := outport.Resource{Type: "HTTP", ID: path}
 			if privilegedAuditRead(path) && c.Request().Method == http.MethodGet {
 				action, resource = privilegedReadAction(path, c)
 			}
-			event := auditport.Event{
+			event := outport.Event{
 				EventID:       newUUID(),
 				OccurredAt:    time.Now().UTC().Format(time.RFC3339),
 				SchemaVersion: 1,
@@ -54,7 +54,7 @@ func AuditMiddleware(publisher auditport.EventPublisher, sourceService string) e
 				RequestID:     c.Response().Header().Get(echo.HeaderXRequestID),
 				TenantID:      tenantID,
 				CompanyID:     companyID,
-				Actor: auditport.Actor{
+				Actor: outport.Actor{
 					Type:     actorType(codeUser),
 					CodeUser: codeUser,
 					ClientIP: c.RealIP(),
@@ -112,14 +112,14 @@ func privilegedAuditRead(path string) bool {
 	return false
 }
 
-func privilegedReadAction(path string, c echo.Context) (string, auditport.Resource) {
+func privilegedReadAction(path string, c echo.Context) (string, outport.Resource) {
 	if strings.Contains(path, "/sessions") {
-		return "SESSION_LIST_TENANT", auditport.Resource{Type: "SESSION", ID: strings.TrimSpace(c.Param("userId"))}
+		return "SESSION_LIST_TENANT", outport.Resource{Type: "SESSION", ID: strings.TrimSpace(c.Param("userId"))}
 	}
 	if strings.Contains(path, "/devices/blacklist") {
-		return "DEVICE_BLACKLIST_LIST_TENANT", auditport.Resource{Type: "DEVICE", ID: strings.TrimSpace(c.Param("userId"))}
+		return "DEVICE_BLACKLIST_LIST_TENANT", outport.Resource{Type: "DEVICE", ID: strings.TrimSpace(c.Param("userId"))}
 	}
-	return "SESSION_LIST_TENANT", auditport.Resource{Type: "HTTP", ID: path}
+	return "SESSION_LIST_TENANT", outport.Resource{Type: "HTTP", ID: path}
 }
 
 func domainCoveredByMS(path string) bool {

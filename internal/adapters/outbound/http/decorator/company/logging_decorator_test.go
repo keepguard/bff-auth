@@ -50,12 +50,12 @@ func TestCompanyLoggingDecorator_GetByTenantId_Success(t *testing.T) {
 	correlationID := "test-correlation-id"
 
 	expectedResponse := portsclient.CompanySimpleResponseDTO{
-		ID:           "company-123",
-		TenantId: tenantId,
-		Name:         "Test Company",
-		LegalName:    "Test Company LTDA",
-		CNPJ:         "12345678000199",
-		Status:       "ACTIVE",
+		ID:        "company-123",
+		TenantId:  tenantId,
+		Name:      "Test Company",
+		LegalName: "Test Company LTDA",
+		CNPJ:      "12345678000199",
+		Status:    "ACTIVE",
 	}
 
 	mockInner.On("GetByTenantId", ctx, tenantId, correlationID).Return(expectedResponse, nil)

@@ -5,7 +5,7 @@ import (
 	"errors"
 	"testing"
 
-	"github.com/keepguard/bff-auth/internal/domain/ports/messaging"
+	outport "github.com/keepguard/bff-auth/internal/application/port/out"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
 	"go.uber.org/zap/zaptest"
@@ -16,7 +16,7 @@ type MockCircuitBreakerMessagePublisher struct {
 	mock.Mock
 }
 
-func (m *MockCircuitBreakerMessagePublisher) PublishMessage(ctx context.Context, message messaging.MessageDTO) error {
+func (m *MockCircuitBreakerMessagePublisher) PublishMessage(ctx context.Context, message outport.MessageDTO) error {
 	args := m.Called(ctx, message)
 	return args.Error(0)
 }
@@ -44,8 +44,8 @@ func TestCircuitBreakerDecorator_PublishMessage_Success(t *testing.T) {
 	logger := zaptest.NewLogger(t)
 	mockPublisher := &MockCircuitBreakerMessagePublisher{}
 
-	message := messaging.MessageDTO{
-		TenantId:      "test-app",
+	message := outport.MessageDTO{
+		TenantId:          "test-app",
 		XCorrelationID:    "test-correlation-id",
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",
@@ -77,8 +77,8 @@ func TestCircuitBreakerDecorator_PublishMessage_Error(t *testing.T) {
 	logger := zaptest.NewLogger(t)
 	mockPublisher := &MockCircuitBreakerMessagePublisher{}
 
-	message := messaging.MessageDTO{
-		TenantId:      "test-app",
+	message := outport.MessageDTO{
+		TenantId:          "test-app",
 		XCorrelationID:    "test-correlation-id",
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",

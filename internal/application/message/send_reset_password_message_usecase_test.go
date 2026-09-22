@@ -8,7 +8,7 @@ import (
 	outboundDto "github.com/keepguard/bff-auth/internal/adapters/outbound/http/dto"
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
 	authclient "github.com/keepguard/bff-auth/internal/application/port"
-	"github.com/keepguard/bff-auth/internal/domain/ports/messaging"
+	outport "github.com/keepguard/bff-auth/internal/application/port/out"
 	"github.com/keepguard/bff-auth/internal/pkg"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/mock"
@@ -181,7 +181,7 @@ type MockMessagePublisher struct {
 	mock.Mock
 }
 
-func (m *MockMessagePublisher) PublishMessage(ctx context.Context, message messaging.MessageDTO) error {
+func (m *MockMessagePublisher) PublishMessage(ctx context.Context, message outport.MessageDTO) error {
 	args := m.Called(ctx, message)
 	return args.Error(0)
 }
@@ -242,7 +242,7 @@ func TestSendResetPasswordMessageUseCase_Execute_Success(t *testing.T) {
 		ExpiresInSeconds:  600,
 	}
 
-	expectedMessageReq := messaging.MessageDTO{
+	expectedMessageReq := outport.MessageDTO{
 		TenantId:          tenantId,
 		CorrelationID:     correlationID,
 		XCorrelationID:    correlationID,
@@ -604,7 +604,7 @@ func TestSendResetPasswordMessageUseCase_Execute_MessagePublisherError(t *testin
 	mockCompanyClient.On("GetByTenantId", ctx, tenantId, correlationID).Return(expectedCompany, nil)
 	mockUserClient.On("GetByEmail", ctx, email, tenantId, "company-123", correlationID).Return(expectedUser, nil)
 	mockAuthClient.On("GenerateResetToken", ctx, expectedGenerateTokenReq, tenantId, correlationID).Return(expectedGenerateTokenResponse, nil)
-	mockMessagePublisher.On("PublishMessage", ctx, mock.AnythingOfType("messaging.MessageDTO")).Return(errors.New("rabbitmq connection failed"))
+	mockMessagePublisher.On("PublishMessage", ctx, mock.AnythingOfType("outport.MessageDTO")).Return(errors.New("rabbitmq connection failed"))
 
 	// Act
 	result, err := useCase.Execute(ctx, command)
@@ -674,7 +674,7 @@ func TestSendResetPasswordMessageUseCase_Execute_SendMessageFailure(t *testing.T
 	mockCompanyClient.On("GetByTenantId", ctx, tenantId, correlationID).Return(expectedCompany, nil)
 	mockUserClient.On("GetByEmail", ctx, email, tenantId, "company-123", correlationID).Return(expectedUser, nil)
 	mockAuthClient.On("GenerateResetToken", ctx, expectedGenerateTokenReq, tenantId, correlationID).Return(expectedGenerateTokenResponse, nil)
-	mockMessagePublisher.On("PublishMessage", ctx, mock.AnythingOfType("messaging.MessageDTO")).Return(nil)
+	mockMessagePublisher.On("PublishMessage", ctx, mock.AnythingOfType("outport.MessageDTO")).Return(nil)
 
 	// Act
 	result, err := useCase.Execute(ctx, command)

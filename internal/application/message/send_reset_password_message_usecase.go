@@ -6,8 +6,8 @@ import (
 
 	appdto "github.com/keepguard/bff-auth/internal/application/dto"
 	authclient "github.com/keepguard/bff-auth/internal/application/port"
+	outport "github.com/keepguard/bff-auth/internal/application/port/out"
 	"github.com/keepguard/bff-auth/internal/domain/enums"
-	"github.com/keepguard/bff-auth/internal/domain/ports/messaging"
 	"github.com/keepguard/bff-auth/internal/pkg"
 	"go.uber.org/zap"
 )
@@ -20,7 +20,7 @@ type sendResetPasswordMessageUseCaseImpl struct {
 	authClient       authclient.AuthClient
 	userClient       authclient.UserClient
 	companyClient    authclient.CompanyClient
-	messagePublisher messaging.MessagePublisher
+	messagePublisher outport.MessagePublisher
 	logger           *zap.Logger
 }
 
@@ -28,7 +28,7 @@ func NewSendResetPasswordMessageUseCase(
 	authClient authclient.AuthClient,
 	userClient authclient.UserClient,
 	companyClient authclient.CompanyClient,
-	messagePublisher messaging.MessagePublisher,
+	messagePublisher outport.MessagePublisher,
 	logger *zap.Logger,
 ) SendResetPasswordMessageUseCase {
 	return &sendResetPasswordMessageUseCaseImpl{
@@ -76,7 +76,7 @@ func (uc *sendResetPasswordMessageUseCaseImpl) Execute(ctx context.Context, comm
 		"token":    tokenResponse.Token,
 	}
 
-	messageReq := messaging.MessageDTO{
+	messageReq := outport.MessageDTO{
 		TenantId:          command.TenantId,
 		CorrelationID:     command.CorrelationID,
 		XCorrelationID:    command.CorrelationID,

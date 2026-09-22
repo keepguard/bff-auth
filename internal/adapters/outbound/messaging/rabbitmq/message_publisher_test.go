@@ -5,7 +5,7 @@ import (
 	"encoding/json"
 	"testing"
 
-	"github.com/keepguard/bff-auth/internal/domain/ports/messaging"
+	outport "github.com/keepguard/bff-auth/internal/application/port/out"
 	"github.com/keepguard/bff-auth/internal/infrastructure/config"
 	"github.com/stretchr/testify/assert"
 	"go.uber.org/zap/zaptest"
@@ -76,8 +76,8 @@ func TestMessagePublisher_MessageSerialization(t *testing.T) {
 	assert.NotNil(t, publisher)
 
 	// Testar serialização de diferentes tipos de variáveis
-	message := messaging.MessageDTO{
-		TenantId:      "test-app",
+	message := outport.MessageDTO{
+		TenantId:          "test-app",
 		XCorrelationID:    "test-correlation-id",
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",
@@ -102,7 +102,7 @@ func TestMessagePublisher_MessageSerialization(t *testing.T) {
 	assert.NotEmpty(t, messageBytes)
 
 	// Verificar se pode ser deserializada
-	var deserializedMessage messaging.MessageDTO
+	var deserializedMessage outport.MessageDTO
 	err = json.Unmarshal(messageBytes, &deserializedMessage)
 	assert.NoError(t, err)
 	assert.Equal(t, message.TenantId, deserializedMessage.TenantId)
@@ -145,8 +145,8 @@ func TestMessagePublisher_SerializationError(t *testing.T) {
 	assert.NotNil(t, publisher)
 
 	// Criar mensagem com dados que causam erro de serialização
-	message := messaging.MessageDTO{
-		TenantId:      "test-app",
+	message := outport.MessageDTO{
+		TenantId:          "test-app",
 		XCorrelationID:    "test-correlation-id",
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",

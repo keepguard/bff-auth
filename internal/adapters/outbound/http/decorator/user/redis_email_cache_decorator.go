@@ -5,8 +5,8 @@ import (
 	"encoding/json"
 	"strings"
 
-	outboundDto "github.com/keepguard/bff-auth/internal/adapters/outbound/http/dto"
 	companydecorator "github.com/keepguard/bff-auth/internal/adapters/outbound/http/decorator/company"
+	outboundDto "github.com/keepguard/bff-auth/internal/adapters/outbound/http/dto"
 	portsclient "github.com/keepguard/bff-auth/internal/application/port"
 	"github.com/keepguard/bff-auth/internal/infrastructure/metrics"
 	"go.uber.org/zap"
