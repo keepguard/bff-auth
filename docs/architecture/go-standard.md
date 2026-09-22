@@ -154,8 +154,9 @@ Quem declara porta é a **aplicação**, não o domínio:
 com o mundo externo, não regra de negócio. O domínio tem que poder ser lido sem
 saber que existe HTTP ou Postgres.
 
-Referência: `ms-analyst-finance` e `srv-news-ingestion`. Os outros 9 serviços
-ainda usam `domain/ports` (legado, fase 5).
+Migração concluída nos 13 serviços (2026-09-22). `port/in` existe só onde as
+portas de entrada foram declaradas explicitamente (`ms-analyst-finance`,
+`srv-news-ingestion`); nos demais a interface do caso de uso faz esse papel.
 
 Um arquivo por tema — nunca um `ports.go` com 20 interfaces soltas.
 
@@ -438,7 +439,8 @@ Aderência ao padrão após a atualização para Go 1.27.1:
 | 2 | Higiene: destrackear binários (~30 MB) + `cmd/` dos achadinhos | Baixo | ✅ **concluída** |
 | 3 | Renomear arquivos genéricos (`usecase.go` → `<ação>_usecase.go` etc.) | Baixo | pendente |
 | 4 | Extrair DTOs de handlers; quebrar handlers monolíticos | Médio | pendente |
-| 5 | Migrar `domain/ports` → `application/port/{in,out}` (9 serviços) e `in/out`/`core/` do mock-sms-gateway | Médio | pendente |
+| 5 | Migrar `domain/ports` → `application/port/out` (9 serviços) | Médio | ✅ **concluída** |
+| 5b | `in/out`/`core/` do mock-sms-gateway → inbound/outbound/domain | Médio | pendente |
 | 6 | Completar `infrastructure/` (logger, validation, resilience) | Médio | pendente |
 | 7 | Migrar os 6 serviços que compilam no host para build multi-stage | Médio | pendente |
 | 8 | Refatoração estrutural: `application/` no bff-invest; quebrar o UseCase de 1.142 linhas | **Alto** | pendente |
