@@ -199,6 +199,22 @@ do contexto criaria ciclo.
 Aplicado em `ms-analyst-finance` (2026-09-22). Revelou um `mapper.go` de 569
 linhas com três contextos misturados e 4 handlers no contexto errado.
 
+### O `out/` segue as mesmas regras
+
+Primeiro a tecnologia, depois o contexto: `out/http/<serviço>/`,
+`out/messaging/<tema>/`, `out/mongo|postgres/<contexto>/`, `out/redis/`.
+
+O adapter de saída tem `dto/` e `mapper/` próprios — o JSON do parceiro não
+chega ao domínio. Em banco, a struct com tags `bson`/`db` é um **document**,
+separado do repositório e do mapper.
+
+**A interface do cliente não fica no adapter**: ela é a porta, em
+`application/port/out`. Exceção: interface que é dependência interna do adapter
+e não atravessa camada (ex.: `TokenSource`).
+
+Nomes: `<serviço>_client.go`, `<tema>_publisher.go`, `<entidade>_repository.go`,
+`<entidade>_document.go`. Proibidos: `client.go`, `adapter.go`, `mongo.go`.
+
 ### Onde fica o mapper (e por que não dentro do dto)
 
 `dto/` e `mapper/` são **pastas irmãs**, cada uma seu pacote:
