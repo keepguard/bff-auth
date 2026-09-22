@@ -521,11 +521,32 @@ Aderência ao padrão após a atualização para Go 1.27.1:
 | 9 | Cobertura: meta 80% na lógica | Médio | 🔄 3 de 11 na meta |
 | 5 | Migrar `domain/ports` → `application/port/out` (9 serviços) | Médio | ✅ **concluída** |
 | 5b | `core/` do mock-sms-gateway → `domain/` + `application/` | Médio | ✅ **concluída** |
-| 6 | Completar `infrastructure/` (logger, validation, resilience) | Médio | pendente |
-
-**Restam:** fase 6 e fase 9 (cobertura). O resto está concluído.
+| 6 | Completar `infrastructure/` (logger, validation, resilience) | Médio | ❌ **descartada** — ver abaixo |
+| 9 | Cobertura: meta 80% na lógica | Médio | 🔄 em andamento |
 | 7 | Migrar os 6 serviços que compilam no host para build multi-stage | Médio | ✅ **concluída** |
 | 8 | `application/` no bff-invest; quebrar os UseCases de 1.138 e 929 linhas | **Alto** | ✅ **concluída** |
+
+### Por que a fase 6 foi descartada
+
+A fase previa copiar `logger/` e `validation/` do `bff-auth` para os 7 serviços
+que não os têm. Medindo antes de executar:
+
+- **`logger/` já está duplicado e divergente** nos 4 projetos que o têm —
+  `bff-auth`, `bff-core` e `ms-achadinhos` têm versões diferentes do mesmo
+  arquivo. Copiar para mais 7 criaria 11 cópias divergentes de ~540 linhas.
+- **Os 7 "sem logger" não estão sem log**: usam `zap` direto, que é a
+  biblioteca que o próprio pacote embrulha. O wrapper só agrega onde há
+  `NewTCPLogger` (envio por TCP), usado em 2 lugares, nos 2 BFFs do core.
+- **`validation/`** valida struct por tag de formulário. `srv-audit` e
+  `srv-sms-sender` recebem mensagem de fila, não formulário — o pacote ali
+  ficaria sem uso.
+
+**Regra que fica no lugar:** `infrastructure/` ganha pacote quando há
+comportamento próprio a encapsular, não para igualar a árvore. Log é `zap`
+direto, salvo onde o envio por TCP for necessário.
+
+Se a duplicação do `logger/` incomodar, o caminho é **unificar** num módulo Go
+compartilhado — não propagar mais cópias.
 
 **Regras de execução:**
 
