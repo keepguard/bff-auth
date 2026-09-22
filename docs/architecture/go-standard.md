@@ -517,13 +517,15 @@ Aderência ao padrão após a atualização para Go 1.27.1:
 | 3 | Renomear arquivos genéricos (`usecase.go` → `<ação>_usecase.go` etc.) | Baixo | ✅ **concluída** |
 | 4 | Extrair DTOs de handlers; quebrar handlers monolíticos | Médio | ✅ **concluída** |
 | 4b | `in/out` único; handler dependendo de `port/in`; `out/` por tecnologia | Médio | ✅ **concluída** |
-| 4c | `in/http` por contexto (fatia vertical) | Médio | 🔄 só `ms-analyst-finance` |
+| 4c | `in/http` por contexto (fatia vertical) | Médio | ✅ `ms-analyst-finance`; **descartada** nos outros 6 — usam `application/dto`, não `http/dto`; criar 12 pastas ali seria nível sem ganho |
 | 9 | Cobertura: meta 80% na lógica | Médio | 🔄 3 de 11 na meta |
 | 5 | Migrar `domain/ports` → `application/port/out` (9 serviços) | Médio | ✅ **concluída** |
-| 5b | `in/out`/`core/` do mock-sms-gateway → inbound/outbound/domain | Médio | pendente |
+| 5b | `core/` do mock-sms-gateway → `domain/` + `application/` | Médio | ✅ **concluída** |
 | 6 | Completar `infrastructure/` (logger, validation, resilience) | Médio | pendente |
-| 7 | Migrar os 6 serviços que compilam no host para build multi-stage | Médio | pendente |
-| 8 | Refatoração estrutural: `application/` no bff-invest; quebrar o UseCase de 1.142 linhas | **Alto** | pendente |
+
+**Restam:** fase 6 e fase 9 (cobertura). O resto está concluído.
+| 7 | Migrar os 6 serviços que compilam no host para build multi-stage | Médio | ✅ **concluída** |
+| 8 | `application/` no bff-invest; quebrar os UseCases de 1.138 e 929 linhas | **Alto** | ✅ **concluída** |
 
 **Regras de execução:**
 
