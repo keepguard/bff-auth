@@ -280,6 +280,10 @@ repetir o nome dele no arquivo só faz ruído — `alert/alert_port.go` não diz
 ### Testes
 
 Arquivo de teste acompanha o arquivo testado: `login_usecase.go` → `login_usecase_test.go`.
+Ao renomear um fonte, renomeie o teste **no mesmo commit**.
+
+Exceção: teste temático, que cobre comportamento atravessando vários arquivos
+(`ticker_test.go`, `fakes_test.go`, `contract_test.go`). Esse mantém o nome do tema.
 
 ---
 
