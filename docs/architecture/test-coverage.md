@@ -41,26 +41,24 @@ calculado precisam de teste como qualquer outra lógica.
 
 ## Situação por serviço
 
-| Serviço | Antes | **Agora** | Meta 80% |
+| Serviço | Início | **Agora** | Meta 80% |
 |---|---|---|---|
+| bff-invest | 0.0% | **100.0%** | ✅ |
 | srv-news-ingestion | 89.6% | **89.6%** | ✅ |
 | bff-achadinhos | 88.0% | **88.0%** | ✅ |
 | ms-analyst-finance | 87.4% | **87.4%** | ✅ |
-| srv-sms-sender | 78.2% | **78.2%** | quase |
-| srv-email-sender | 72.8% | **72.8%** | quase |
+| srv-sms-sender | 78.2% | **80.8%** | ✅ |
+| srv-email-sender | 72.8% | **80.1%** | ✅ |
+| srv-audit | 71.0% | **78.1%** | quase |
+| srv-llm-gateway | 56.4% | **74.8%** | quase |
+| bff-auth | 62.7% | **74.2%** | quase |
+| srv-data-collector | 71.8% | **73.2%** | quase |
 | ms-achadinhos | 71.9% | **72.3%** | quase |
-| srv-data-collector | 71.8% | **71.8%** | quase |
-| srv-audit | 71.0% | **71.0%** | quase |
-| bff-auth | 62.7% | **67.5%** | falta |
-| srv-llm-gateway | 56.4% | **62.3%** | falta |
-| bff-core | 49.5% | **58.0%** | falta |
-| bff-invest | 0.0% | 0.0% | n/a — ver nota |
-| mock-sms-gateway | 0.0% | 0.0% | n/a — ver nota |
+| bff-core | 49.5% | **61.1%** | falta |
+| mock-sms-gateway | 0.0% | 0.0% | n/a — é um mock |
 
-**bff-invest e mock-sms-gateway marcam 0% porque não têm lógica onde medir:**
-o `bff-invest` tem `application/` só com `port/` e `domain/` vazio — toda a
-regra está nos handlers (é o item da fase 8); o `mock-sms-gateway` é um mock.
-A cobertura real do bff-invest, medida sobre todo o `internal/`, é **59.6%**.
+**6 dos 12 na meta.** O `bff-invest` saltou de 0% para 100% porque ganhou
+camada de aplicação na fase 8 — antes não havia lógica onde medir.
 
 ## Bug encontrado escrevendo os testes
 
