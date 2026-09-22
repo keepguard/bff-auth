@@ -1,6 +1,6 @@
 # Padrão de Estrutura e Nomenclatura — Serviços Go do KeepGuard
 
-Documento normativo para as **14 aplicações Go** do monorepo (`bff-*`, `ms-*`, `srv-*`,
+Documento normativo para as **13 aplicações Go** do monorepo (`bff-*`, `ms-*`, `srv-*`,
 `mock-*`), nos domínios `achadinhos/`, `investbot/` e `keepguard-core/`.
 
 **Referência canônica:** `keepguard-core/backend/bff/bff-auth`. Em caso de dúvida não
@@ -225,7 +225,7 @@ ENTRYPOINT ["/app/<serviço>"]
 | Abordagem | Quando usar | Quem usa hoje |
 |---|---|---|
 | **Binário** `deploy/healthcheck/main.go` | Imagem **distroless** (não tem shell nem `curl`) | bff-auth, bff-core, bff-achadinhos, ms-achadinhos |
-| `curl` no `HEALTHCHECK` | Imagem **alpine** (traz `curl` via `apk add`) | os outros 9 |
+| `curl` no `HEALTHCHECK` | Imagem **alpine** (traz `curl` via `apk add`) | os outros 8 |
 
 Ambas atendem. A do binário é preferível por permitir distroless (superfície de ataque
 menor e imagem menor), e é para onde convergir ao migrar um serviço para distroless.
@@ -356,7 +356,6 @@ Aderência ao padrão após a atualização para Go 1.27.1:
 | srv-sms-sender | core/srv | 🟠 baixa | idem; binário versionado; build no host |
 | **ms-analyst-finance** | investbot/ms | 🔴 crítica | `handler.go` 2.036 linhas com ~40 DTOs inline; `usecase.go` 1.142 linhas |
 | **bff-invest** | investbot/bff | 🔴 crítica | `handler.go` 707 linhas; **sem camada `application/`** |
-| **srv-mcp-invest** | investbot/srv | 🔴 crítica | não é hexagonal: `internal/{auth,client,config,tools}` plano |
 | **mock-sms-gateway** | core/mock | 🔴 crítica | `in/out/core`; `handler.go`/`repository.go`/`models.go`/`ports.go`; zero testes |
 
 ---
@@ -373,7 +372,7 @@ Aderência ao padrão após a atualização para Go 1.27.1:
 | 5 | Reestruturar diretórios divergentes (`in/out`, `core/`, `port/{in,out}`) | Médio | pendente |
 | 6 | Completar `infrastructure/` (logger, validation, resilience) | Médio | pendente |
 | 7 | Migrar os 6 serviços que compilam no host para build multi-stage | Médio | pendente |
-| 8 | Refatoração estrutural: `application/` no bff-invest; quebrar o UseCase de 1.142 linhas; hexagonalizar srv-mcp-invest | **Alto** | pendente |
+| 8 | Refatoração estrutural: `application/` no bff-invest; quebrar o UseCase de 1.142 linhas | **Alto** | pendente |
 
 **Regras de execução:**
 
