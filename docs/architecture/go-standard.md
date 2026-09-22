@@ -285,6 +285,13 @@ Ao renomear um fonte, renomeie o teste **no mesmo commit**.
 Exceção: teste temático, que cobre comportamento atravessando vários arquivos
 (`ticker_test.go`, `fakes_test.go`, `contract_test.go`). Esse mantém o nome do tema.
 
+**Medir cobertura com `-coverpkg`.** O `go test -cover ./...` simples engana:
+pacotes testados de fora (handlers de contexto exercitados pelo teste de
+integração do pacote pai) aparecem como 0%. Use
+`go test -coverpkg=./internal/... -coverprofile=cover.out ./...`.
+
+Não conta como lacuna: `dto/`, `port/in`, `port/out`, `cmd/*/main.go`, `server.go`.
+
 ---
 
 ## 4. Nomenclatura de tipos
