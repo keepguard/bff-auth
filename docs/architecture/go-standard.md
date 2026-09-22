@@ -141,6 +141,36 @@ Foi por violar isso que o padrão virou problema: um `usecase.go` dentro de
 | `service.go` | `<contexto>_service.go` ou vira `_usecase.go` | |
 | `mapper.go` genérico | `<entidade>_mapper.go` | `message_mapper.go` |
 
+### Onde fica o mapper (e por que não dentro do dto)
+
+`dto/` e `mapper/` são **pastas irmãs**, cada uma seu pacote:
+
+```
+adapters/inbound/http/
+├── dto/      → struct + tag JSON. Dado puro, NAO importa domain
+├── mapper/   → traduz. Importa dto E domain
+└── handlers/ → importa dto e mapper
+```
+
+A regra é a direção da dependência: se a função de conversão mora dentro de `dto/`,
+o DTO passa a importar o domínio e deixa de ser dado puro — o adaptador contamina a
+borda que existia justamente para isolar. O mapper é quem pode conhecer os dois lados.
+
+Vale nos dois sentidos, como no `bff-auth`:
+`inbound/http/mapper/` (HTTP → aplicação) e `outbound/http/mapper/` (aplicação → serviço externo).
+
+### Todo caso de uso termina em `_usecase.go`
+
+Se o arquivo declara ou implementa métodos de um `UseCase`/`service` da camada
+`application`, o nome termina em `_usecase.go` — **sem exceção**. Um `compare.go` com
+`CompareAssetsUseCase.Execute` dentro obriga a abrir o arquivo para descobrir o que é.
+
+Vale também quando o caso de uso está partido em vários arquivos por assunto: cada
+parte leva o sufixo (`catalog_usecase.go`, `proactive_usecase.go`, `batch_usecase.go`).
+
+Continuam sem sufixo só os arquivos que **declaram a interface**, não a implementam:
+`interfaces.go` e `port.go` dentro do pacote de contexto (padrão do `bff-auth`).
+
 ### O nome do pacote já conta como contexto
 
 Nome de arquivo Go é lido como `pacote/arquivo`. Quando o pacote já delimita o assunto,
