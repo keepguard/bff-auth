@@ -171,6 +171,34 @@ constrói caso de uso é o composition root.
 
 Interfaces segregadas por contexto (ISP), não uma porta com 31 métodos.
 
+### Organização de `in/http`: por contexto, a partir de 3
+
+Com 3 ou mais contextos, cada um vira fatia vertical completa:
+
+```
+in/http/
+├── analysis/{dto,mapper}/ + handler.go + analysis_handlers.go
+├── catalog/{dto,mapper}/  + handler.go + catalog_handlers.go
+├── watchlist/{dto,mapper}/+ handler.go + watchlist_handlers.go
+├── httperr/               helpers compartilhados
+└── server.go
+```
+
+Com 1 ou 2 contextos, fica a forma simples `in/http/{dto,mapper,handlers}/`.
+
+**O `dto/` não vai dentro de `handlers/`** — isso faria o handler virar dono do
+DTO. O contexto vem antes da divisão técnica; `dto/` e `mapper/` são irmãos.
+
+**Um `Handler` por contexto**, recebendo só as portas que usa (Go não permite
+métodos do mesmo struct em pacotes diferentes, e aqui isso ajuda).
+
+Em `application/`, o `dto` fica **neutro** (`application/dto`): `port/in`
+importa os commands e o pacote do use case implementa `port/in` — o dto dentro
+do contexto criaria ciclo.
+
+Aplicado em `ms-analyst-finance` (2026-09-22). Revelou um `mapper.go` de 569
+linhas com três contextos misturados e 4 handlers no contexto errado.
+
 ### Onde fica o mapper (e por que não dentro do dto)
 
 `dto/` e `mapper/` são **pastas irmãs**, cada uma seu pacote:
