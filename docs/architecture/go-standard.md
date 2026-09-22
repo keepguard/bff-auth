@@ -133,7 +133,7 @@ Foi por violar isso que o padrão virou problema: um `usecase.go` dentro de
 | Proibido | Obrigatório | Exemplo |
 |---|---|---|
 | `usecase.go`, `usecases.go` | `<ação>_usecase.go` | `login_usecase.go`, `aprovar_candidato_usecase.go` |
-| `port.go`, `ports.go` | `<subdomínio>_port.go` ou `ports/<subdomínio>/<nome>.go` | `product_port.go`, `ports/audit/publisher.go` |
+| `ports.go` com muitas interfaces soltas | um arquivo por tema | `product_repository.go`, `scraper.go`, `notifier.go` |
 | `handler.go`, `handlers.go` | `<recurso>_handlers.go` | `auth_handlers.go`, `product_handlers.go` |
 | `dto.go`, `types.go`, `models.go` | `<entidade>_{request,response,command}.go` | `login_command.go`, `auth_response.go` |
 | `client.go` | `<domínio>_client.go` | `auth_client.go`, `company_client.go` |
@@ -141,9 +141,26 @@ Foi por violar isso que o padrão virou problema: um `usecase.go` dentro de
 | `service.go` | `<contexto>_service.go` ou vira `_usecase.go` | |
 | `mapper.go` genérico | `<entidade>_mapper.go` | `message_mapper.go` |
 
-**Exceção permitida:** `interfaces.go` dentro de um pacote de contexto já delimitado
-(ex.: `application/auth/interfaces.go`) — o pacote dá o contexto que falta ao nome.
-É o padrão do `bff-auth`. Não vale para `ports.go` no nível de `domain/ports/`.
+### O nome do pacote já conta como contexto
+
+Nome de arquivo Go é lido como `pacote/arquivo`. Quando o pacote já delimita o assunto,
+repetir o nome dele no arquivo só faz ruído — `alert/alert_port.go` não diz nada que
+`alert/port.go` já não dissesse.
+
+**Ficam como estão** (é o padrão do `bff-auth`):
+
+- `port.go` e `interfaces.go` dentro de um pacote de contexto — `application/auth/interfaces.go`,
+  `application/blacklist/port.go`
+- `client.go`, `mapper.go` dentro de um pacote que já nomeia o destino —
+  `outbound/mercadolivre/client.go`
+
+**Precisam de nome melhor** quando o pacote NÃO delimita:
+
+- `usecase.go` — o pacote diz o contexto (`curadoria`), mas não a ação. Quebrar por ação:
+  `descobrir_usecase.go`, `buscas_usecase.go`, `candidatos_usecase.go`.
+- `ports.go` no nível de `domain/ports/` — o pacote é genérico e o arquivo acumula
+  dezenas de interfaces de assuntos diferentes. Quebrar por tema.
+- `handler.go`, `dto.go`, `types.go`, `models.go` num pacote genérico como `http/`.
 
 ### Testes
 
