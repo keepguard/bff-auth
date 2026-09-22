@@ -52,7 +52,7 @@ Ao subir de versão, atualizar sempre **os dois** (`go.mod` + Dockerfile), rodar
 ├── .gitignore                        # ver regra 6
 └── internal/
     ├── adapters/                     # tudo que fala com o mundo externo
-    │   ├── inbound/                  # quem CHAMA o serviço
+    │   ├── in/                       # quem CHAMA o serviço
     │   │   ├── http/
     │   │   │   ├── server.go         # montagem do servidor e rotas
     │   │   │   ├── interfaces.go     # interfaces consumidas pelos handlers
@@ -62,7 +62,7 @@ Ao subir de versão, atualizar sempre **os dois** (`go.mod` + Dockerfile), rodar
     │   │   │   └── middleware/
     │   │   ├── scheduler/            # cron/jobs
     │   │   └── rabbitmq/             # consumers
-    │   └── outbound/                 # quem o serviço CHAMA
+    │   └── out/                      # quem o serviço CHAMA
     │       ├── http/
     │       │   ├── client/           # um arquivo por serviço externo
     │       │   ├── decorator/<domínio>/  # retry, cache, circuit breaker, log, métrica
@@ -112,8 +112,8 @@ serviços passa a `prod` — mudança de runtime, não de estrutura.
 
 | Proibido | Correto |
 |---|---|
-| `internal/adapters/in/` | `internal/adapters/inbound/` |
-| `internal/adapters/out/` | `internal/adapters/outbound/` |
+| `internal/adapters/inbound/` | `internal/adapters/in/` |
+| `internal/adapters/outbound/` | `internal/adapters/out/` |
 | `internal/core/domain/` | `internal/domain/entities/` |
 | `internal/core/ports/` | `internal/application/port/{in,out}/` |
 | `internal/core/service/` | `internal/application/<contexto>/` |
@@ -159,6 +159,17 @@ portas de entrada foram declaradas explicitamente (`ms-analyst-finance`,
 `srv-news-ingestion`); nos demais a interface do caso de uso faz esse papel.
 
 Um arquivo por tema — nunca um `ports.go` com 20 interfaces soltas.
+
+### O handler depende da porta, não do use case
+
+Receber `*analyze.UseCase` (struct concreto) no handler fura a inversão de
+dependência. O adapter conhece **só a interface** de `application/port/in`.
+
+Consequência: o adapter não importa o pacote do use case para nada. Erros
+sentinela, commands e helpers de contexto moram em `application/dto`; quem
+constrói caso de uso é o composition root.
+
+Interfaces segregadas por contexto (ISP), não uma porta com 31 métodos.
 
 ### Onde fica o mapper (e por que não dentro do dto)
 
