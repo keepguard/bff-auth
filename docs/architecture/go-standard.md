@@ -347,8 +347,8 @@ publicando uma imagem com o SHA da `main` e o código da `develop`. Um
 para 3,4 kB**. Não excluir `*_test.go` — o `go build` já os ignora, e tirar
 arquivo `.go` do contexto pode quebrar a compilação do pacote.
 
-Antes de qualquer deploy: `./keepguard-core/scripts/colima.sh build`.
-Ao terminar: `colima.sh dev` (detalhe na §5.1).
+O script prepara o ambiente de build sozinho (sobe a VM vz+Rosetta, ajusta o
+builder, devolve o contexto no fim). Deploy é um comando só.
 
 
 **Regra: todo serviço compila DENTRO do Docker, em multi-stage.**
