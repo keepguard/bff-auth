@@ -329,6 +329,28 @@ declara **apenas** o próprio struct receptor (`type AuthHandlers struct`) e seu
 
 ## 5. Build e Docker
 
+### O script de deploy: build é opt-in
+
+| Comando | Faz | Tempo |
+|---|---|---|
+| (sem argumento) | commit + push | ~0s |
+| `merge main` | + promove para main | ~2s |
+| `merge main build` | + publica a imagem no GHCR | minutos |
+| `merge main prod` | + aplica em produção | minutos |
+
+O build sai de `git archive <ref>`, **não** da árvore de trabalho. Sem isso o
+script faz merge para `main`, volta para `develop` e só então builda —
+publicando uma imagem com o SHA da `main` e o código da `develop`. Um
+`docker build .` no fim de um script de deploy é sempre suspeito.
+
+`.dockerignore` é obrigatório: reduziu o contexto do `srv-audit` de **41 MB
+para 3,4 kB**. Não excluir `*_test.go` — o `go build` já os ignora, e tirar
+arquivo `.go` do contexto pode quebrar a compilação do pacote.
+
+Antes de qualquer deploy: `./keepguard-core/scripts/colima.sh build`.
+Ao terminar: `colima.sh dev` (detalhe na §5.1).
+
+
 **Regra: todo serviço compila DENTRO do Docker, em multi-stage.**
 
 Hoje 6 serviços compilam no Mac do desenvolvedor e o Dockerfile só faz `COPY` do
