@@ -5,13 +5,15 @@ WORKDIR /src
 
 # Copia go.mod e go.sum primeiro para aproveitar cache de dependências
 COPY go.mod go.sum ./
-RUN go mod download
+RUN --mount=type=cache,target=/go/pkg/mod go mod download
 
 # Copia o código fonte
 COPY . .
 
 # Build da aplicação
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/bff-auth ./cmd/bff-auth \
+RUN --mount=type=cache,target=/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/bff-auth ./cmd/bff-auth \
     && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/healthcheck ./deploy/healthcheck
 
 # Stage final - imagem mínima
