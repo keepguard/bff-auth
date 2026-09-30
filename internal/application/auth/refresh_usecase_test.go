@@ -22,6 +22,7 @@ func TestRefreshUseCase_Execute_Success(t *testing.T) {
 
 	command := appdto.NewRefreshTokenCommand(
 		"valid_refresh_token",
+		"",
 		tenantId,
 		correlationID,
 		"keepguard-default-client",
@@ -64,6 +65,7 @@ func TestRefreshUseCase_Execute_EmptyRefreshToken(t *testing.T) {
 
 	command := appdto.NewRefreshTokenCommand(
 		"",
+		"",
 		tenantId,
 		correlationID,
 		"keepguard-default-client",
@@ -102,6 +104,7 @@ func TestRefreshUseCase_Execute_AuthServiceError(t *testing.T) {
 
 	command := appdto.NewRefreshTokenCommand(
 		"invalid_refresh_token",
+		"",
 		tenantId,
 		correlationID,
 		"keepguard-default-client",
@@ -140,6 +143,7 @@ func TestRefreshUseCase_Execute_ContextCancelled(t *testing.T) {
 
 	command := appdto.NewRefreshTokenCommand(
 		"valid_refresh_token",
+		"",
 		tenantId,
 		correlationID,
 		"keepguard-default-client",
@@ -177,6 +181,7 @@ func TestRefreshUseCase_Execute_CompanyNotFound(t *testing.T) {
 
 	command := appdto.NewRefreshTokenCommand(
 		"valid_refresh_token",
+		"",
 		tenantId,
 		correlationID,
 		"keepguard-default-client",

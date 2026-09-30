@@ -26,7 +26,8 @@ func (uc *refreshUseCaseImpl) Execute(ctx context.Context, command appdto.Refres
 	}
 
 	req := appdto.RefreshTokenRequestDTO{
-		Token: command.RefreshToken,
+		Token:        command.LegacyToken,
+		RefreshToken: command.OpaqueRefreshToken,
 	}
 
 	response, err := uc.authClient.RefreshToken(ctx, req, command.TenantId, command.CorrelationID, command.ClientId)

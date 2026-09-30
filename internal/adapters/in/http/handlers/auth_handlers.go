@@ -118,7 +118,9 @@ const (
 )
 
 func (h *AuthHandlers) getCookieConfig(c echo.Context) (domain string, sameSite http.SameSite, secure bool, path string) {
-	path = "/"
+	// Path restrito à rota de auth: o cookie nunca precisa trafegar para
+	// outras rotas da API, e escopar reduz a superfície de CSRF/replay.
+	path = "/api/v1/auth"
 
 	host := c.Request().Host
 	origin := c.Request().Header.Get("Origin")
@@ -132,9 +134,12 @@ func (h *AuthHandlers) getCookieConfig(c echo.Context) (domain string, sameSite 
 		os.Getenv("BFF_AUTH_COOKIE_DOMAIN") != ""
 
 	if isKeepguard {
+		// Front e API estão no mesmo site (*.keepguard.com.br): Lax basta e
+		// evita o SameSite=None desnecessário (exigiria Secure sem trazer
+		// proteção adicional aqui, já que não há navegação cross-site real).
 		domain = ".keepguard.com.br"
 		secure = true
-		sameSite = http.SameSiteNoneMode
+		sameSite = http.SameSiteLaxMode
 	} else {
 		domain = ""
 		secure = false
@@ -311,22 +316,26 @@ func (h *AuthHandlers) LoginHandler(c echo.Context) error {
 		zap.String("username", req.Username),
 	)
 
-	if response.Token != "" {
+	if response.RefreshToken != "" {
+		h.setRefreshTokenCookie(c, response.RefreshToken)
+	} else if response.Token != "" {
 		h.setRefreshTokenCookie(c, response.Token)
 	}
+	// O refresh token nunca vai no corpo da resposta — só no cookie HttpOnly.
+	// Devolvê-lo aqui também exporia o segredo a leitura via JavaScript.
+	response.RefreshToken = ""
 
 	return c.JSON(http.StatusOK, mapper.ToAuthResponse(response))
 }
 
 // RefreshHandler trata requisições de refresh de token
 // @Summary Refresh token
-// @Description Renova o token de acesso usando o refresh token. Requer headers obrigatórios X-Correlation-ID e X-Tenant-Id.
+// @Description Renova o token de acesso usando o refresh token lido do cookie HttpOnly keepguard_refresh_token. O corpo da requisição é ignorado. Requer headers obrigatórios X-Correlation-ID e X-Tenant-Id.
 // @Tags auth
 // @Accept json
 // @Produce json
 // @Param X-Correlation-ID header string false "ID de correlação para rastreamento da requisição"
 // @Param X-Tenant-Id header string true "ID da aplicação cliente (UUID)"
-// @Param request body dto.RefreshTokenRequestDTO true "Token de refresh para renovação"
 // @Success 200 {object} dto.RefreshTokenResponseDTO "Token renovado com sucesso"
 // @Failure 400 {object} pkg.ErrorResponse "Erro de validação (headers ausentes ou dados inválidos)"
 // @Failure 401 {object} pkg.ErrorResponse "Refresh token inválido ou expirado"
@@ -345,33 +354,36 @@ func (h *AuthHandlers) RefreshHandler(c echo.Context) error {
 		})
 	}
 
-	var req dto.RefreshTokenRequestDTO
-	_ = c.Bind(&req)
-
-	tokenToUse := strings.TrimSpace(req.Token)
-	if tokenToUse == "" {
-		if cookie, err := c.Cookie(RefreshTokenCookieName); err == nil && cookie != nil && cookie.Value != "" {
-			tokenToUse = strings.TrimSpace(cookie.Value)
-			h.logger.Info("Token de refresh extraído com sucesso do Cookie",
-				zap.String("correlationId", correlationID),
-			)
+	// Refresh lê SOMENTE o cookie HttpOnly — nunca o corpo da requisição.
+	// Corpo é ignorado mesmo que enviado, para impedir que um refresh
+	// token seja lido/roubado via JavaScript (o cookie não é acessível a
+	// JS; aceitar corpo reabriria essa superfície).
+	var legacyToken, opaqueRefreshToken string
+	cookie, err := c.Cookie(RefreshTokenCookieName)
+	if err == nil && cookie != nil && cookie.Value != "" {
+		value := strings.TrimSpace(cookie.Value)
+		if strings.HasPrefix(value, "rt_") {
+			opaqueRefreshToken = value
 		} else {
-			h.logger.Warn("Token de refresh ausente no Body e no Cookie",
-				zap.String("correlationId", correlationID),
-				zap.String("host", c.Request().Host),
-				zap.String("origin", c.Request().Header.Get("Origin")),
-				zap.Bool("hasCookieHeader", c.Request().Header.Get("Cookie") != ""),
-			)
+			legacyToken = value
 		}
-	} else {
-		h.logger.Info("Token de refresh recebido via Body",
+		h.logger.Info("Token de refresh extraído do Cookie",
 			zap.String("correlationId", correlationID),
+			zap.Bool("isOpaqueRefreshToken", opaqueRefreshToken != ""),
+		)
+	} else {
+		h.logger.Warn("Token de refresh ausente no Cookie",
+			zap.String("correlationId", correlationID),
+			zap.String("host", c.Request().Host),
+			zap.String("origin", c.Request().Header.Get("Origin")),
+			zap.Bool("hasCookieHeader", c.Request().Header.Get("Cookie") != ""),
 		)
 	}
 
 	// Criar comando de domínio encapsulado
 	command := appdto.NewRefreshTokenCommand(
-		tokenToUse,
+		legacyToken,
+		opaqueRefreshToken,
 		tenantId,
 		correlationID,
 		clientId,
@@ -402,10 +414,16 @@ func (h *AuthHandlers) RefreshHandler(c echo.Context) error {
 		return handleError(c, err, correlationID)
 	}
 
-	// Rotacionar o cookie com novo token gerado
-	if response.Token != "" {
+	// Rotaciona o cookie com o novo refresh token opaco. Enquanto o ms-auth
+	// não devolver refreshToken (fluxo legado), o cookie continua com o
+	// access token — mesmo comportamento de antes da Fase 1.
+	if response.RefreshToken != "" {
+		h.setRefreshTokenCookie(c, response.RefreshToken)
+	} else if response.Token != "" {
 		h.setRefreshTokenCookie(c, response.Token)
 	}
+	// O refresh token nunca vai no corpo da resposta — só no cookie HttpOnly.
+	response.RefreshToken = ""
 
 	h.logger.Info("Refresh realizado com sucesso",
 		zap.String("correlationId", correlationID),
