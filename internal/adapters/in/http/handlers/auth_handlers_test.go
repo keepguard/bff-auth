@@ -963,23 +963,76 @@ func TestSetRefreshTokenCookie_Production(t *testing.T) {
 
 	handlers.setRefreshTokenCookie(c, "rt_test_refresh_token_xyz")
 
+	// A resposta traz DOIS cookies de mesmo nome: o válido em path "/" e a
+	// expiração do legado em "/api/v1/auth". Selecionamos pelo path.
 	cookies := rec.Result().Cookies()
-	var refreshCookie *http.Cookie
+	var refreshCookie, legacyCookie *http.Cookie
 	for _, ck := range cookies {
-		if ck.Name == RefreshTokenCookieName {
-			refreshCookie = ck
-			break
+		if ck.Name != RefreshTokenCookieName {
+			continue
 		}
+		if ck.Path == LegacyRefreshTokenCookiePath {
+			legacyCookie = ck
+			continue
+		}
+		refreshCookie = ck
 	}
 
 	assert.NotNil(t, refreshCookie)
 	assert.Equal(t, "rt_test_refresh_token_xyz", refreshCookie.Value)
 	assert.Equal(t, "keepguard.com.br", refreshCookie.Domain)
 	assert.Contains(t, rec.Header().Get("Set-Cookie"), "Domain=keepguard.com.br")
-	assert.Equal(t, "/api/v1/auth", refreshCookie.Path)
+	// Path "/" é o que faz o cookie novo SOBRESCREVER o antigo e ser enviado
+	// em todas as rotas da aplicação.
+	assert.Equal(t, "/", refreshCookie.Path)
 	assert.True(t, refreshCookie.HttpOnly)
 	assert.True(t, refreshCookie.Secure)
 	assert.Equal(t, http.SameSiteLaxMode, refreshCookie.SameSite)
+
+	// E o cookie legado precisa ser expirado junto.
+	assert.NotNil(t, legacyCookie, "cookie legado deve ser expirado")
+	assert.Equal(t, "", legacyCookie.Value)
+	assert.Equal(t, -1, legacyCookie.MaxAge)
+}
+
+// Regressão: o browser envia DOIS cookies de mesmo nome (o legado de path
+// "/api/v1/auth", envenenado com o access token, e o novo de path "/"). O
+// handler precisa escolher o opaco — c.Cookie() devolveria só o primeiro,
+// que é justamente o quebrado, e a sessão caía a cada refresh.
+func TestRefreshHandler_PrefereCookieOpacoQuandoHaLegado(t *testing.T) {
+	handlers, _, mockRefreshUseCase, _ := setupTestHandlers()
+
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodPost, "/auth/refresh", bytes.NewReader([]byte("{}")))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Correlation-ID", "test-correlation-id")
+	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")
+	// Ordem proposital: o legado vem PRIMEIRO, como o browser envia.
+	req.AddCookie(&http.Cookie{
+		Name:  RefreshTokenCookieName,
+		Value: "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.legado.envenenado",
+	})
+	req.AddCookie(&http.Cookie{
+		Name:  RefreshTokenCookieName,
+		Value: "rt_valor_opaco_correto",
+	})
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	mockRefreshUseCase.On("Execute", mock.MatchedBy(func(cmd appdto.RefreshTokenCommand) bool {
+		// O opaco precisa ser escolhido, e o legado descartado.
+		return cmd.OpaqueRefreshToken == "rt_valor_opaco_correto" && cmd.LegacyToken == ""
+	})).Return(dto.RefreshTokenResponseDTO{
+		Token:        "novo_access_token",
+		RefreshToken: "rt_rotacionado",
+		ExpiresIn:    3600,
+	}, nil)
+
+	err := handlers.RefreshHandler(c)
+
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusOK, rec.Code)
+	mockRefreshUseCase.AssertExpectations(t)
 }
 
 // Regressão: gravar um access token (ou qualquer valor não-opaco) no cookie
@@ -1039,20 +1092,28 @@ func TestClearRefreshTokenCookie_Production(t *testing.T) {
 
 	handlers.clearRefreshTokenCookie(c)
 
+	// O logout expira o cookie em path "/" e também o legado "/api/v1/auth".
 	cookies := rec.Result().Cookies()
-	var refreshCookie *http.Cookie
+	var refreshCookie, legacyCookie *http.Cookie
 	for _, ck := range cookies {
-		if ck.Name == RefreshTokenCookieName {
-			refreshCookie = ck
-			break
+		if ck.Name != RefreshTokenCookieName {
+			continue
 		}
+		if ck.Path == LegacyRefreshTokenCookiePath {
+			legacyCookie = ck
+			continue
+		}
+		refreshCookie = ck
 	}
+
+	assert.NotNil(t, legacyCookie, "logout deve expirar o cookie legado")
+	assert.Equal(t, -1, legacyCookie.MaxAge)
 
 	assert.NotNil(t, refreshCookie)
 	assert.Equal(t, "", refreshCookie.Value)
 	assert.Equal(t, "keepguard.com.br", refreshCookie.Domain)
 	assert.Contains(t, rec.Header().Get("Set-Cookie"), "Domain=keepguard.com.br")
-	assert.Equal(t, "/api/v1/auth", refreshCookie.Path)
+	assert.Equal(t, "/", refreshCookie.Path)
 	assert.Equal(t, -1, refreshCookie.MaxAge)
 	assert.True(t, refreshCookie.HttpOnly)
 	assert.True(t, refreshCookie.Secure)
