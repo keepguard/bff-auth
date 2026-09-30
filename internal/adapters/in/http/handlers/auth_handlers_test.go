@@ -346,19 +346,45 @@ func TestAuthHandlers_LoginHandler_UseCaseError(t *testing.T) {
 	mockLoginUseCase.AssertExpectations(t)
 }
 
-func TestAuthHandlers_RefreshHandler_Success(t *testing.T) {
-	// Arrange
+func TestAuthHandlers_RefreshHandler_IgnoresBody_RequiresCookie(t *testing.T) {
+	// Arrange: refresh não lê mais o corpo, mesmo que ele venha preenchido —
+	// só o cookie HttpOnly é aceito como credencial de rotação.
 	handlers, _, mockRefreshUseCase, _ := setupTestHandlers()
 
 	e := echo.New()
 	reqBody := dto.RefreshTokenRequestDTO{
-		Token: "valid_refresh_token",
+		Token: "token_no_body_deve_ser_ignorado",
 	}
 	reqBodyBytes, _ := json.Marshal(reqBody)
 	req := httptest.NewRequest(http.MethodPost, "/auth/refresh", bytes.NewReader(reqBodyBytes))
 	req.Header.Set("Content-Type", "application/json")
 	req.Header.Set("X-Correlation-ID", "test-correlation-id")
 	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")
+	rec := httptest.NewRecorder()
+	c := e.NewContext(req, rec)
+
+	// Act: sem cookie, corpo não basta — deve falhar validação
+	err := handlers.RefreshHandler(c)
+
+	// Assert
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+	mockRefreshUseCase.AssertNotCalled(t, "Execute", mock.Anything, mock.Anything)
+}
+
+func TestAuthHandlers_RefreshHandler_Success(t *testing.T) {
+	// Arrange
+	handlers, _, mockRefreshUseCase, _ := setupTestHandlers()
+
+	e := echo.New()
+	req := httptest.NewRequest(http.MethodPost, "/auth/refresh", bytes.NewReader([]byte("{}")))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("X-Correlation-ID", "test-correlation-id")
+	req.Header.Set("X-Tenant-Id", "550e8400-e29b-41d4-a716-446655440000")
+	req.AddCookie(&http.Cookie{
+		Name:  RefreshTokenCookieName,
+		Value: "valid_refresh_token",
+	})
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
@@ -418,7 +444,7 @@ func TestAuthHandlers_RefreshHandler_Success_WithCookieOnly(t *testing.T) {
 	}
 
 	mockRefreshUseCase.On("Execute", mock.MatchedBy(func(cmd appdto.RefreshTokenCommand) bool {
-		return cmd.RefreshToken == "cookie_refresh_token"
+		return cmd.LegacyToken == "cookie_refresh_token"
 	})).Return(expectedResponse, nil)
 
 	// Act
@@ -926,10 +952,10 @@ func TestSetRefreshTokenCookie_Production(t *testing.T) {
 	assert.Equal(t, "test-refresh-token-xyz", refreshCookie.Value)
 	assert.Equal(t, "keepguard.com.br", refreshCookie.Domain)
 	assert.Contains(t, rec.Header().Get("Set-Cookie"), "Domain=keepguard.com.br")
-	assert.Equal(t, "/", refreshCookie.Path)
+	assert.Equal(t, "/api/v1/auth", refreshCookie.Path)
 	assert.True(t, refreshCookie.HttpOnly)
 	assert.True(t, refreshCookie.Secure)
-	assert.Equal(t, http.SameSiteNoneMode, refreshCookie.SameSite)
+	assert.Equal(t, http.SameSiteLaxMode, refreshCookie.SameSite)
 }
 
 func TestClearRefreshTokenCookie_Production(t *testing.T) {
@@ -965,9 +991,9 @@ func TestClearRefreshTokenCookie_Production(t *testing.T) {
 	assert.Equal(t, "", refreshCookie.Value)
 	assert.Equal(t, "keepguard.com.br", refreshCookie.Domain)
 	assert.Contains(t, rec.Header().Get("Set-Cookie"), "Domain=keepguard.com.br")
-	assert.Equal(t, "/", refreshCookie.Path)
+	assert.Equal(t, "/api/v1/auth", refreshCookie.Path)
 	assert.Equal(t, -1, refreshCookie.MaxAge)
 	assert.True(t, refreshCookie.HttpOnly)
 	assert.True(t, refreshCookie.Secure)
-	assert.Equal(t, http.SameSiteNoneMode, refreshCookie.SameSite)
+	assert.Equal(t, http.SameSiteLaxMode, refreshCookie.SameSite)
 }

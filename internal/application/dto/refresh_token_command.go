@@ -1,23 +1,29 @@
 package dto
 
 type RefreshTokenCommand struct {
-	RefreshToken  string
-	TenantId      string
-	CorrelationID string
-	ClientId      string
+	// LegacyToken é o JWT usado como credencial de rotação no fluxo antigo
+	// (pré refresh-token opaco). Mantido por compatibilidade.
+	LegacyToken string
+	// OpaqueRefreshToken é o refresh token opaco do novo fluxo, sempre lido
+	// do cookie HttpOnly — nunca do corpo da requisição.
+	OpaqueRefreshToken string
+	TenantId           string
+	CorrelationID      string
+	ClientId           string
 }
 
-func NewRefreshTokenCommand(refreshToken, tenantId, correlationID, clientId string) RefreshTokenCommand {
+func NewRefreshTokenCommand(legacyToken, opaqueRefreshToken, tenantId, correlationID, clientId string) RefreshTokenCommand {
 	return RefreshTokenCommand{
-		RefreshToken:  refreshToken,
-		TenantId:      tenantId,
-		CorrelationID: correlationID,
-		ClientId:      clientId,
+		LegacyToken:        legacyToken,
+		OpaqueRefreshToken: opaqueRefreshToken,
+		TenantId:           tenantId,
+		CorrelationID:      correlationID,
+		ClientId:           clientId,
 	}
 }
 
 func (c *RefreshTokenCommand) Validate() error {
-	if c.RefreshToken == "" {
+	if c.LegacyToken == "" && c.OpaqueRefreshToken == "" {
 		return &ValidationError{Field: "refreshToken", Message: "Token de refresh é obrigatório"}
 	}
 	if c.TenantId == "" {

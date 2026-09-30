@@ -11,6 +11,9 @@ type AuthRequestDTO struct {
 
 type RefreshTokenRequestDTO struct {
 	Token string `json:"token" validate:"required,min=1"`
+	// RefreshToken é o refresh token opaco (novo fluxo). Quando presente, o
+	// ms-auth prioriza esta credencial na rotação em vez do JWT em Token.
+	RefreshToken string `json:"refreshToken,omitempty"`
 }
 
 type AvailableMfaChannelDTO struct {
@@ -21,6 +24,7 @@ type AvailableMfaChannelDTO struct {
 
 type AuthResponseDTO struct {
 	Token              string                   `json:"token,omitempty"`
+	RefreshToken       string                   `json:"refreshToken,omitempty"`
 	ExpiresIn          int64                    `json:"expiresIn,omitempty"`
 	Status             string                   `json:"status,omitempty"`
 	ChallengeSessionID string                   `json:"challengeSessionId,omitempty"`
@@ -29,8 +33,9 @@ type AuthResponseDTO struct {
 }
 
 type RefreshTokenResponseDTO struct {
-	Token     string `json:"token"`
-	ExpiresIn int64  `json:"expiresIn"`
+	Token        string `json:"token"`
+	RefreshToken string `json:"refreshToken,omitempty"`
+	ExpiresIn    int64  `json:"expiresIn"`
 }
 
 type DeviceChallengeSendRequestDTO struct {
