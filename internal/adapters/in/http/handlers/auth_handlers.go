@@ -172,8 +172,24 @@ func (h *AuthHandlers) getCookieConfig(c echo.Context) (domain string, sameSite 
 	return domain, sameSite, secure, path
 }
 
+// setRefreshTokenCookie grava APENAS o refresh token opaco (rt_...). Gravar
+// um access token aqui produz um cookie que parece válido e morre no primeiro
+// refresh — falha silenciosa que já derrubou sessões em produção. Por isso
+// qualquer valor fora do padrão é recusado e logado como erro, em vez de
+// gravado.
 func (h *AuthHandlers) setRefreshTokenCookie(c echo.Context, token string) {
 	if token == "" {
+		h.logger.Error("Refresh token ausente na resposta do ms-auth — cookie NÃO gravado",
+			zap.String("correlationId", GetCorrelationID(c)),
+			zap.String("path", c.Path()),
+		)
+		return
+	}
+	if !strings.HasPrefix(token, "rt_") {
+		h.logger.Error("Valor não-opaco recusado para o cookie de refresh — cookie NÃO gravado",
+			zap.String("correlationId", GetCorrelationID(c)),
+			zap.String("path", c.Path()),
+		)
 		return
 	}
 	domain, sameSite, secure, path := h.getCookieConfig(c)
@@ -316,11 +332,10 @@ func (h *AuthHandlers) LoginHandler(c echo.Context) error {
 		zap.String("username", req.Username),
 	)
 
-	if response.RefreshToken != "" {
-		h.setRefreshTokenCookie(c, response.RefreshToken)
-	} else if response.Token != "" {
-		h.setRefreshTokenCookie(c, response.Token)
-	}
+	// Só o refresh token opaco (rt_...) vai para o cookie. O fallback para
+	// response.Token gravava o access token, e o refresh seguinte caía no
+	// fluxo legado do ms-auth → INVALID_TOKEN → sessão derrubada.
+	h.setRefreshTokenCookie(c, response.RefreshToken)
 	// O refresh token nunca vai no corpo da resposta — só no cookie HttpOnly.
 	// Devolvê-lo aqui também exporia o segredo a leitura via JavaScript.
 	response.RefreshToken = ""
@@ -414,14 +429,10 @@ func (h *AuthHandlers) RefreshHandler(c echo.Context) error {
 		return handleError(c, err, correlationID)
 	}
 
-	// Rotaciona o cookie com o novo refresh token opaco. Enquanto o ms-auth
-	// não devolver refreshToken (fluxo legado), o cookie continua com o
-	// access token — mesmo comportamento de antes da Fase 1.
-	if response.RefreshToken != "" {
-		h.setRefreshTokenCookie(c, response.RefreshToken)
-	} else if response.Token != "" {
-		h.setRefreshTokenCookie(c, response.Token)
-	}
+	// Rotaciona o cookie com o novo refresh token opaco. Sem fallback para o
+	// access token: gravá-lo aqui quebrava a rotação seguinte (o ms-auth
+	// desviava para o fluxo legado e respondia INVALID_TOKEN).
+	h.setRefreshTokenCookie(c, response.RefreshToken)
 	// O refresh token nunca vai no corpo da resposta — só no cookie HttpOnly.
 	response.RefreshToken = ""
 
@@ -948,9 +959,13 @@ func (h *AuthHandlers) VerifyDeviceChallengeHandler(c echo.Context) error {
 		return handleError(c, err, correlationID)
 	}
 
-	if res.Token != "" {
-		h.setRefreshTokenCookie(c, res.Token)
-	}
+	// Só o refresh token opaco (rt_...) pode ir para o cookie. Gravar o
+	// access token aqui fazia o refresh seguinte cair no fluxo legado do
+	// ms-auth e falhar com INVALID_TOKEN, derrubando a sessão ~15s após o
+	// login por MFA.
+	h.setRefreshTokenCookie(c, res.RefreshToken)
+	// O refresh token nunca vai no corpo da resposta — só no cookie HttpOnly.
+	res.RefreshToken = ""
 
 	return c.JSON(http.StatusOK, mapper.ToAuthResponse(res))
 }
