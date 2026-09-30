@@ -115,12 +115,19 @@ func withClientNetwork(c echo.Context) context.Context {
 const (
 	RefreshTokenCookieName = "keepguard_refresh_token"
 	DefaultCookieMaxAge    = 7 * 24 * 3600 // 7 dias em segundos
+	// Path usado por uma versão anterior. O cookie gravado com ele continua
+	// vivo no browser e precisa ser expirado explicitamente (ver
+	// expireLegacyScopedCookie).
+	LegacyRefreshTokenCookiePath = "/api/v1/auth"
 )
 
 func (h *AuthHandlers) getCookieConfig(c echo.Context) (domain string, sameSite http.SameSite, secure bool, path string) {
-	// Path restrito à rota de auth: o cookie nunca precisa trafegar para
-	// outras rotas da API, e escopar reduz a superfície de CSRF/replay.
-	path = "/api/v1/auth"
+	// Path "/" é obrigatório aqui. Restringir a "/api/v1/auth" criava um
+	// cookie SEPARADO (cookies só são iguais se nome+domínio+path batem):
+	// o novo nunca sobrescrevia o antigo de path "/", e o browser continuava
+	// mandando o antigo — envenenado com o access token — no refresh.
+	// Resultado: sessão caindo ~15s após o login, indefinidamente.
+	path = "/"
 
 	host := c.Request().Host
 	origin := c.Request().Header.Get("Origin")
@@ -206,6 +213,7 @@ func (h *AuthHandlers) setRefreshTokenCookie(c echo.Context, token string) {
 	}
 
 	c.SetCookie(cookie)
+	h.expireLegacyScopedCookie(c, domain)
 	h.logger.Info("Cookie de refresh configurado",
 		zap.String("cookieName", RefreshTokenCookieName),
 		zap.String("domain", domain),
@@ -213,6 +221,26 @@ func (h *AuthHandlers) setRefreshTokenCookie(c echo.Context, token string) {
 		zap.Bool("secure", secure),
 		zap.Int("sameSite", int(sameSite)),
 	)
+}
+
+// expireLegacyScopedCookie apaga o cookie de path "/api/v1/auth" deixado por
+// versões anteriores. Sem isso ele sobrevive no browser (path diferente = outro
+// cookie) e continua sendo enviado no refresh, derrubando a sessão. Roda junto
+// de toda gravação, de modo que o próprio login limpa o estado de quem já tem
+// o cookie ruim — sem exigir que o usuário limpe o browser na mão.
+func (h *AuthHandlers) expireLegacyScopedCookie(c echo.Context, domain string) {
+	if LegacyRefreshTokenCookiePath == "" {
+		return
+	}
+	c.SetCookie(&http.Cookie{
+		Name:     RefreshTokenCookieName,
+		Value:    "",
+		Path:     LegacyRefreshTokenCookiePath,
+		Domain:   domain,
+		HttpOnly: true,
+		MaxAge:   -1,
+		Expires:  time.Unix(0, 0),
+	})
 }
 
 func (h *AuthHandlers) clearRefreshTokenCookie(c echo.Context) {
@@ -231,6 +259,9 @@ func (h *AuthHandlers) clearRefreshTokenCookie(c echo.Context) {
 	}
 
 	c.SetCookie(cookie)
+	// Logout também precisa derrubar o cookie legado de path "/api/v1/auth";
+	// senão ele sobrevive ao logout e volta a ser enviado no próximo refresh.
+	h.expireLegacyScopedCookie(c, domain)
 	h.logger.Info("Cookie de refresh limpo",
 		zap.String("cookieName", RefreshTokenCookieName),
 		zap.String("domain", domain),
@@ -373,14 +404,38 @@ func (h *AuthHandlers) RefreshHandler(c echo.Context) error {
 	// Corpo é ignorado mesmo que enviado, para impedir que um refresh
 	// token seja lido/roubado via JavaScript (o cookie não é acessível a
 	// JS; aceitar corpo reabriria essa superfície).
+	// Um browser pode mandar MAIS DE UM cookie com este nome: o novo (path
+	// "/") e um legado de path "/api/v1/auth" gravado por versões anteriores.
+	// c.Cookie() devolve só o primeiro, que pode ser justamente o envenenado
+	// com o access token. Por isso varremos todos e preferimos o opaco (rt_).
 	var legacyToken, opaqueRefreshToken string
-	cookie, err := c.Cookie(RefreshTokenCookieName)
-	if err == nil && cookie != nil && cookie.Value != "" {
-		value := strings.TrimSpace(cookie.Value)
+	var found bool
+	for _, ck := range c.Request().Cookies() {
+		if ck.Name != RefreshTokenCookieName {
+			continue
+		}
+		value := strings.TrimSpace(ck.Value)
+		if value == "" {
+			continue
+		}
+		found = true
 		if strings.HasPrefix(value, "rt_") {
 			opaqueRefreshToken = value
-		} else {
-			legacyToken = value
+			break // opaco é sempre o preferido; para de procurar
+		}
+		legacyToken = value
+	}
+
+	if found {
+		// Um token opaco encontrado junto de um legado significa que o cookie
+		// antigo ainda está no browser e continuará chegando: descartar o
+		// legado, senão o ms-auth ainda o receberia e poderia desviar para o
+		// fluxo antigo — exatamente a falha que derrubava a sessão.
+		if opaqueRefreshToken != "" && legacyToken != "" {
+			legacyToken = ""
+			h.logger.Warn("Cookie legado de refresh ainda presente no browser — descartado em favor do opaco",
+				zap.String("correlationId", correlationID),
+			)
 		}
 		h.logger.Info("Token de refresh extraído do Cookie",
 			zap.String("correlationId", correlationID),
