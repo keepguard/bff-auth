@@ -242,6 +242,13 @@ func TestAuthHandlers_LoginHandler_Success(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
+	useCaseResponse := dto.AuthResponseDTO{
+		Token:        "access_token",
+		RefreshToken: "rt_opaque_refresh_value",
+		ExpiresIn:    3600,
+	}
+
+	// O refresh token sai só no cookie HttpOnly, nunca no corpo da resposta.
 	expectedResponse := dto.AuthResponseDTO{
 		Token:     "access_token",
 		ExpiresIn: 3600,
@@ -249,7 +256,7 @@ func TestAuthHandlers_LoginHandler_Success(t *testing.T) {
 
 	// O teste precisa ser ajustado para usar o novo command
 	// Por enquanto, vamos usar mock.Anything para o comando
-	mockLoginUseCase.On("Execute", mock.Anything, mock.Anything).Return(expectedResponse, nil)
+	mockLoginUseCase.On("Execute", mock.Anything, mock.Anything).Return(useCaseResponse, nil)
 
 	// Act
 	err := handlers.LoginHandler(c)
@@ -271,8 +278,10 @@ func TestAuthHandlers_LoginHandler_Success(t *testing.T) {
 			break
 		}
 	}
+	// O cookie carrega o refresh token opaco, NUNCA o access token: gravar o
+	// JWT aqui fazia o refresh seguinte cair no fluxo legado e derrubar a sessão.
 	assert.NotNil(t, loginCookie)
-	assert.Equal(t, "access_token", loginCookie.Value)
+	assert.Equal(t, "rt_opaque_refresh_value", loginCookie.Value)
 	assert.True(t, loginCookie.HttpOnly)
 
 	mockLoginUseCase.AssertExpectations(t)
@@ -388,12 +397,19 @@ func TestAuthHandlers_RefreshHandler_Success(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
+	useCaseResponse := dto.RefreshTokenResponseDTO{
+		Token:        "new_access_token",
+		RefreshToken: "rt_rotated_refresh_value",
+		ExpiresIn:    3600,
+	}
+
+	// O refresh token rotacionado sai só no cookie, nunca no corpo.
 	expectedResponse := dto.RefreshTokenResponseDTO{
 		Token:     "new_access_token",
 		ExpiresIn: 3600,
 	}
 
-	mockRefreshUseCase.On("Execute", mock.Anything, mock.Anything).Return(expectedResponse, nil)
+	mockRefreshUseCase.On("Execute", mock.Anything, mock.Anything).Return(useCaseResponse, nil)
 
 	// Act
 	err := handlers.RefreshHandler(c)
@@ -415,8 +431,9 @@ func TestAuthHandlers_RefreshHandler_Success(t *testing.T) {
 			break
 		}
 	}
+	// A rotação grava o novo refresh token opaco, nunca o access token.
 	assert.NotNil(t, rotatedCookie)
-	assert.Equal(t, "new_access_token", rotatedCookie.Value)
+	assert.Equal(t, "rt_rotated_refresh_value", rotatedCookie.Value)
 	assert.True(t, rotatedCookie.HttpOnly)
 
 	mockRefreshUseCase.AssertExpectations(t)
@@ -438,6 +455,13 @@ func TestAuthHandlers_RefreshHandler_Success_WithCookieOnly(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
+	useCaseResponse := dto.RefreshTokenResponseDTO{
+		Token:        "rotated_from_cookie",
+		RefreshToken: "rt_rotated_from_cookie",
+		ExpiresIn:    3600,
+	}
+
+	// O refresh token rotacionado sai só no cookie, nunca no corpo.
 	expectedResponse := dto.RefreshTokenResponseDTO{
 		Token:     "rotated_from_cookie",
 		ExpiresIn: 3600,
@@ -445,7 +469,7 @@ func TestAuthHandlers_RefreshHandler_Success_WithCookieOnly(t *testing.T) {
 
 	mockRefreshUseCase.On("Execute", mock.MatchedBy(func(cmd appdto.RefreshTokenCommand) bool {
 		return cmd.LegacyToken == "cookie_refresh_token"
-	})).Return(expectedResponse, nil)
+	})).Return(useCaseResponse, nil)
 
 	// Act
 	err := handlers.RefreshHandler(c)
@@ -468,7 +492,7 @@ func TestAuthHandlers_RefreshHandler_Success_WithCookieOnly(t *testing.T) {
 		}
 	}
 	assert.NotNil(t, rotatedCookie)
-	assert.Equal(t, "rotated_from_cookie", rotatedCookie.Value)
+	assert.Equal(t, "rt_rotated_from_cookie", rotatedCookie.Value)
 	assert.True(t, rotatedCookie.HttpOnly)
 
 	mockRefreshUseCase.AssertExpectations(t)
@@ -937,7 +961,7 @@ func TestSetRefreshTokenCookie_Production(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	handlers.setRefreshTokenCookie(c, "test-refresh-token-xyz")
+	handlers.setRefreshTokenCookie(c, "rt_test_refresh_token_xyz")
 
 	cookies := rec.Result().Cookies()
 	var refreshCookie *http.Cookie
@@ -949,13 +973,50 @@ func TestSetRefreshTokenCookie_Production(t *testing.T) {
 	}
 
 	assert.NotNil(t, refreshCookie)
-	assert.Equal(t, "test-refresh-token-xyz", refreshCookie.Value)
+	assert.Equal(t, "rt_test_refresh_token_xyz", refreshCookie.Value)
 	assert.Equal(t, "keepguard.com.br", refreshCookie.Domain)
 	assert.Contains(t, rec.Header().Get("Set-Cookie"), "Domain=keepguard.com.br")
 	assert.Equal(t, "/api/v1/auth", refreshCookie.Path)
 	assert.True(t, refreshCookie.HttpOnly)
 	assert.True(t, refreshCookie.Secure)
 	assert.Equal(t, http.SameSiteLaxMode, refreshCookie.SameSite)
+}
+
+// Regressão: gravar um access token (ou qualquer valor não-opaco) no cookie
+// fazia o refresh seguinte cair no fluxo legado do ms-auth e derrubar a
+// sessão ~15s após o login. O cookie precisa ser recusado nesses casos.
+func TestSetRefreshTokenCookie_RecusaValorNaoOpaco(t *testing.T) {
+	casos := map[string]string{
+		"access token JWT": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.abc.def",
+		"vazio":            "",
+	}
+
+	for nome, valor := range casos {
+		t.Run(nome, func(t *testing.T) {
+			handlers := newAuthHandlers(
+				new(MockLoginUseCase),
+				new(MockRefreshUseCase),
+				new(MockLogoutUseCase),
+				new(MockDevicePort),
+				new(MockSessionPort),
+				new(MockBlacklistPort),
+				new(MockLifecyclePort),
+			)
+
+			e := echo.New()
+			req := httptest.NewRequest(http.MethodPost, "/api/v1/auth/login", nil)
+			req.Host = "api.keepguard.com.br"
+			rec := httptest.NewRecorder()
+			c := e.NewContext(req, rec)
+
+			handlers.setRefreshTokenCookie(c, valor)
+
+			for _, ck := range rec.Result().Cookies() {
+				assert.NotEqual(t, RefreshTokenCookieName, ck.Name,
+					"cookie de refresh não pode ser gravado com valor não-opaco")
+			}
+		})
+	}
 }
 
 func TestClearRefreshTokenCookie_Production(t *testing.T) {
