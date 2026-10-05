@@ -10,9 +10,12 @@ RUN go mod download
 # Copia o código fonte
 COPY . .
 
+ARG TARGETOS
+ARG TARGETARCH
+
 # Build da aplicação
-RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/bff-auth ./cmd/bff-auth \
-    && CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build -o /out/healthcheck ./deploy/healthcheck
+RUN CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-arm64} go build -o /out/bff-auth ./cmd/bff-auth \
+    && CGO_ENABLED=0 GOOS=${TARGETOS:-linux} GOARCH=${TARGETARCH:-arm64} go build -o /out/healthcheck ./deploy/healthcheck
 
 # Stage final - imagem mínima
 FROM gcr.io/distroless/base-debian12
