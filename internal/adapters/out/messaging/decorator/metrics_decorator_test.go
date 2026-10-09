@@ -45,7 +45,7 @@ func TestMetricsDecorator_PublishMessage_Success(t *testing.T) {
 	mockPublisher := &MockMetricsMessagePublisher{}
 
 	message := outport.MessageDTO{
-		TenantId:          "test-app",
+		CompanyID:         "test-app",
 		XCorrelationID:    "test-correlation-id",
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",
@@ -77,7 +77,7 @@ func TestMetricsDecorator_PublishMessage_Error(t *testing.T) {
 	mockPublisher := &MockMetricsMessagePublisher{}
 
 	message := outport.MessageDTO{
-		TenantId:          "test-app",
+		CompanyID:         "test-app",
 		XCorrelationID:    "test-correlation-id",
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",

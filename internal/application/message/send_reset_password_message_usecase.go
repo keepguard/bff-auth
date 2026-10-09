@@ -77,7 +77,7 @@ func (uc *sendResetPasswordMessageUseCaseImpl) Execute(ctx context.Context, comm
 	}
 
 	messageReq := outport.MessageDTO{
-		TenantId:          command.TenantId,
+		CompanyID:         company.ID,
 		CorrelationID:     command.CorrelationID,
 		XCorrelationID:    command.CorrelationID,
 		MessageType:       enums.MessageTypeEmail.String(),

@@ -77,7 +77,7 @@ func TestMessagePublisher_MessageSerialization(t *testing.T) {
 
 	// Testar serialização de diferentes tipos de variáveis
 	message := outport.MessageDTO{
-		TenantId:          "test-app",
+		CompanyID:         "test-app",
 		XCorrelationID:    "test-correlation-id",
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",
@@ -105,7 +105,7 @@ func TestMessagePublisher_MessageSerialization(t *testing.T) {
 	var deserializedMessage outport.MessageDTO
 	err = json.Unmarshal(messageBytes, &deserializedMessage)
 	assert.NoError(t, err)
-	assert.Equal(t, message.TenantId, deserializedMessage.TenantId)
+	assert.Equal(t, message.CompanyID, deserializedMessage.CompanyID)
 	assert.Equal(t, message.XCorrelationID, deserializedMessage.XCorrelationID)
 	assert.Equal(t, message.MessageType, deserializedMessage.MessageType)
 	assert.Equal(t, message.CommunicationType, deserializedMessage.CommunicationType)
@@ -146,7 +146,7 @@ func TestMessagePublisher_SerializationError(t *testing.T) {
 
 	// Criar mensagem com dados que causam erro de serialização
 	message := outport.MessageDTO{
-		TenantId:          "test-app",
+		CompanyID:         "test-app",
 		XCorrelationID:    "test-correlation-id",
 		MessageType:       "EMAIL",
 		CommunicationType: "EMAIL",
