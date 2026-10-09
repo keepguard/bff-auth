@@ -160,6 +160,31 @@ portas de entrada foram declaradas explicitamente (`ms-analyst-finance`,
 
 Um arquivo por tema — nunca um `ports.go` com 20 interfaces soltas.
 
+### Classifique pelo conteúdo, não pelo caminho
+
+Arquivo no lugar errado não se denuncia pelo nome. `analyst_client.go` era um
+cliente HTTP de saída dentro de `adapters/in/http` e passou por três fases de
+padronização sem ser notado.
+
+| Se tem... | É | Vai em |
+|---|---|---|
+| `http.Client`, chama serviço externo | adapter de saída | `out/http/<serviço>/` |
+| `echo.MiddlewareFunc` | middleware | `in/http/middleware/` |
+| publica em fila | adapter de saída | `out/messaging/<tema>/` |
+| responde rota (`c echo.Context`) | handler | `in/http/handlers/` |
+
+### Tipo de adapter não atravessa camada
+
+Se `in/` importa `out/` só para declarar uma interface, o tipo está no lugar
+errado — é contrato, e contrato mora na porta. Sintoma típico: um adaptador de
+tradução dentro do próprio Handler.
+
+Vale para erro sentinela também: `ErrQuotaNotFound` vivia em `handlers/` e o
+cliente de saída o importava.
+
+Struct com tag (`json`, `bson`) fica no adapter; o tipo que a aplicação
+enxerga fica na porta; o mapper traduz.
+
 ### Entrada nunca chama saída
 
 `in/` não importa `out/`. Handler que fala com cliente HTTP ou repositório
@@ -328,6 +353,28 @@ declara **apenas** o próprio struct receptor (`type AuthHandlers struct`) e seu
 ---
 
 ## 5. Build e Docker
+
+### O script de deploy: build é opt-in
+
+| Comando | Faz | Tempo |
+|---|---|---|
+| (sem argumento) | commit + push | ~0s |
+| `merge main` | + promove para main | ~2s |
+| `merge main build` | + publica a imagem no GHCR | minutos |
+| `merge main prod` | + aplica em produção | minutos |
+
+O build sai de `git archive <ref>`, **não** da árvore de trabalho. Sem isso o
+script faz merge para `main`, volta para `develop` e só então builda —
+publicando uma imagem com o SHA da `main` e o código da `develop`. Um
+`docker build .` no fim de um script de deploy é sempre suspeito.
+
+`.dockerignore` é obrigatório: reduziu o contexto do `srv-audit` de **41 MB
+para 3,4 kB**. Não excluir `*_test.go` — o `go build` já os ignora, e tirar
+arquivo `.go` do contexto pode quebrar a compilação do pacote.
+
+O script prepara o ambiente de build sozinho (sobe a VM vz+Rosetta, ajusta o
+builder, devolve o contexto no fim). Deploy é um comando só.
+
 
 **Regra: todo serviço compila DENTRO do Docker, em multi-stage.**
 
