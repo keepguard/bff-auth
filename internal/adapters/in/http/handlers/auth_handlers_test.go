@@ -130,6 +130,10 @@ func (m *MockLifecyclePort) DeleteUser(ctx context.Context, cmd appdto.AdminDele
 	return m.Called(ctx, cmd).Error(0)
 }
 
+func (m *MockLifecyclePort) DeleteUserByCode(ctx context.Context, cmd appdto.AdminDeleteUserByCodeCommand) error {
+	return m.Called(ctx, cmd).Error(0)
+}
+
 func (m *MockLifecyclePort) DeleteMe(ctx context.Context, cmd appdto.AccountLifecycleCommand) error {
 	return m.Called(ctx, cmd).Error(0)
 }
@@ -721,6 +725,54 @@ func TestAdminDeleteUserHandler_RequiresReason(t *testing.T) {
 	assert.NoError(t, err)
 	assert.Equal(t, http.StatusBadRequest, rec.Code)
 	mockLifecycle.AssertNotCalled(t, "DeleteUser", mock.Anything, mock.Anything)
+}
+
+func TestAdminDeleteUserByCodeHandler_ForwardsTargetAndReason(t *testing.T) {
+	handlers, mockLifecycle := setupLifecycleHandlers()
+	token := testJWTWithSub("admin-sub-1")
+	c, rec := newLifecycleContext(http.MethodDelete, "/api/v1/admin/users/by-code/code-alvo", token, `{"reason":"pedido pelas Mensagens do Meu Achadinho"}`)
+	c.SetParamNames("codeUser")
+	c.SetParamValues("code-alvo")
+
+	mockLifecycle.On("DeleteUserByCode", mock.Anything, appdto.AdminDeleteUserByCodeCommand{
+		TenantID: "tenant-1", Token: token, CodeUser: "code-alvo",
+		Reason: "pedido pelas Mensagens do Meu Achadinho", CorrelationID: "corr-1",
+	}).Return(nil)
+
+	err := handlers.AdminDeleteUserByCodeHandler(c)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+	mockLifecycle.AssertExpectations(t)
+}
+
+func TestAdminDeleteUserByCodeHandler_RequiresReason(t *testing.T) {
+	handlers, mockLifecycle := setupLifecycleHandlers()
+	c, rec := newLifecycleContext(http.MethodDelete, "/api/v1/admin/users/by-code/code-alvo", testJWTWithSub("admin-sub-1"), `{}`)
+	c.SetParamNames("codeUser")
+	c.SetParamValues("code-alvo")
+
+	err := handlers.AdminDeleteUserByCodeHandler(c)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusBadRequest, rec.Code)
+	mockLifecycle.AssertNotCalled(t, "DeleteUserByCode", mock.Anything, mock.Anything)
+}
+
+func TestAdminDeleteUserHandler_ByQueryParam(t *testing.T) {
+	handlers, mockLifecycle := setupLifecycleHandlers()
+	token := testJWTWithSub("admin-sub-1")
+	c, rec := newLifecycleContext(http.MethodDelete, "/api/v1/admin/users/code-alvo?by=codeUser", token, `{"reason":"pedido parceiro"}`)
+	c.SetParamNames("idUserExternal")
+	c.SetParamValues("code-alvo")
+
+	mockLifecycle.On("DeleteUserByCode", mock.Anything, appdto.AdminDeleteUserByCodeCommand{
+		TenantID: "tenant-1", Token: token, CodeUser: "code-alvo",
+		Reason: "pedido parceiro", CorrelationID: "corr-1",
+	}).Return(nil)
+
+	err := handlers.AdminDeleteUserHandler(c)
+	assert.NoError(t, err)
+	assert.Equal(t, http.StatusNoContent, rec.Code)
+	mockLifecycle.AssertExpectations(t)
 }
 
 func TestBlockMeHandler_Propagates403(t *testing.T) {

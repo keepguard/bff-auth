@@ -115,3 +115,48 @@ func TestLifecyclePort_DeleteUser_RequiresTarget(t *testing.T) {
 	err := svc.DeleteUser(context.Background(), appdto.AdminDeleteUserCommand{TenantID: "tenant-1", Token: "tok"})
 	assert.Error(t, err)
 }
+
+func TestLifecyclePort_DeleteUserByCode_ResolvesCodeAndDeletes(t *testing.T) {
+	authClient := new(mockAuthClient)
+	companyClient := new(mockCompanyClient)
+	svc := NewLifecyclePort(authClient, companyClient)
+
+	companyClient.On("GetByTenantId", mock.Anything, "tenant-1", "corr-1").
+		Return(appdto.CompanySimpleResponseDTO{ID: "company-1"}, nil)
+	authClient.On("GetUserByCodeUser", mock.MatchedBy(func(ctx context.Context) bool {
+		return port.CompanyIDFromContext(ctx) == "company-1"
+	}), "code-alvo", "tok-admin", "tenant-1", "corr-1").
+		Return(appdto.UserByCodeResponseDTO{IDUserExternal: "ext-alvo"}, nil)
+	authClient.On("DeleteUser", mock.MatchedBy(func(ctx context.Context) bool {
+		return port.CompanyIDFromContext(ctx) == "company-1"
+	}), "ext-alvo", "pedido LGPD", "tok-admin", "tenant-1", "corr-1").Return(nil)
+
+	err := svc.DeleteUserByCode(context.Background(), appdto.AdminDeleteUserByCodeCommand{
+		TenantID: "tenant-1", Token: "tok-admin", CodeUser: "code-alvo", Reason: "pedido LGPD", CorrelationID: "corr-1",
+	})
+	assert.NoError(t, err)
+	companyClient.AssertExpectations(t)
+	authClient.AssertExpectations(t)
+}
+
+func TestLifecyclePort_DeleteUserByCode_RequiresCodeUser(t *testing.T) {
+	svc := NewLifecyclePort(new(mockAuthClient), new(mockCompanyClient))
+	err := svc.DeleteUserByCode(context.Background(), appdto.AdminDeleteUserByCodeCommand{TenantID: "tenant-1", Token: "tok"})
+	assert.Error(t, err)
+}
+
+func TestLifecyclePort_DeleteUserByCode_UserNotFound(t *testing.T) {
+	authClient := new(mockAuthClient)
+	companyClient := new(mockCompanyClient)
+	svc := NewLifecyclePort(authClient, companyClient)
+
+	companyClient.On("GetByTenantId", mock.Anything, "tenant-1", "corr-1").
+		Return(appdto.CompanySimpleResponseDTO{ID: "company-1"}, nil)
+	authClient.On("GetUserByCodeUser", mock.Anything, "code-alvo", "tok-admin", "tenant-1", "corr-1").
+		Return(appdto.UserByCodeResponseDTO{}, nil)
+
+	err := svc.DeleteUserByCode(context.Background(), appdto.AdminDeleteUserByCodeCommand{
+		TenantID: "tenant-1", Token: "tok-admin", CodeUser: "code-alvo", Reason: "motivo", CorrelationID: "corr-1",
+	})
+	assert.Error(t, err)
+}

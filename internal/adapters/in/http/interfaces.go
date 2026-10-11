@@ -38,6 +38,7 @@ type Handler interface {
 	BlockMeHandler(c echo.Context) error
 	DeleteMeHandler(c echo.Context) error
 	AdminDeleteUserHandler(c echo.Context) error
+	AdminDeleteUserByCodeHandler(c echo.Context) error
 }
 
 // Middleware define a interface para middlewares HTTP

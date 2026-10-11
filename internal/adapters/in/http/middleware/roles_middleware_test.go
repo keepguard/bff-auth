@@ -77,3 +77,33 @@ func TestRequireSessionWrite_RejectsReadOnly(t *testing.T) {
 		t.Fatalf("expected 403, got %d", code)
 	}
 }
+
+func TestRequireAuthorityUserDelete_AllowsAdminRole(t *testing.T) {
+	token := encodeUnsignedJWT(t, map[string]any{
+		"roles":  []string{"ROLE_ADMIN"},
+		"tenant": "b5f3c003-b48e-492d-8862-9a7f3d7dfd01",
+	})
+	if code := runAuthorityMiddleware(t, RequireAuthority(AuthorityUserDelete), token); code != http.StatusOK {
+		t.Fatalf("expected 200 for ROLE_ADMIN, got %d", code)
+	}
+}
+
+func TestRequireAuthorityUserDelete_AllowsUserWithAuthority(t *testing.T) {
+	token := encodeUnsignedJWT(t, map[string]any{
+		"roles":       []string{"ROLE_USER"},
+		"authorities": []string{"user:delete"},
+	})
+	if code := runAuthorityMiddleware(t, RequireAuthority(AuthorityUserDelete), token); code != http.StatusOK {
+		t.Fatalf("expected 200 for user:delete, got %d", code)
+	}
+}
+
+func TestRequireAuthorityUserDelete_RejectsUserWithoutAuthority(t *testing.T) {
+	token := encodeUnsignedJWT(t, map[string]any{
+		"roles":       []string{"ROLE_USER"},
+		"authorities": []string{"session:read"},
+	})
+	if code := runAuthorityMiddleware(t, RequireAuthority(AuthorityUserDelete), token); code != http.StatusForbidden {
+		t.Fatalf("expected 403, got %d", code)
+	}
+}

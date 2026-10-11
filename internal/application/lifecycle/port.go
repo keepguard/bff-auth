@@ -15,6 +15,9 @@ type LifecyclePort interface {
 	// DeleteUser: o ms-auth confere o ator (mesma company, ADMIN/MANAGER com
 	// user:delete; alvo ADMIN/SYSTEM protegido).
 	DeleteUser(ctx context.Context, cmd appdto.AdminDeleteUserCommand) error
+	// DeleteUserByCode: resolve o idUserExternal a partir do codeUser dentro da
+	// company do tenant e exclui o usuário com as mesmas garantias de DeleteUser.
+	DeleteUserByCode(ctx context.Context, cmd appdto.AdminDeleteUserByCodeCommand) error
 }
 
 type service struct {
@@ -64,6 +67,34 @@ func (s *service) DeleteUser(ctx context.Context, cmd appdto.AdminDeleteUserComm
 		return pkg.NewAppError("COMPANY_NOT_FOUND", "Empresa não encontrada para o tenant informado", http.StatusNotFound)
 	}
 	return s.auth.DeleteUser(port.WithCompanyID(ctx, company.ID), cmd.IDUserExternal, cmd.Reason, cmd.Token, cmd.TenantID, cmd.CorrelationID)
+}
+
+func (s *service) DeleteUserByCode(ctx context.Context, cmd appdto.AdminDeleteUserByCodeCommand) error {
+	if s == nil || s.auth == nil || s.company == nil {
+		return s.unavailable()
+	}
+	if cmd.Token == "" {
+		return pkg.NewAppError("UNAUTHORIZED", "Token de autorização não fornecido ou inválido", http.StatusUnauthorized)
+	}
+	if cmd.CodeUser == "" {
+		return pkg.NewAppError("VALIDATION_ERROR", "Código do usuário alvo não informado", http.StatusBadRequest)
+	}
+	company, err := s.company.GetByTenantId(ctx, cmd.TenantID, cmd.CorrelationID)
+	if err != nil {
+		return err
+	}
+	if company.ID == "" {
+		return pkg.NewAppError("COMPANY_NOT_FOUND", "Empresa não encontrada para o tenant informado", http.StatusNotFound)
+	}
+	user, err := s.auth.GetUserByCodeUser(port.WithCompanyID(ctx, company.ID), cmd.CodeUser, cmd.Token, cmd.TenantID, cmd.CorrelationID)
+	if err != nil {
+		return err
+	}
+	idUserExternal := user.ExternalID()
+	if idUserExternal == "" {
+		return pkg.NewAppError("USER_NOT_FOUND", "Usuário alvo não encontrado", http.StatusNotFound)
+	}
+	return s.auth.DeleteUser(port.WithCompanyID(ctx, company.ID), idUserExternal, cmd.Reason, cmd.Token, cmd.TenantID, cmd.CorrelationID)
 }
 
 func (s *service) resolveSelfUserExternalID(ctx context.Context, cmd appdto.AccountLifecycleCommand) (string, error) {

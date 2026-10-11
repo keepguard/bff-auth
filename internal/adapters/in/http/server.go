@@ -152,6 +152,9 @@ func (s *serverImpl) SetupRoutes(handlers Handler) {
 	s.echo.DELETE("/api/v1/admin/users/:idUserExternal", handlers.AdminDeleteUserHandler,
 		requireBearer, tokenRevocationMiddleware, middlewarePkg.RequireAuthority(middlewarePkg.AuthorityUserDelete),
 		rl.Limit("account_lifecycle", rules.AccountLifecycle))
+	s.echo.DELETE("/api/v1/admin/users/by-code/:codeUser", handlers.AdminDeleteUserByCodeHandler,
+		requireBearer, tokenRevocationMiddleware, middlewarePkg.RequireAuthority(middlewarePkg.AuthorityUserDelete),
+		rl.Limit("account_lifecycle", rules.AccountLifecycle))
 
 	s.logger.Info("Rotas configuradas com sucesso com proteção de Rate Limit",
 		zap.String("port", s.config.Server.Port),

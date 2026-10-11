@@ -18,3 +18,13 @@ type AdminDeleteUserCommand struct {
 	Reason         string
 	CorrelationID  string
 }
+
+// AdminDeleteUserByCodeCommand: admin/gestor da company exclui (soft delete) a
+// conta de outro usuário a partir do codeUser (sub do JWT).
+type AdminDeleteUserByCodeCommand struct {
+	TenantID      string
+	Token         string
+	CodeUser      string
+	Reason        string
+	CorrelationID string
+}

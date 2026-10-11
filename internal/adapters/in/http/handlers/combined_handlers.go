@@ -133,3 +133,7 @@ func (h *CombinedHandlers) DeleteMeHandler(c echo.Context) error {
 func (h *CombinedHandlers) AdminDeleteUserHandler(c echo.Context) error {
 	return h.AuthHandlers.AdminDeleteUserHandler(c)
 }
+
+func (h *CombinedHandlers) AdminDeleteUserByCodeHandler(c echo.Context) error {
+	return h.AuthHandlers.AdminDeleteUserByCodeHandler(c)
+}

@@ -1138,7 +1138,8 @@ func (h *AuthHandlers) DeleteMeHandler(c echo.Context) error {
 
 // AdminDeleteUserHandler — DELETE /api/v1/admin/users/:idUserExternal, corpo
 // {reason}: o admin/gestor da company exclui a conta de outro usuário (soft
-// delete; os dados de login são eliminados pelo job do ms-auth).
+// delete; os dados de login são eliminados pelo job do ms-auth). Aceita o
+// parâmetro de consulta ?by=codeUser para excluir a partir do codeUser.
 func (h *AuthHandlers) AdminDeleteUserHandler(c echo.Context) error {
 	correlationID, tenantId, token, err := h.accountLifecycleHeaders(c)
 	if err != nil {
@@ -1148,14 +1149,53 @@ func (h *AuthHandlers) AdminDeleteUserHandler(c echo.Context) error {
 	if err != nil {
 		return handleError(c, err, correlationID)
 	}
+	rawParam := strings.TrimSpace(c.Param("idUserExternal"))
+	if by := strings.ToLower(strings.TrimSpace(c.QueryParam("by"))); by == "codeuser" || by == "code_user" || by == "code" {
+		cmd := appdto.AdminDeleteUserByCodeCommand{
+			TenantID:      tenantId,
+			Token:         token,
+			CodeUser:      rawParam,
+			Reason:        reason,
+			CorrelationID: correlationID,
+		}
+		if err := h.lifecyclePort.DeleteUserByCode(c.Request().Context(), cmd); err != nil {
+			return handleError(c, err, correlationID)
+		}
+		return c.NoContent(http.StatusNoContent)
+	}
 	cmd := appdto.AdminDeleteUserCommand{
 		TenantID:       tenantId,
 		Token:          token,
-		IDUserExternal: strings.TrimSpace(c.Param("idUserExternal")),
+		IDUserExternal: rawParam,
 		Reason:         reason,
 		CorrelationID:  correlationID,
 	}
 	if err := h.lifecyclePort.DeleteUser(c.Request().Context(), cmd); err != nil {
+		return handleError(c, err, correlationID)
+	}
+	return c.NoContent(http.StatusNoContent)
+}
+
+// AdminDeleteUserByCodeHandler — DELETE /api/v1/admin/users/by-code/:codeUser, corpo
+// {reason}: o admin/gestor da company exclui a conta de outro usuário a partir do
+// codeUser (sub do JWT). Resolve o idUserExternal e repassa ao ms-auth.
+func (h *AuthHandlers) AdminDeleteUserByCodeHandler(c echo.Context) error {
+	correlationID, tenantId, token, err := h.accountLifecycleHeaders(c)
+	if err != nil {
+		return handleError(c, err, correlationID)
+	}
+	reason, err := h.bindAccountLifecycleReason(c)
+	if err != nil {
+		return handleError(c, err, correlationID)
+	}
+	cmd := appdto.AdminDeleteUserByCodeCommand{
+		TenantID:      tenantId,
+		Token:         token,
+		CodeUser:      strings.TrimSpace(c.Param("codeUser")),
+		Reason:        reason,
+		CorrelationID: correlationID,
+	}
+	if err := h.lifecyclePort.DeleteUserByCode(c.Request().Context(), cmd); err != nil {
 		return handleError(c, err, correlationID)
 	}
 	return c.NoContent(http.StatusNoContent)
