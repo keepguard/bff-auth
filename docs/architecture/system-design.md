@@ -31,6 +31,7 @@
   - Auth (`/api/v1/auth`): `POST /login`, `/refresh`, `/logout`, `/validate`, `/change-password`, `/reset-password`, `/forgot-password`; device: `POST /device/challenge/send|verify`, `GET|POST /device/quick-revoke`.
   - Self-service (`/api/v1/users/me`, Bearer + token revocation): `POST /block`, `DELETE /`, sessões e blacklist de dispositivos.
   - Tenant/admin (Bearer + `session:read` / `session:write` ou roles `ADMIN`/`SYSTEM`): sessões/blacklist por `userId`, `GET /api/v1/sessions`, admin blacklist em `/api/v1/admin/devices/blacklist` e `/api/v1/devices/blacklist`.
+  - Exclusão pelo admin: `DELETE /api/v1/admin/users/{idUserExternal}`, corpo `{reason}` (Bearer + `user:delete` ou role `ADMIN`/`SYSTEM`) → ms-auth `DELETE /api/v1/users/delete/{id}` com o JWT do admin (o ms-auth confere mesma company e protege alvo ADMIN/SYSTEM). É soft delete; a eliminação vem pelo job `account_purge` do ms-auth.
 - **Dependências Externas:**
   - **ms-auth** (HTTP, default `:8081`) — auth, sessões, blacklist, challenge, block/delete user; client principal com CB + retry + cache Redis.
   - **ms-company** (HTTP, default `:8083`) — resolve tenant → company (`GET /api/v1/companies/x-tenant-id/{tenantId}`); chamado em praticamente toda request via `CompanyResolveMiddleware`.

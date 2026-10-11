@@ -90,3 +90,28 @@ func TestLifecyclePort_DeleteMe_PropagatesError(t *testing.T) {
 	assert.True(t, ok)
 	assert.Equal(t, http.StatusForbidden, httpErr.StatusCode)
 }
+
+func TestLifecyclePort_DeleteUser_UsesTargetAndCompany(t *testing.T) {
+	authClient := new(mockAuthClient)
+	companyClient := new(mockCompanyClient)
+	svc := NewLifecyclePort(authClient, companyClient)
+
+	companyClient.On("GetByTenantId", mock.Anything, "tenant-1", "corr-1").
+		Return(appdto.CompanySimpleResponseDTO{ID: "company-1"}, nil)
+	authClient.On("DeleteUser", mock.MatchedBy(func(ctx context.Context) bool {
+		return port.CompanyIDFromContext(ctx) == "company-1"
+	}), "ext-alvo", "pedido LGPD", "tok-admin", "tenant-1", "corr-1").Return(nil)
+
+	err := svc.DeleteUser(context.Background(), appdto.AdminDeleteUserCommand{
+		TenantID: "tenant-1", Token: "tok-admin", IDUserExternal: "ext-alvo", Reason: "pedido LGPD", CorrelationID: "corr-1",
+	})
+	assert.NoError(t, err)
+	authClient.AssertExpectations(t)
+	authClient.AssertNotCalled(t, "GetUserByCodeUser", mock.Anything, mock.Anything, mock.Anything, mock.Anything, mock.Anything)
+}
+
+func TestLifecyclePort_DeleteUser_RequiresTarget(t *testing.T) {
+	svc := NewLifecyclePort(new(mockAuthClient), new(mockCompanyClient))
+	err := svc.DeleteUser(context.Background(), appdto.AdminDeleteUserCommand{TenantID: "tenant-1", Token: "tok"})
+	assert.Error(t, err)
+}

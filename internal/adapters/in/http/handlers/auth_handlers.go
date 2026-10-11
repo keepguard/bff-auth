@@ -1136,6 +1136,31 @@ func (h *AuthHandlers) DeleteMeHandler(c echo.Context) error {
 	return c.NoContent(http.StatusNoContent)
 }
 
+// AdminDeleteUserHandler — DELETE /api/v1/admin/users/:idUserExternal, corpo
+// {reason}: o admin/gestor da company exclui a conta de outro usuário (soft
+// delete; os dados de login são eliminados pelo job do ms-auth).
+func (h *AuthHandlers) AdminDeleteUserHandler(c echo.Context) error {
+	correlationID, tenantId, token, err := h.accountLifecycleHeaders(c)
+	if err != nil {
+		return handleError(c, err, correlationID)
+	}
+	reason, err := h.bindAccountLifecycleReason(c)
+	if err != nil {
+		return handleError(c, err, correlationID)
+	}
+	cmd := appdto.AdminDeleteUserCommand{
+		TenantID:       tenantId,
+		Token:          token,
+		IDUserExternal: strings.TrimSpace(c.Param("idUserExternal")),
+		Reason:         reason,
+		CorrelationID:  correlationID,
+	}
+	if err := h.lifecyclePort.DeleteUser(c.Request().Context(), cmd); err != nil {
+		return handleError(c, err, correlationID)
+	}
+	return c.NoContent(http.StatusNoContent)
+}
+
 // RevokeSessionHandler revoga sessão de dispositivo específico
 func (h *AuthHandlers) RevokeSessionHandler(c echo.Context) error {
 	correlationID := GetCorrelationID(c)

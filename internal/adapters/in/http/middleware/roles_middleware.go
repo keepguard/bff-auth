@@ -11,6 +11,7 @@ import (
 const (
 	AuthoritySessionRead  = "session:read"
 	AuthoritySessionWrite = "session:write"
+	AuthorityUserDelete   = "user:delete"
 )
 
 func RequireBearer() echo.MiddlewareFunc {

@@ -148,6 +148,11 @@ func (s *serverImpl) SetupRoutes(handlers Handler) {
 	adminWrite.POST("", handlers.AdminAddDeviceBlacklistHandler, rl.Limit("admin_device_blacklist", rules.DeviceBlacklist))
 	adminWrite.DELETE("/:deviceId", handlers.AdminRemoveDeviceBlacklistHandler)
 
+	// Exclusão de conta de outro usuário pelo admin da company (pedidos LGPD).
+	s.echo.DELETE("/api/v1/admin/users/:idUserExternal", handlers.AdminDeleteUserHandler,
+		requireBearer, tokenRevocationMiddleware, middlewarePkg.RequireAuthority(middlewarePkg.AuthorityUserDelete),
+		rl.Limit("account_lifecycle", rules.AccountLifecycle))
+
 	s.logger.Info("Rotas configuradas com sucesso com proteção de Rate Limit",
 		zap.String("port", s.config.Server.Port),
 	)
