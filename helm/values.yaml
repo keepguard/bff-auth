@@ -1,6 +1,6 @@
 image:
   repository: ghcr.io/keepguard/bff-auth
-  tag: "61a7297"
+  tag: "96e51e8"
   pullPolicy: IfNotPresent
 
 service:
