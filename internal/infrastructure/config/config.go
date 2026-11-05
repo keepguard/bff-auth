@@ -134,6 +134,14 @@ func Load() (*Config, error) {
 	viper.SetEnvKeyReplacer(strings.NewReplacer(".", "_"))
 	viper.AutomaticEnv()
 
+	_ = viper.BindEnv("rabbitmq.host", "BFF_AUTH_RABBITMQ_HOST", "RABBITMQ_HOST")
+	_ = viper.BindEnv("rabbitmq.port", "BFF_AUTH_RABBITMQ_PORT", "RABBITMQ_PORT")
+	_ = viper.BindEnv("rabbitmq.user", "BFF_AUTH_RABBITMQ_USER", "RABBITMQ_USER", "RABBITMQ_DEFAULT_USER")
+	_ = viper.BindEnv("rabbitmq.password", "BFF_AUTH_RABBITMQ_PASSWORD", "RABBITMQ_PASSWORD", "RABBITMQ_DEFAULT_PASS")
+	_ = viper.BindEnv("rabbitmq.vhost", "BFF_AUTH_RABBITMQ_VHOST", "RABBITMQ_VHOST")
+	_ = viper.BindEnv("redis.host", "BFF_AUTH_REDIS_HOST", "REDIS_HOST")
+	_ = viper.BindEnv("redis.password", "BFF_AUTH_REDIS_PASSWORD", "REDIS_PASSWORD")
+
 	// Determina o ambiente
 	env := os.Getenv("BFF_AUTH_ENV")
 	if env == "" {

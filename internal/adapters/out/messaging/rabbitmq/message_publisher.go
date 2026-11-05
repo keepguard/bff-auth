@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"net/url"
+	"strings"
 
 	outport "github.com/keepguard/bff-auth/internal/application/port/out"
 	"github.com/keepguard/bff-auth/internal/infrastructure/config"
@@ -25,8 +27,15 @@ func NewMessagePublisher(cfg *config.RabbitMQConfig, logger *zap.Logger) (outpor
 	}
 
 	// Configurar conexão RabbitMQ
+	vhost := strings.TrimPrefix(strings.TrimSpace(cfg.VHost), "/")
+	amqpURL := (&url.URL{
+		Scheme: "amqp",
+		User:   url.UserPassword(cfg.User, cfg.Password),
+		Host:   fmt.Sprintf("%s:%d", cfg.Host, cfg.Port),
+		Path:   "/" + vhost,
+	}).String()
 	conn, err := rabbitmq.NewConn(
-		fmt.Sprintf("amqp://%s:%s@%s:%d%s", cfg.User, cfg.Password, cfg.Host, cfg.Port, cfg.VHost),
+		amqpURL,
 		rabbitmq.WithConnectionOptionsLogging,
 	)
 	if err != nil {
