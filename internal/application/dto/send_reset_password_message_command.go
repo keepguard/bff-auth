@@ -48,3 +48,6 @@ type SendResetPasswordMessageViewDTO struct {
 	Success bool
 	Message string
 }
+
+// ResetPasswordGenericMessage é a resposta do esqueci a senha com ou sem conta: não revela se o e-mail existe.
+const ResetPasswordGenericMessage = "Se houver uma conta ativa com este e-mail, enviamos um código para redefinir a senha."

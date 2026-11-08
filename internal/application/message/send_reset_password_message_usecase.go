@@ -91,17 +91,15 @@ func (uc *sendResetPasswordMessageUseCaseImpl) Execute(ctx context.Context, comm
 	err = uc.messagePublisher.PublishMessage(ctx, messageReq)
 	if err != nil {
 		uc.logger.Error("Erro ao publicar mensagem de reset de senha",
-			zap.String("email", command.Email),
 			zap.String("correlation_id", command.CorrelationID),
 			zap.Error(err))
 	} else {
 		uc.logger.Info("Mensagem de reset de senha publicada com sucesso",
-			zap.String("email", command.Email),
 			zap.String("correlation_id", command.CorrelationID))
 	}
 
 	return appdto.SendResetPasswordMessageViewDTO{
 		Success: true,
-		Message: "Token de reset de senha gerado e mensagem enviada com sucesso",
+		Message: appdto.ResetPasswordGenericMessage,
 	}, nil
 }

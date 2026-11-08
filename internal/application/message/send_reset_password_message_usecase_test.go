@@ -269,7 +269,7 @@ func TestSendResetPasswordMessageUseCase_Execute_Success(t *testing.T) {
 	// Assert
 	assert.NoError(t, err)
 	assert.True(t, result.Success)
-	assert.Equal(t, "Token de reset de senha gerado e mensagem enviada com sucesso", result.Message)
+	assert.Equal(t, appdto.ResetPasswordGenericMessage, result.Message)
 	mockCompanyClient.AssertExpectations(t)
 	mockUserClient.AssertExpectations(t)
 	mockAuthClient.AssertExpectations(t)
@@ -612,7 +612,7 @@ func TestSendResetPasswordMessageUseCase_Execute_MessagePublisherError(t *testin
 	// Assert
 	assert.NoError(t, err) // Não deve falhar se o email não for enviado (melhor UX)
 	assert.True(t, result.Success)
-	assert.Equal(t, "Token de reset de senha gerado e mensagem enviada com sucesso", result.Message)
+	assert.Equal(t, appdto.ResetPasswordGenericMessage, result.Message)
 	mockCompanyClient.AssertExpectations(t)
 	mockUserClient.AssertExpectations(t)
 	mockAuthClient.AssertExpectations(t)
@@ -682,7 +682,7 @@ func TestSendResetPasswordMessageUseCase_Execute_SendMessageFailure(t *testing.T
 	// Assert
 	assert.NoError(t, err)
 	assert.True(t, result.Success)
-	assert.Equal(t, "Token de reset de senha gerado e mensagem enviada com sucesso", result.Message)
+	assert.Equal(t, appdto.ResetPasswordGenericMessage, result.Message)
 	mockCompanyClient.AssertExpectations(t)
 	mockUserClient.AssertExpectations(t)
 	mockAuthClient.AssertExpectations(t)

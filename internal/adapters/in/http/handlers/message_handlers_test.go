@@ -227,13 +227,14 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_UseCaseHTTPError(t *tes
 
 	// Assert
 	assert.NoError(t, err)
-	assert.Equal(t, http.StatusNotFound, rec.Code)
+	// Sem conta ou conta inativa: mesma resposta do sucesso (não revela se o e-mail tem conta).
+	assert.Equal(t, http.StatusOK, rec.Code)
 
-	var response pkg.ErrorResponse
+	var response inboundDto.SendResetPasswordMessageResponseDTO
 	err = json.Unmarshal(rec.Body.Bytes(), &response)
 	assert.NoError(t, err)
-	assert.Equal(t, "USER_NOT_FOUND", response.Error)
-	assert.Equal(t, "Usuário não encontrado", response.Message)
+	assert.True(t, response.Success)
+	assert.Equal(t, appdto.ResetPasswordGenericMessage, response.Message)
 
 	mockUseCase.AssertExpectations(t)
 }
@@ -268,13 +269,14 @@ func TestMessageHandlers_SendResetPasswordMessageHandler_UseCaseAppError(t *test
 
 	// Assert
 	assert.NoError(t, err)
-	assert.Equal(t, http.StatusBadRequest, rec.Code)
+	// Sem conta ou conta inativa: mesma resposta do sucesso (não revela se o e-mail tem conta).
+	assert.Equal(t, http.StatusOK, rec.Code)
 
-	var response pkg.ErrorResponse
+	var response inboundDto.SendResetPasswordMessageResponseDTO
 	err = json.Unmarshal(rec.Body.Bytes(), &response)
 	assert.NoError(t, err)
-	assert.Equal(t, "USER_NOT_ACTIVE", response.Error)
-	assert.Equal(t, "Usuário não está ativo", response.Message)
+	assert.True(t, response.Success)
+	assert.Equal(t, appdto.ResetPasswordGenericMessage, response.Message)
 
 	mockUseCase.AssertExpectations(t)
 }

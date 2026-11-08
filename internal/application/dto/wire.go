@@ -64,13 +64,18 @@ type DeviceSessionDTO struct {
 	Writable     *bool  `json:"writable,omitempty"`
 }
 
+// DeviceBlacklistDTO é o aparelho bloqueado da própria pessoa, como o ms-auth devolve. IP, user agent e validade vêm do
+// ms-auth e eram descartados aqui (a tela de aparelhos bloqueados ficava sem IP).
 type DeviceBlacklistDTO struct {
 	CodeUser   string `json:"codeUser"`
 	DeviceID   string `json:"deviceId"`
 	DeviceName string `json:"deviceName"`
+	IPAddress  string `json:"ipAddress,omitempty"`
+	UserAgent  string `json:"userAgent,omitempty"`
 	Reason     string `json:"reason"`
 	BlockedAt  string `json:"blockedAt"`
 	BlockedBy  string `json:"blockedBy"`
+	ExpiresAt  string `json:"expiresAt,omitempty"`
 }
 
 type AddDeviceBlacklistRequestDTO struct {

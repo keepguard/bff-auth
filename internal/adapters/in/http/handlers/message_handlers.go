@@ -1,6 +1,7 @@
 package http
 
 import (
+	"errors"
 	"net/http"
 
 	"github.com/keepguard/bff-auth/internal/adapters/in/http/dto"
@@ -107,6 +108,17 @@ func (h *MessageHandlers) SendResetPasswordMessageHandler(c echo.Context) error 
 
 	// Executar caso de uso com comando encapsulado
 	response, err := h.sendResetPasswordMessageUseCase.Execute(c.Request().Context(), command)
+	if err != nil && contaSemRecuperacao(err) {
+		// Conta inexistente ou inativa: mesma resposta do sucesso, para ninguém descobrir quais e-mails têm conta
+		// (antes: 404 USER_NOT_FOUND e 400 USER_NOT_ACTIVE). Nada é enviado.
+		h.logger.Info("Esqueci a senha sem conta ativa para o e-mail (resposta genérica)",
+			zap.String("correlationId", correlationID),
+			zap.String("applicationId", tenantId),
+		)
+		return c.JSON(http.StatusOK, mapper.ToSendResetPasswordMessageResponse(appdto.SendResetPasswordMessageViewDTO{
+			Success: true, Message: appdto.ResetPasswordGenericMessage,
+		}))
+	}
 	if err != nil {
 		h.logger.Error("Erro no caso de uso de envio de mensagem de reset",
 			zap.String("correlationId", correlationID),
@@ -119,8 +131,20 @@ func (h *MessageHandlers) SendResetPasswordMessageHandler(c echo.Context) error 
 	h.logger.Info("Mensagem de reset de senha enviada com sucesso",
 		zap.String("correlationId", correlationID),
 		zap.String("applicationId", tenantId),
-		zap.String("email", req.Email),
 	)
 
 	return c.JSON(http.StatusOK, mapper.ToSendResetPasswordMessageResponse(response))
+}
+
+// contaSemRecuperacao: o e-mail não tem conta (404) ou a conta não está ativa (USER_NOT_ACTIVE).
+func contaSemRecuperacao(err error) bool {
+	var httpErr *appdto.HTTPError
+	if errors.As(err, &httpErr) && httpErr.StatusCode == http.StatusNotFound {
+		return true
+	}
+	var appErr *pkg.AppError
+	if errors.As(err, &appErr) && (appErr.StatusCode == http.StatusNotFound || string(appErr.Code) == "USER_NOT_ACTIVE") {
+		return true
+	}
+	return false
 }

@@ -2,6 +2,7 @@ package user
 
 import (
 	"context"
+	"strings"
 	"time"
 
 	outboundDto "github.com/keepguard/bff-auth/internal/adapters/out/http/dto"
@@ -38,7 +39,7 @@ func (d *userLoggingDecorator) GetByEmail(ctx context.Context, email, tenantId, 
 		zap.String("operation", "GetByEmail"),
 		zap.String("correlationID", correlationID),
 		zap.String("tenantId", tenantId),
-		zap.String("email", email),
+		zap.String("email", emailMascarado(email)),
 	)
 
 	response, err := d.inner.GetByEmail(ctx, email, tenantId, companyId, correlationID)
@@ -50,7 +51,7 @@ func (d *userLoggingDecorator) GetByEmail(ctx context.Context, email, tenantId, 
 			zap.String("operation", "GetByEmail"),
 			zap.String("correlationID", correlationID),
 			zap.String("tenantId", tenantId),
-			zap.String("email", email),
+			zap.String("email", emailMascarado(email)),
 			zap.Duration("duration", duration),
 			zap.Error(err),
 		)
@@ -62,11 +63,24 @@ func (d *userLoggingDecorator) GetByEmail(ctx context.Context, email, tenantId, 
 		zap.String("operation", "GetByEmail"),
 		zap.String("correlationID", correlationID),
 		zap.String("tenantId", tenantId),
-		zap.String("email", email),
+		zap.String("email", emailMascarado(email)),
 		zap.String("userID", response.ID),
 		zap.String("codeUser", response.CodeUser),
 		zap.Duration("duration", duration),
 	)
 
 	return response, nil
+}
+
+// emailMascarado: "r***l@dominio" — dado pessoal não vai inteiro para o log.
+func emailMascarado(email string) string {
+	at := strings.LastIndex(email, "@")
+	if at <= 0 {
+		return "***"
+	}
+	nome := email[:at]
+	if len(nome) <= 2 {
+		return nome[:1] + "***" + email[at:]
+	}
+	return nome[:1] + "***" + nome[len(nome)-1:] + email[at:]
 }
