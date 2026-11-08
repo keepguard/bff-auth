@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"fmt"
 	"net/http"
+	"net/url"
 	"os"
 	"strings"
 	"time"
@@ -121,6 +122,26 @@ const (
 	LegacyRefreshTokenCookiePath = "/api/v1/auth"
 )
 
+// hostDoPedido normaliza um valor de Host, X-Forwarded-Host, Origin ou Referer para só o nome do host, minúsculo e sem porta.
+func hostDoPedido(v string) string {
+	v = strings.TrimSpace(strings.Split(v, ",")[0])
+	if strings.Contains(v, "://") {
+		if u, err := url.Parse(v); err == nil {
+			v = u.Host
+		}
+	}
+	v = strings.ToLower(v)
+	if i := strings.LastIndex(v, ":"); i >= 0 && !strings.Contains(v[i:], "]") {
+		v = v[:i]
+	}
+	return v
+}
+
+// ehLoopback: localhost e 127.0.0.1 em desenvolvimento, onde não há HTTPS e o Secure segue os envs de sempre.
+func ehLoopback(host string) bool {
+	return host == "localhost" || strings.HasSuffix(host, ".localhost") || host == "127.0.0.1" || host == "[::1]" || host == "::1"
+}
+
 func (h *AuthHandlers) getCookieConfig(c echo.Context) (domain string, sameSite http.SameSite, secure bool, path string) {
 	// Path "/" é obrigatório aqui. Restringir a "/api/v1/auth" criava um
 	// cookie SEPARADO (cookies só são iguais se nome+domínio+path batem):
@@ -137,21 +158,33 @@ func (h *AuthHandlers) getCookieConfig(c echo.Context) (domain string, sameSite 
 	isKeepguard := strings.Contains(host, "keepguard.com.br") ||
 		strings.Contains(origin, "keepguard.com.br") ||
 		strings.Contains(referer, "keepguard.com.br") ||
-		strings.Contains(forwardedHost, "keepguard.com.br") ||
-		os.Getenv("BFF_AUTH_COOKIE_DOMAIN") != ""
+		strings.Contains(forwardedHost, "keepguard.com.br")
 
-	if isKeepguard {
-		// Front e API estão no mesmo site (*.keepguard.com.br): Lax basta e
-		// evita o SameSite=None desnecessário (exigiria Secure sem trazer
-		// proteção adicional aqui, já que não há navegação cross-site real).
-		domain = ".keepguard.com.br"
-		secure = true
-		sameSite = http.SameSiteLaxMode
-	} else {
-		domain = ""
-		secure = false
-		sameSite = http.SameSiteLaxMode
+	if !isKeepguard {
+		// Produto em domínio próprio (ex.: app.echouno.com, pelo proxy do nginx do front, mesma origem): o navegador recusa um
+		// cookie com Domain de outro site, então o cookie é só do host, Secure e Lax, e os envs globais de Domain e SameSite (do
+		// KeepGuard) não valem. Quem chama de servidor para servidor (BFFs dos produtos) só lê o valor do cookie: nada muda.
+		// Forjar X-Forwarded-Host só muda o escopo do cookie da própria resposta; não dá acesso a nada.
+		h := hostDoPedido(forwardedHost)
+		if h == "" {
+			h = hostDoPedido(host)
+		}
+		secure = !ehLoopback(h)
+		if s := os.Getenv("BFF_AUTH_COOKIE_SECURE"); ehLoopback(h) && s == "true" {
+			secure = true
+		}
+		if p := os.Getenv("BFF_AUTH_COOKIE_PATH"); p != "" {
+			path = p
+		}
+		return "", http.SameSiteLaxMode, secure, path
 	}
+
+	// Front e API estão no mesmo site (*.keepguard.com.br): Lax basta e
+	// evita o SameSite=None desnecessário (exigiria Secure sem trazer
+	// proteção adicional aqui, já que não há navegação cross-site real).
+	domain = ".keepguard.com.br"
+	secure = true
+	sameSite = http.SameSiteLaxMode
 
 	if d := os.Getenv("BFF_AUTH_COOKIE_DOMAIN"); d != "" {
 		domain = d
