@@ -51,7 +51,7 @@ func (uc *sendResetPasswordMessageUseCaseImpl) Execute(ctx context.Context, comm
 		return appdto.SendResetPasswordMessageViewDTO{}, err
 	}
 
-	if user.Status != "ACTIVE" {
+	if !pkg.IsActiveUserStatus(user.Status) {
 		return appdto.SendResetPasswordMessageViewDTO{}, &pkg.AppError{
 			StatusCode: 400,
 			Code:       "USER_NOT_ACTIVE",

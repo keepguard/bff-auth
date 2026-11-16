@@ -46,7 +46,7 @@ func (uc *resetPasswordUseCaseImpl) Execute(ctx context.Context, command appdto.
 		return err
 	}
 
-	if user.Status != "ACTIVE" {
+	if !pkg.IsActiveUserStatus(user.Status) {
 		return &pkg.AppError{
 			StatusCode: 400,
 			Code:       "USER_NOT_ACTIVE",
