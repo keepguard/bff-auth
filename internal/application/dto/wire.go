@@ -156,6 +156,8 @@ type UserByEmailResponseDTO struct {
 	Email         string `json:"email"`
 	Status        string `json:"status"`
 	EmailVerified bool   `json:"emailVerified"`
+	// PreferredLocale é aditivo: ausente ou null até o ms-auth expor o idioma; nil = pt-BR.
+	PreferredLocale *string `json:"preferredLocale,omitempty"`
 }
 
 type UserByCodeResponseDTO struct {

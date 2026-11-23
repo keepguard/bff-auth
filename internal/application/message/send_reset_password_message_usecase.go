@@ -9,6 +9,7 @@ import (
 	outport "github.com/keepguard/bff-auth/internal/application/port/out"
 	"github.com/keepguard/bff-auth/internal/domain/enums"
 	"github.com/keepguard/bff-auth/internal/pkg"
+	pkglocale "github.com/keepguard/bff-auth/internal/pkg/locale"
 	"go.uber.org/zap"
 )
 
@@ -76,6 +77,17 @@ func (uc *sendResetPasswordMessageUseCaseImpl) Execute(ctx context.Context, comm
 		"token":    tokenResponse.Token,
 	}
 
+	// Idioma da conta vem na mesma resposta da busca por e-mail (nenhuma chamada
+	// nova, nenhuma diferença de tempo). Sem idioma, sai vazio e o campo é omitido.
+	// The account's stored language wins; without one, the language the person is using on the screen.
+	accountLocale := ""
+	if user.PreferredLocale != nil {
+		accountLocale = *user.PreferredLocale
+	}
+	if pkglocale.Normalize(accountLocale) == "" {
+		accountLocale = command.Locale
+	}
+
 	messageReq := outport.MessageDTO{
 		CompanyID:         company.ID,
 		CorrelationID:     command.CorrelationID,
@@ -86,6 +98,7 @@ func (uc *sendResetPasswordMessageUseCaseImpl) Execute(ctx context.Context, comm
 		Recipient:         command.Email,
 		CodeUser:          user.CodeUser,
 		Variables:         variables,
+		Locale:            pkglocale.Normalize(accountLocale),
 	}
 
 	err = uc.messagePublisher.PublishMessage(ctx, messageReq)

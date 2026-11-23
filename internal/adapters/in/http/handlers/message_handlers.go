@@ -91,6 +91,7 @@ func (h *MessageHandlers) SendResetPasswordMessageHandler(c echo.Context) error 
 		tenantId,
 		correlationID,
 	)
+	command.Locale = req.Locale
 
 	// Validar comando
 	if err := command.Validate(); err != nil {

@@ -25,4 +25,7 @@ type MessageDTO struct {
 	Content           string                 `json:"content,omitempty"`
 	CodeUser          string                 `json:"codeUser,omitempty"`
 	Variables         map[string]interface{} `json:"variables"`
+	// Locale é opcional e aditivo: idioma da conta já normalizado (pt-BR, en-US,
+	// es-ES). Vazio = campo omitido, e o ms-communication usa pt-BR como sempre.
+	Locale string `json:"locale,omitempty"`
 }

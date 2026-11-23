@@ -9,6 +9,8 @@ type SendResetPasswordMessageCommand struct {
 	Email         string
 	TenantId      string
 	CorrelationID string
+	// Locale is the UI language sent by the client (raw; normalized by the use case). Optional.
+	Locale string
 }
 
 func NewSendResetPasswordMessageCommand(

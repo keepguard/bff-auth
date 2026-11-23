@@ -8,7 +8,7 @@
 - **Linguagem & Framework:** Go 1.24 / Labstack Echo v4; config via Viper (`application.yml` + `application-{env}.yml`); validação com go-playground/validator; JWT com golang-jwt; HTTP outbound com Resty; Swagger (swaggo); logs Zap; métricas Prometheus (`promhttp` em porta dedicada).
 - **Persistência e Cache:** Sem banco relacional/documental próprio. Redis (go-redis) para: presença de token de login (`tokenlogin:{codeUser}:{jwt}`), blacklist de dispositivo, rate limiting (Lua INCR/EXPIRE), cache de company/tenant, cache de usuário por code/email.
 - **Mensageria:** RabbitMQ (wagslane/go-rabbitmq) como **publisher** (não consumidor):
-  - Exchange topic de comunicação (default local: `ms-communication-exchange-local`, routing key `communication.message.send`) — reset/forgot password; fallback HTTP para `ms-communication` via circuit breaker.
+  - Exchange topic de comunicação (default local: `ms-communication-exchange-local`, routing key `communication.message.send`) — reset/forgot password; campo opcional `locale` (pt-BR, en-US, es-ES; omitido sem idioma); fallback HTTP para `ms-communication` via circuit breaker.
   - Exchange de auditoria (default local: `srv-audit-exchange-local`, routing key `audit.event`) — eventos assíncronos do middleware de audit.
 
 ## 3. Arquitetura Interna
